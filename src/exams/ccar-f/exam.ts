@@ -2,6 +2,7 @@
    分野・細目の名前と配点は Anthropic の試験ガイド（Version 0.1）に合わせる。
    シナリオの文・要点・問題はすべて自分の言葉で書く（ガイドの本文やサンプル問題は載せない）。 */
 import type { Domain, Exam, Scenario } from "../types";
+import { ja } from "./ja";
 import { notes } from "./notes";
 import { questions } from "./questions";
 
@@ -232,6 +233,7 @@ export const ccarF: Exam = {
   scenarios,
   questions,
   notes,
+  translations: { ja },
   outOfScope: [
     "Claude のファインチューニング、独自モデルの学習",
     "API の認証・課金・アカウント管理（OAuth、API キーのローテーションを含む）",

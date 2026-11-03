@@ -95,6 +95,19 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/settings");
   await shot("13-settings");
 
+  // 問題文の言語：日本語・併記に切り替え、設定が残ることを確かめる
+  await goto("#/ccar-f/practice");
+  await clickText("日本語");
+  if (!/[ぁ-ん]/.test(await page.$eval(".stem", e => e.textContent))) throw new Error("日本語に切り替わらない");
+  await shot("15-practice-ja");
+  await clickText("併記");
+  if (!(await page.$(".stem .ja-sub"))) throw new Error("併記にならない");
+  await click(".option");
+  await shot("16-practice-both");
+  await page.reload({ waitUntil: "networkidle0" });
+  if (!(await page.$(".stem .ja-sub"))) throw new Error("言語の設定が残らない");
+  await clickText("英語");
+
   // ダーク
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "dark" }]);
   await goto("#/ccar-f/practice");
