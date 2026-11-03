@@ -9,7 +9,8 @@ import { href } from "../route";
 export function MockResult({ exam, at }: { exam: Exam; at: number }) {
   const r = useData().mocks[exam.id]?.find(x => x.finishedAt === at);
   const [open, setOpen] = useState<string | undefined>();
-  const [onlyWrong, setOnlyWrong] = useState(false);
+  // 全問を並べると長いので、まずは間違えた（未回答を含む）問題だけ
+  const [onlyWrong, setOnlyWrong] = useState(true);
   const back = href({ name: "mock", examId: exam.id });
   if (!r)
     return (

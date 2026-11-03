@@ -30,3 +30,13 @@ docker compose run --rm dev npm run check  # 型・整形・テスト・ビル�
 2. `feature/N-…`（直しは `fix/N-…`）を `develop` から切る
 3. コミット本文の最後と、`develop` への `--no-ff` マージに `Refs #N`
 4. 本番に出すときは `develop` → `main` のマージに `Closes #N` を並べる
+
+## 画面の確かめ
+
+dev サーバーを立てた状態で、iPhone の幅で主な画面をたどってスクリーンショットを撮る（エラーが出たら失敗）。
+
+```sh
+docker run --rm --network host -v "$PWD":/work:ro -v /tmp/shots:/shots -w /work \
+  -e NODE_PATH=/usr/src/app/node_modules --user root zenika/alpine-chrome:with-puppeteer \
+  node tests/smoke.cjs http://localhost:8009/claude-cert-drill/ /shots
+```
