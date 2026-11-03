@@ -4,9 +4,14 @@ import type { ItemStat } from "../engine/schedule";
 
 export const VERSION = 1;
 
+/** 問題文の言語。en＝英語（本番と同じ）、ja＝日本語、both＝英語の下に日本語 */
+export type QuestionLang = "en" | "ja" | "both";
+export const QUESTION_LANGS: readonly QuestionLang[] = ["en", "ja", "both"];
+
 export interface Settings {
   /** 1 回の練習の問題数 */
   readonly practiceSize: number;
+  readonly lang: QuestionLang;
   /** 前回開いた資格（起動時にそこへ） */
   readonly lastExam?: string;
 }
@@ -50,7 +55,7 @@ export interface Data {
   readonly activeMock?: ActiveMock;
 }
 
-export const DEFAULT_SETTINGS: Settings = { practiceSize: 10 };
+export const DEFAULT_SETTINGS: Settings = { practiceSize: 10, lang: "en" };
 export const PRACTICE_SIZES = [5, 10, 20] as const;
 export const MAX_MOCKS = 20;
 
@@ -84,7 +89,10 @@ function settings(x: unknown): Settings {
     ? (x.practiceSize as number)
     : DEFAULT_SETTINGS.practiceSize;
   const lastExam = typeof x.lastExam === "string" && /^[a-z0-9-]+$/.test(x.lastExam) ? x.lastExam : undefined;
-  return lastExam ? { practiceSize: size, lastExam } : { practiceSize: size };
+  const lang = (QUESTION_LANGS as readonly unknown[]).includes(x.lang)
+    ? (x.lang as QuestionLang)
+    : DEFAULT_SETTINGS.lang;
+  return lastExam ? { practiceSize: size, lang, lastExam } : { practiceSize: size, lang };
 }
 
 const strArr = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => typeof s === "string");

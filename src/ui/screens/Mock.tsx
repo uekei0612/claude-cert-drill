@@ -7,6 +7,7 @@ import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { abandonMock, finishMock, patchMock, startMock } from "../../store/actions";
 import { getData, update, useData } from "../../store/store";
+import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { go, href } from "../route";
 
@@ -135,6 +136,7 @@ export function Mock({ exam }: { exam: Exam }) {
   return (
     <main class="page drill">
       {header}
+      <LangSwitch exam={exam} />
       <div class="progress" aria-hidden="true">
         <div style={{ width: `${(answered / ids.length) * 100}%` }} />
       </div>
@@ -163,6 +165,7 @@ export function Mock({ exam }: { exam: Exam }) {
         reveal={false}
         onChoose={orig => update(d => patchMock(d, x => ({ ...x, answers: { ...x.answers, [id]: orig } })))}
         scenarioOpen={!prev || prev.scenario !== q.scenario}
+        lang={data.settings.lang}
       />
       <div class="sticky-next">
         <button class="btn" disabled={cursor === 0} onClick={() => setCursor(cursor - 1)}>

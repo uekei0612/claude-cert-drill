@@ -43,6 +43,22 @@ describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
     expect(exam.format.target).toBeLessThan(1);
   });
 
+  describe.each(Object.entries(exam.translations ?? {}))("訳（%s）", (_lang, tr) => {
+    test("すべてのシナリオと問題に訳があり、余分な ID は無い", () => {
+      expect(Object.keys(tr!.scenarios).sort()).toEqual([...scenarioIds].sort());
+      expect(Object.keys(tr!.questions).sort()).toEqual(exam.questions.map(q => q.id).sort());
+    });
+    test("訳は空でなく、選択肢は 4 つで重複しない", () => {
+      for (const v of Object.values(tr!.scenarios)) expect(v.trim().length).toBeGreaterThan(20);
+      for (const [id, t] of Object.entries(tr!.questions)) {
+        expect(t.stem.trim().length, id).toBeGreaterThan(20);
+        expect(t.options, id).toHaveLength(4);
+        expect(new Set(t.options.map(o => o.trim())).size, id).toBe(4);
+        for (const o of t.options) expect(o.trim().length, id).toBeGreaterThan(0);
+      }
+    });
+  });
+
   describe("問題", () => {
     test("ID は資格の中で一意、形は <シナリオ or 分野>-<2 桁>", () => {
       const ids = exam.questions.map(q => q.id);

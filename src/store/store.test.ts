@@ -24,7 +24,7 @@ describe("parseData", () => {
       },
     });
     expect(Object.keys(d.items)).toEqual(["ccar-f:s1-01"]);
-    expect(d.settings).toEqual({ practiceSize: 10, lastExam: "ccar-f" });
+    expect(d.settings).toEqual({ practiceSize: 10, lang: "en", lastExam: "ccar-f" });
     expect(d.mocks["ccar-f"]).toHaveLength(1);
   });
   test("記録でないものは空の記録", () => {

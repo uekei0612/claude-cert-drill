@@ -3,11 +3,13 @@ import { useState } from "preact/hooks";
 import type { Exam } from "../../exams/types";
 import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
+import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { href } from "../route";
 
 export function MockResult({ exam, at }: { exam: Exam; at: number }) {
-  const r = useData().mocks[exam.id]?.find(x => x.finishedAt === at);
+  const data = useData();
+  const r = data.mocks[exam.id]?.find(x => x.finishedAt === at);
   const [open, setOpen] = useState<string | undefined>();
   // 全問を並べると長いので、まずは間違えた（未回答を含む）問題だけ
   const [onlyWrong, setOnlyWrong] = useState(true);
@@ -78,6 +80,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
         <section class="stack">
           <div class="row between">
             <h2>見直し</h2>
+            <LangSwitch exam={exam} />
             <label class="row small">
               <input type="checkbox" checked={onlyWrong} onChange={e => setOnlyWrong(e.currentTarget.checked)} />
               間違えた問題だけ
@@ -109,6 +112,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                     chosen={chosen}
                     reveal={true}
                     scenarioOpen={false}
+                    lang={data.settings.lang}
                   />
                 )}
               </div>

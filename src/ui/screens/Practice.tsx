@@ -7,7 +7,8 @@ import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
 import { answer } from "../../store/actions";
 import { itemKey } from "../../store/schema";
-import { getData, update } from "../../store/store";
+import { getData, update, useData } from "../../store/store";
+import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { href } from "../route";
 
@@ -25,6 +26,7 @@ function onlyLabel(exam: Exam, only?: string): string | undefined {
 }
 
 export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: number }) {
+  const lang = useData().settings.lang;
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
   const [round, setRound] = useState(0);
   const initial = useMemo(() => {
@@ -145,6 +147,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
           {isRetry && "（やり直し）"}
         </span>
       </header>
+      <LangSwitch exam={exam} />
       <div class="progress" aria-hidden="true">
         <div style={{ width: `${(pos / queue.length) * 100}%` }} />
       </div>
@@ -156,6 +159,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         reveal={revealed}
         onChoose={choose}
         scenarioOpen={!prev || prev.scenario !== q.scenario}
+        lang={lang}
       />
       {revealed && (
         <div class="sticky-next">

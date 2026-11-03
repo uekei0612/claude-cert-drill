@@ -1,7 +1,9 @@
 /* 1 問の表示。シナリオ（畳める）→ 問題文 → 選択肢。
-   reveal のときは、選択肢ごとに正誤と解説を出す（誤答の解説がそのまま弱点の地図になる） */
+   reveal のときは、選択肢ごとに正誤と解説を出す（誤答の解説がそのまま弱点の地図になる）。
+   lang で問題文の言語を選ぶ（訳が無い問題は英語で出す） */
 import type { Exam, Question } from "../exams/types";
 import { domainOf, findTask } from "../exams/types";
+import type { QuestionLang } from "../store/schema";
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -16,12 +18,45 @@ export interface QuestionCardProps {
   readonly onChoose?: (original: number) => void;
   /** シナリオを最初から開いておくか（シナリオが変わった最初の問題など） */
   readonly scenarioOpen?: boolean;
+  readonly lang?: QuestionLang;
 }
 
-export function QuestionCard({ exam, q, order, chosen, reveal, onChoose, scenarioOpen }: QuestionCardProps) {
+/** 英語・日本語・併記のどれかで文を出す */
+function Text({ en, ja, lang }: { en: string; ja?: string; lang: QuestionLang }) {
+  if (lang === "ja" && ja) return <span lang="ja">{ja}</span>;
+  if (lang === "both" && ja)
+    return (
+      <>
+        <span class="en" lang="en">
+          {en}
+        </span>
+        <span class="ja-sub" lang="ja">
+          {ja}
+        </span>
+      </>
+    );
+  return (
+    <span class="en" lang="en">
+      {en}
+    </span>
+  );
+}
+
+export function QuestionCard({
+  exam,
+  q,
+  order,
+  chosen,
+  reveal,
+  onChoose,
+  scenarioOpen,
+  lang = "en",
+}: QuestionCardProps) {
   const scenario = exam.scenarios.find(s => s.id === q.scenario);
   const task = findTask(exam, q.tasks[0]);
   const domain = domainOf(exam, q);
+  const ja = exam.translations?.ja;
+  const tq = ja?.questions[q.id];
   return (
     <article class="qcard">
       {scenario && (
@@ -29,13 +64,18 @@ export function QuestionCard({ exam, q, order, chosen, reveal, onChoose, scenari
           <summary>
             <span class="tag">シナリオ {scenario.id.slice(1)}</span> {scenario.ja}
           </summary>
-          <p class="en" lang="en">
-            <strong>{scenario.title}.</strong> {scenario.context}
+          <p>
+            {lang !== "ja" && (
+              <strong class="en" lang="en">
+                {scenario.title}.{" "}
+              </strong>
+            )}
+            <Text en={scenario.context} ja={ja?.scenarios[scenario.id]} lang={lang} />
           </p>
         </details>
       )}
-      <p class="stem en" lang="en">
-        {q.stem}
+      <p class="stem">
+        <Text en={q.stem} ja={tq?.stem} lang={lang} />
       </p>
       <ol class="options" role="list">
         {order.map((orig, i) => {
@@ -52,8 +92,8 @@ export function QuestionCard({ exam, q, order, chosen, reveal, onChoose, scenari
                 onClick={() => onChoose?.(orig)}
               >
                 <span class="letter">{LETTERS[i]}</span>
-                <span class="en" lang="en">
-                  {o.text}
+                <span class="otext">
+                  <Text en={o.text} ja={tq?.options[orig]} lang={lang} />
                 </span>
               </button>
               {reveal && (
