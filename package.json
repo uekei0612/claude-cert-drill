@@ -1,0 +1,29 @@
+{
+  "name": "claude-cert-drill",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 8009",
+    "build": "vite build",
+    "build:develop": "vite build --mode develop",
+    "preview": "vite preview --host 0.0.0.0 --port 8009",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run format:check && npm test && npm run build"
+  },
+  "dependencies": {
+    "preact": "^11.0.2"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "happy-dom": "^21.0.4",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.5"
+  }
+}
