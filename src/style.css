@@ -214,3 +214,191 @@ a.card {
   color: inherit;
   border-color: currentColor;
 }
+
+/* ---- 画面の部品 ---- */
+.big {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.okc {
+  color: var(--ok);
+}
+.ngc {
+  color: var(--ng);
+}
+.tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-right: 4px;
+  vertical-align: 1px;
+}
+.card.tight {
+  padding: 12px 14px;
+  gap: 6px;
+}
+.card.notice {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.btn.small {
+  min-height: 36px;
+  font-size: 0.85rem;
+}
+
+/* 下のタブ */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+.tabbar a {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.tabbar a.active {
+  color: var(--accent);
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+
+/* 練習・模擬試験 */
+.progress {
+  height: 4px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress > div {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+.qcard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.scenario {
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+.scenario summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 28px;
+}
+.scenario p {
+  margin-top: 8px;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+.stem {
+  font-size: 1.06rem;
+  line-height: 1.7;
+}
+.options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.option {
+  width: 100%;
+  min-height: var(--tap);
+  text-align: left;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  line-height: 1.55;
+  cursor: pointer;
+}
+.option:disabled {
+  cursor: default;
+}
+.option .letter {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 1px;
+}
+.option.chosen {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.option.ok {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+.option.ng {
+  border-color: var(--ng);
+  background: var(--ng-soft);
+}
+.option.dim {
+  opacity: 0.75;
+}
+.why {
+  font-size: 0.9rem;
+  margin: 6px 4px 0 38px;
+  color: var(--text);
+}
+.why strong {
+  font-size: 0.8rem;
+}
+.why.ok strong {
+  color: var(--ok);
+}
+.why.ng strong {
+  color: var(--muted);
+}
+.point {
+  border-left: 4px solid var(--accent);
+  padding: 8px 12px;
+  background: var(--surface);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sticky-next {
+  position: sticky;
+  bottom: 0;
+  margin: 0 -16px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
