@@ -53,6 +53,16 @@ describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
       }
     });
 
+    test("すべての細目に、それを主たる細目とする問題が 1 問以上ある", () => {
+      const missing = tasks.filter(t => !exam.questions.some(q => q.tasks[0] === t.id)).map(t => t.id);
+      expect(missing).toEqual([]);
+    });
+
+    test("すべてのシナリオに問題がある", () => {
+      const missing = exam.scenarios.filter(s => !exam.questions.some(q => q.scenario === s.id)).map(s => s.id);
+      expect(missing).toEqual([]);
+    });
+
     test("正解が一番長い選択肢になっている問題は 4 割まで（長さで当てられないように）", () => {
       const longest = exam.questions.filter(q => {
         const lens = q.options.map(o => o.text.length);
