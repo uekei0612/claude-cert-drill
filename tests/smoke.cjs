@@ -29,7 +29,9 @@ const OUT = process.argv[3] || "/tmp/shots";
   const text = () => page.evaluate(() => document.body.innerText);
   const click = async sel => {
     await page.waitForSelector(sel, { timeout: 5000 });
-    await page.click(sel);
+    // 座標でなく要素に直接送る（公開版では「オフラインでも使えるように」の通知が下に重なることがある）
+    await page.$eval(sel, e => e.click());
+    await new Promise(r => setTimeout(r, 200));
   };
   const clickText = async t => {
     const ok = await page.evaluate(t => {
