@@ -8,6 +8,9 @@ import { ExamPicker } from "./ui/screens/ExamPicker";
 import { Home } from "./ui/screens/Home";
 import { Mock } from "./ui/screens/Mock";
 import { MockResult } from "./ui/screens/MockResult";
+import { Domains } from "./ui/screens/Domains";
+import { Settings } from "./ui/screens/Settings";
+import { TaskDetail } from "./ui/screens/TaskDetail";
 import { Practice } from "./ui/screens/Practice";
 import { TabBar } from "./ui/TabBar";
 import { UpdatePrompt } from "./ui/UpdatePrompt";
@@ -42,11 +45,17 @@ export function App() {
 
   const activeHere = useData().activeMock?.examId === examId;
   // 練習中と、模擬試験を解いている間は、下のタブを出さず、新しい版への切り替えも待つ
+  // 設定は資格の外の画面だが、前回の資格のタブを出して戻れるようにする
+  const tabExam = exam ?? (route.name === "settings" ? findExam(getData().settings.lastExam ?? "") : undefined);
   const busy = route.name === "practice" || (route.name === "mock" && activeHere);
   let screen;
-  if (route.name === "picker" || !exam) screen = <ExamPicker />;
+  if (route.name === "settings") screen = <Settings />;
+  else if (route.name === "picker" || !exam) screen = <ExamPicker />;
   else if (route.name === "practice") screen = <Practice key={href(route)} exam={exam} only={route.only} now={now} />;
   else if (route.name === "mock") screen = <Mock exam={exam} />;
+  else if (route.name === "domains") screen = <Domains exam={exam} now={now} />;
+  else if (route.name === "task")
+    screen = <TaskDetail key={route.taskId} exam={exam} taskId={route.taskId} now={now} />;
   else if (route.name === "mock-result") screen = <MockResult key={route.at} exam={exam} at={route.at} />;
   else screen = <Home exam={exam} now={now} />;
 
@@ -58,7 +67,7 @@ export function App() {
         </div>
       )}
       {screen}
-      {exam && !busy && <TabBar examId={exam.id} current={route.name} />}
+      {tabExam && !busy && <TabBar examId={tabExam.id} current={route.name} />}
       <UpdatePrompt busy={busy} />
     </>
   );

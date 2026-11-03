@@ -469,3 +469,69 @@ a.card {
 .review-row .muted {
   display: block;
 }
+
+/* 分野・設定 */
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+.facts dt {
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+}
+ul.small,
+.points {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.points.traps li::marker {
+  content: "✗ ";
+  color: var(--ng);
+}
+.row.wrap {
+  flex-wrap: wrap;
+}
+select,
+textarea {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 8px 10px;
+  min-height: var(--tap);
+}
+textarea {
+  width: 100%;
+  font-size: 0.85rem;
+}
+.btn.file {
+  position: relative;
+  overflow: hidden;
+}
+.btn.file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.btn.danger {
+  color: var(--ng);
+  border-color: var(--ng);
+}
+
+/* 行の右端（配点・件数など）は折り返さない */
+.row.between > :last-child:not(:first-child) {
+  flex: none;
+  white-space: nowrap;
+}
+/* 戻るボタンは左に寄せる（.page は縦の flex で子が横に伸びるため） */
+.page > a.btn.ghost:first-child,
+.page > .btn.ghost:first-child {
+  align-self: flex-start;
+}
