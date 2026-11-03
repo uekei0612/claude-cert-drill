@@ -53,6 +53,16 @@ describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
       }
     });
 
+    test("正解が一番長い選択肢になっている問題は 4 割まで（長さで当てられないように）", () => {
+      const longest = exam.questions.filter(q => {
+        const lens = q.options.map(o => o.text.length);
+        return lens[q.answer] === Math.max(...lens);
+      });
+      expect(longest.length / Math.max(1, exam.questions.length), longest.map(q => q.id).join(" ")).toBeLessThanOrEqual(
+        0.4,
+      );
+    });
+
     test.each(exam.questions.map(q => [q.id, q] as const))("%s", (_qid, q) => {
       if (exam.scenarios.length) expect(scenarioIds.has(q.scenario ?? ""), "シナリオ").toBe(true);
       for (const t of q.tasks) expect(taskIds.has(t), `細目 ${t}`).toBe(true);
