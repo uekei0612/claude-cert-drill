@@ -1,0 +1,70 @@
+name: Pages
+
+# main（本番：/claude-cert-drill/）と develop（/claude-cert-drill/dev/）を 1 つのサイトにまとめて公開する。
+# Pages はデプロイのたびにサイト全体を置き換えるので、どちらに push しても両方をビルドし直す
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          path: develop
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            main/package-lock.json
+            develop/package-lock.json
+      - name: Build main（本番）
+        working-directory: main
+        # 最初の本番公開の前は main にアプリが無いので飛ばす（/dev/ だけを公開する）
+        if: hashFiles('main/package.json') != ''
+        run: |
+          npm ci
+          npm test
+          VITE_APP_ENV=prod VITE_APP_VERSION=sha-$(git rev-parse --short=7 HEAD) npm run build
+      - name: Build develop（/dev/）
+        working-directory: develop
+        run: |
+          npm ci
+          npm test
+          VITE_APP_VERSION=sha-$(git rev-parse --short=7 HEAD) npm run build:develop
+      - name: Combine
+        run: |
+          mkdir site
+          if [ -d main/dist ]; then cp -r main/dist/. site/; else echo '<!doctype html><meta charset="utf-8"><title>claude-cert-drill</title><p>準備中です。<a href="dev/">develop 版</a></p>' > site/index.html; fi
+          mkdir site/dev
+          cp -r develop/dist/. site/dev/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
