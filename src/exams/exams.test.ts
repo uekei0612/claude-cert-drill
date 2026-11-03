@@ -48,6 +48,15 @@ describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
       expect(Object.keys(tr!.scenarios).sort()).toEqual([...scenarioIds].sort());
       expect(Object.keys(tr!.questions).sort()).toEqual(exam.questions.map(q => q.id).sort());
     });
+    test("訳でも、正解が一番長い選択肢になっている問題は 4 割まで", () => {
+      const longest = exam.questions.filter(q => {
+        const lens = tr!.questions[q.id]!.options.map(o => o.length);
+        return lens[q.answer] === Math.max(...lens);
+      });
+      expect(longest.length / Math.max(1, exam.questions.length), longest.map(q => q.id).join(" ")).toBeLessThanOrEqual(
+        0.4,
+      );
+    });
     test("訳は空でなく、選択肢は 4 つで重複しない", () => {
       for (const v of Object.values(tr!.scenarios)) expect(v.trim().length).toBeGreaterThan(20);
       for (const [id, t] of Object.entries(tr!.questions)) {
