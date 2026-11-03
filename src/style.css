@@ -195,7 +195,8 @@ a.card {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: calc(96px + env(safe-area-inset-bottom));
+  /* 下に出すと練習中の選択肢に重なり、押し間違いの元になるので上に出す */
+  top: calc(8px + env(safe-area-inset-top));
   margin: 0 auto;
   max-width: 480px;
   background: var(--text);
