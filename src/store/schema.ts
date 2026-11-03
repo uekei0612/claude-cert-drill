@@ -19,6 +19,9 @@ export interface MockResult {
   readonly scenarioIds: readonly string[];
   /** 分野 ID → [正解, 問題数] */
   readonly byDomain: Readonly<Record<string, readonly [number, number]>>;
+  /** 見直し用：出した問題（出した順）と、選んだ元の選択肢の添字 */
+  readonly questionIds?: readonly string[];
+  readonly answers?: Readonly<Record<string, number>>;
 }
 
 /** 解いている途中の模擬試験（閉じても続きから） */
@@ -84,6 +87,14 @@ function settings(x: unknown): Settings {
   return lastExam ? { practiceSize: size, lastExam } : { practiceSize: size };
 }
 
+const strArr = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => typeof s === "string");
+
+function answersOf(x: Obj): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(x)) if (num(v) && Number.isInteger(v) && v >= 0 && v <= 3) out[k] = v;
+  return out;
+}
+
 function mockResult(x: unknown): MockResult | undefined {
   if (!isObj(x)) return undefined;
   const { finishedAt, correct, total, weighted, scenarioIds, byDomain } = x;
@@ -93,7 +104,7 @@ function mockResult(x: unknown): MockResult | undefined {
   const bd: Record<string, readonly [number, number]> = {};
   for (const [k, v] of Object.entries(byDomain))
     if (Array.isArray(v) && v.length === 2 && v.every(num)) bd[k] = [v[0] as number, v[1] as number];
-  return {
+  const base: MockResult = {
     finishedAt: finishedAt as number,
     correct: correct as number,
     total: total as number,
@@ -101,17 +112,16 @@ function mockResult(x: unknown): MockResult | undefined {
     scenarioIds,
     byDomain: bd,
   };
+  if (!strArr(x.questionIds) || !isObj(x.answers)) return base;
+  return { ...base, questionIds: x.questionIds, answers: answersOf(x.answers) };
 }
-
-const strArr = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => typeof s === "string");
 
 function activeMock(x: unknown): ActiveMock | undefined {
   if (!isObj(x)) return undefined;
   const { examId, questionIds, scenarioIds, startedAt, limitMs, answers, flags, orders, cursor } = x;
   if (typeof examId !== "string" || !strArr(questionIds) || !strArr(scenarioIds) || !strArr(flags)) return undefined;
   if (![startedAt, limitMs].every(num) || !isObj(answers) || !isObj(orders)) return undefined;
-  const ans: Record<string, number> = {};
-  for (const [k, v] of Object.entries(answers)) if (num(v) && v >= 0 && v <= 3) ans[k] = v;
+  const ans = answersOf(answers);
   const ord: Record<string, number[]> = {};
   for (const [k, v] of Object.entries(orders))
     if (Array.isArray(v) && v.length === 4 && [...v].sort().join() === "0,1,2,3") ord[k] = v as number[];
