@@ -52,6 +52,8 @@ export interface DomainScore {
 export interface MockScore {
   readonly correct: number;
   readonly total: number;
+  /** 正解した問題の ID */
+  readonly correctIds: string[];
   readonly byDomain: DomainScore[];
   /** 出た分野の配点で重み付けした正答率（出なかった分野は除いて配点を割り直す） */
   readonly weighted: number;
@@ -67,12 +69,16 @@ export function scoreMock(
   const byId = new Map(exam.questions.map(q => [q.id, q]));
   const acc = new Map(exam.domains.map(d => [d.id, { correct: 0, total: 0 }]));
   let correct = 0;
+  const correctIds: string[] = [];
   for (const id of questionIds) {
     const q = byId.get(id);
     if (!q) continue;
     const d = acc.get(domainOf(exam, q)?.id ?? "");
     const ok = answers[id] === q.answer;
-    if (ok) correct++;
+    if (ok) {
+      correct++;
+      correctIds.push(id);
+    }
     if (d) {
       d.total++;
       if (ok) d.correct++;
@@ -85,5 +91,5 @@ export function scoreMock(
     ? present.reduce((a, d) => a + (d.weight / wsum) * (acc.get(d.id)!.correct / acc.get(d.id)!.total), 0)
     : 0;
   const total = questionIds.filter(id => byId.has(id)).length;
-  return { correct, total, byDomain, weighted, passed: weighted >= exam.format.target };
+  return { correct, total, correctIds, byDomain, weighted, passed: weighted >= exam.format.target };
 }
