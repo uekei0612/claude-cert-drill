@@ -90,6 +90,8 @@ describe("模擬試験の記録", () => {
     d = finishMock(d, scoreMock(fixture, p.questionIds, answers), NOW);
     expect(d.activeMock).toBeUndefined();
     expect(d.mocks[fixture.id]?.[0]?.correct).toBe(1);
+    expect(d.mocks[fixture.id]?.[0]?.questionIds).toEqual(p.questionIds);
+    expect(parseData(JSON.parse(JSON.stringify(d))).mocks[fixture.id]?.[0]?.answers).toEqual(answers);
     expect(d.items[`${fixture.id}:${p.questionIds[0]}`]?.interval).toBe(1);
     expect(d.items[`${fixture.id}:${p.questionIds[1]}`]?.interval).toBe(0);
   });

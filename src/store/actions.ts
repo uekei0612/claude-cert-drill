@@ -37,6 +37,8 @@ export function finishMock(d: Data, score: MockScore, now: number): Data {
     weighted: score.weighted,
     scenarioIds: m.scenarioIds,
     byDomain: Object.fromEntries(score.byDomain.map(b => [b.domainId, [b.correct, b.total] as const])),
+    questionIds: m.questionIds,
+    answers: m.answers,
   };
   const mocks = { ...d.mocks, [m.examId]: [result, ...(d.mocks[m.examId] ?? [])].slice(0, MAX_MOCKS) };
   return { ...abandonMock(d), items, mocks };

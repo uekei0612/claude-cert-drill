@@ -402,3 +402,70 @@ a.card {
   justify-content: space-between;
   gap: 12px;
 }
+
+/* 模擬試験 */
+.mock-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: 0 -16px;
+  padding: 6px 8px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.qgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+}
+.qnum {
+  min-height: var(--tap);
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  font-weight: 700;
+  position: relative;
+  cursor: pointer;
+}
+.qnum.done {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.qnum.here {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+.qnum.flag::after {
+  content: "⚑";
+  position: absolute;
+  top: -2px;
+  right: 3px;
+  font-size: 0.7rem;
+  color: var(--warn);
+}
+.flag-on {
+  color: var(--warn);
+}
+.review-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  min-height: 32px;
+  cursor: pointer;
+  width: 100%;
+}
+.review-row .muted {
+  display: block;
+}
