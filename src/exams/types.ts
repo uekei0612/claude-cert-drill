@@ -21,6 +21,22 @@ export interface Exam {
   readonly format: ExamFormat;
   /** 出どころと、数字の確からしさ（画面の「この試験について」に出す） */
   readonly sources: readonly { readonly label: string; readonly note: string }[];
+  /** 問題文・選択肢・シナリオの訳。キーは言語（"ja"）。原文（英語）が正で、訳は読むための補助 */
+  readonly translations?: Readonly<Partial<Record<TranslationLang, Translation>>>;
+}
+
+export type TranslationLang = "ja";
+
+export interface Translation {
+  /** シナリオ ID → 状況の説明 */
+  readonly scenarios: Readonly<Record<string, string>>;
+  /** 問題 ID → 問題文と選択肢（選択肢は原文と同じ並び） */
+  readonly questions: Readonly<Record<string, QuestionTranslation>>;
+}
+
+export interface QuestionTranslation {
+  readonly stem: string;
+  readonly options: readonly [string, string, string, string];
 }
 
 export interface ExamFormat {

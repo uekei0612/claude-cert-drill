@@ -3,7 +3,8 @@ import { useState } from "preact/hooks";
 import { APP_ENV, APP_VERSION } from "../../env";
 import { exams, findExam } from "../../exams";
 import { resetAll, resetExam, setSettings } from "../../store/actions";
-import { PRACTICE_SIZES } from "../../store/schema";
+import { PRACTICE_SIZES, QUESTION_LANGS } from "../../store/schema";
+import { LANG_LABEL } from "../LangSwitch";
 import { exportJson, importJson, setData, update, useData } from "../../store/store";
 import { href } from "../route";
 
@@ -69,6 +70,24 @@ export function Settings() {
             ))}
           </select>
         </label>
+        <label class="row between">
+          <span>問題文の言語</span>
+          <select
+            value={data.settings.lang}
+            onChange={e =>
+              update(d => setSettings(d, { lang: e.currentTarget.value as (typeof QUESTION_LANGS)[number] }))
+            }
+          >
+            {QUESTION_LANGS.map(l => (
+              <option key={l} value={l}>
+                {l === "both" ? "英語＋日本語訳" : LANG_LABEL[l]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p class="muted small">
+          本番の試験は英語です。日本語は理解の確認用に使い、慣れてきたら英語で解くのがおすすめです。解説は常に日本語です。
+        </p>
       </section>
 
       <section class="card">
