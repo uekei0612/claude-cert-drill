@@ -8,10 +8,15 @@ export const VERSION = 1;
 export type QuestionLang = "en" | "ja" | "both";
 export const QUESTION_LANGS: readonly QuestionLang[] = ["en", "ja", "both"];
 
+/** 見た目。system＝端末に合わせる */
+export type Theme = "system" | "light" | "dark";
+export const THEMES: readonly Theme[] = ["system", "light", "dark"];
+
 export interface Settings {
   /** 1 回の練習の問題数 */
   readonly practiceSize: number;
   readonly lang: QuestionLang;
+  readonly theme: Theme;
   /** 前回開いた資格（起動時にそこへ） */
   readonly lastExam?: string;
 }
@@ -55,7 +60,7 @@ export interface Data {
   readonly activeMock?: ActiveMock;
 }
 
-export const DEFAULT_SETTINGS: Settings = { practiceSize: 10, lang: "en" };
+export const DEFAULT_SETTINGS: Settings = { practiceSize: 10, lang: "en", theme: "system" };
 export const PRACTICE_SIZES = [5, 10, 20] as const;
 export const MAX_MOCKS = 20;
 
@@ -92,7 +97,9 @@ function settings(x: unknown): Settings {
   const lang = (QUESTION_LANGS as readonly unknown[]).includes(x.lang)
     ? (x.lang as QuestionLang)
     : DEFAULT_SETTINGS.lang;
-  return lastExam ? { practiceSize: size, lang, lastExam } : { practiceSize: size, lang };
+  const theme = (THEMES as readonly unknown[]).includes(x.theme) ? (x.theme as Theme) : DEFAULT_SETTINGS.theme;
+  const base: Settings = { practiceSize: size, lang, theme };
+  return lastExam ? { ...base, lastExam } : base;
 }
 
 const strArr = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => typeof s === "string");

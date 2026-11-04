@@ -116,6 +116,20 @@ const OUT = process.argv[3] || "/tmp/shots";
   await click(".option");
   await shot("14-dark-practice");
 
+  // 見た目の切り替え：端末がダークでもライトを選べば明るい背景。再読み込みしても残る
+  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await goto("#/settings");
+  await clickText("ライト");
+  if ((await bg()) !== "rgb(250, 248, 245)") throw new Error(`ライトにならない：${await bg()}`);
+  await page.reload({ waitUntil: "networkidle0" });
+  if ((await bg()) !== "rgb(250, 248, 245)") throw new Error("見た目の設定が残らない");
+  await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "light" }]);
+  await clickText("ダーク");
+  if ((await bg()) !== "rgb(23, 21, 19)") throw new Error(`ダークにならない：${await bg()}`);
+  await shot("17-settings-dark");
+  await clickText("端末に合わせる");
+  if ((await bg()) !== "rgb(250, 248, 245)") throw new Error("端末に合わせるに戻らない");
+
   await browser.close();
   if (errors.length) {
     console.error(errors.join("\n"));
