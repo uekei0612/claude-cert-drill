@@ -69,8 +69,8 @@ export const s3: Question[] = [
         why: "専門外のツールを持たせると誤用や重複作業の元になる。結果を渡せば済む。",
       },
       {
-        text: "Increase the synthesis subagent's context window so it can see more of the coordinator's history.",
-        why: "文脈の大きさの問題ではない。そもそもコーディネーターの履歴は自動では見えない。",
+        text: "Tell the synthesis subagent in its prompt to review the coordinator's history before writing.",
+        why: "サブエージェントは親の履歴を読めない。見えないものは指示しても見えない。",
       },
       {
         text: "Run the document analysis subagent and the synthesis subagent in the same session so they share memory.",
@@ -95,8 +95,8 @@ export const s3: Question[] = [
         why: "コーディネーターを分けると、全体の分解・統合を担う役がいなくなる。",
       },
       {
-        text: "Have the coordinator emit four Task tool calls in one response.",
-        why: "正解。並列に動かすには、1 回の応答の中で Task 呼び出しを複数出す。別々のターンに分けると順番になる。",
+        text: "Have the coordinator emit four Agent (formerly Task) tool calls in one response.",
+        why: "正解。並列に動かすには、1 回の応答の中で Agent ツール（旧名 Task）の呼び出しを複数出す。別々のターンに分けると順番になる。",
       },
       {
         text: 'Set tool_choice to "any" so the coordinator calls tools more aggressively.',
@@ -104,7 +104,7 @@ export const s3: Question[] = [
       },
     ],
     answer: 2,
-    point: "サブエージェントを並列に動かすには、1 回の応答で Task 呼び出しを複数出す",
+    point: "サブエージェントを並列に動かすには、1 回の応答で Agent（旧 Task）の呼び出しを複数出す",
   },
   {
     id: "s3-05",
@@ -117,7 +117,7 @@ export const s3: Question[] = [
         why: "名前と説明の重なりという根本が残る。システムプロンプトの一文に頼る選び分けは崩れやすい。",
       },
       {
-        text: "Rename and redescribe the tools so their purposes do not overlap, e.g. extract_web_results for snippets.",
+        text: "Rename the tools and rewrite descriptions so purposes do not overlap, e.g. extract_web_results for snippets.",
         why: "正解。ツール選択の主な手がかりは説明。重なりを無くすように名前と説明を変え、使う場面・入力・似たツールとの違いを書く。",
       },
       {
@@ -125,8 +125,8 @@ export const s3: Question[] = [
         why: "取り違えは止まるが、別の用途の機能まで失う。役割を分け直すのが筋。",
       },
       {
-        text: "Lower the temperature so tool selection becomes deterministic.",
-        why: "似た説明のどちらを選ぶかという曖昧さは、温度では解消しない。",
+        text: "Make analyze_document reject inputs shorter than a page, so snippets fail and get retried.",
+        why: "誤った選択を後で弾くだけで、選ぶ段階の曖昧さは残る。失敗と再試行が増える。",
       },
     ],
     answer: 1,
@@ -303,8 +303,8 @@ export const s3: Question[] = [
         why: "誤り。コーディネーターがサブエージェントを起動するのが基本の使い方。",
       },
       {
-        text: "The coordinator's allowed tools do not include the tool used to spawn subagents (Task).",
-        why: "正解。サブエージェントは Task ツールで起動する。コーディネーターの allowedTools に入っていなければ振れない。",
+        text: "The coordinator's allowed tools do not include the tool that spawns subagents (Agent, formerly Task).",
+        why: "正解。サブエージェントは Agent ツール（旧名 Task）で起動する。コーディネーターの allowedTools に入っていなければ振れない。",
       },
       {
         text: "All four subagents share the same model, so the coordinator sees no benefit in delegating.",
@@ -312,7 +312,8 @@ export const s3: Question[] = [
       },
     ],
     answer: 2,
-    point: "コーディネーターが振らない → allowedTools に Task が無い（サブエージェントは Task で起動する）",
+    point:
+      "コーディネーターが振らない → allowedTools に Agent（旧 Task）が無い（サブエージェントは Agent ツールで起動する）",
   },
   {
     id: "s3-13",
@@ -378,7 +379,7 @@ export const s3: Question[] = [
       },
       {
         text: "Retry the failing subtopic in a loop until it succeeds, however long that takes.",
-        why: "有料の壁は再試行で越えられない。恒久的な失敗に繰り返しは無意味。",
+        why: "ペイウォールは再試行で越えられない。恒久的な失敗に繰り返しは無意味。",
       },
       {
         text: "Drop the failing subtopic silently so that the report looks complete to the reader.",
@@ -399,8 +400,8 @@ export const s3: Question[] = [
     stem: "One source says a market is worth $4.2B and another says $6.8B. The synthesis agent flagged this as a contradiction, but the first figure is from 2021 and the second from 2024. What change would let the system handle cases like this correctly?",
     options: [
       {
-        text: "Tell the synthesis agent to always prefer the larger figure when two sources disagree.",
-        why: "根拠の無い選び方。時点の違いという本当の理由が見えないまま。",
+        text: "Have the synthesis agent search for a third source and go with the majority.",
+        why: "3 つ目を探しても、時点の違いという本当の理由が見えないまま多数決になる。",
       },
       {
         text: "Average the two figures and cite both sources for the resulting number.",

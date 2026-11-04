@@ -73,8 +73,8 @@ export const s5: Question[] = [
         why: "議論の履歴まで消える。直した指摘の再掲という問題も解決しない。",
       },
       {
-        text: "Lower the temperature so the second review produces the same comments as the first one.",
-        why: "同じ指摘を同じように出すだけで、重複そのものは無くならない。",
+        text: "Mark all of the bot's earlier comments as resolved, then post a complete new review.",
+        why: "直していない指摘まで解決済みに見え、同じ指摘が付け直される問題も残る。",
       },
     ],
     answer: 1,
@@ -199,8 +199,8 @@ export const s5: Question[] = [
         why: "サービスをまたぐ変更の整合性を見られなくなる。レビューの仕組み側で分ければよい。",
       },
       {
-        text: "Keep the single pass but use a model with a larger context window so all files fit comfortably.",
-        why: "入るかどうかではなく、一度に見る量が多いと注意が分散することが問題。",
+        text: "Run the single pass twice and post only the findings that appear in both runs.",
+        why: "同じ注意の分散が 2 回起きるだけ。一致を取ると、片方だけが見つけた本物の指摘も落ちる。",
       },
       {
         text: "Review only the files with the most changed lines, since they are where most bugs are found.",
@@ -329,8 +329,8 @@ export const s5: Question[] = [
         why: "優先度の手がかりが消える。基準を直せば役に立つ。",
       },
       {
-        text: "Lower the temperature to zero so that the same kind of issue always receives the same severity label in every PR.",
-        why: "ばらつきの原因は基準のあいまいさ。温度を下げても、PR ごとの文脈の違いで判断は変わる。",
+        text: "Base severity on the code's area, so that anything in payment or auth code is critical.",
+        why: "場所だけで決めると、同じ種類の問題の扱いがそろわず、軽い指摘まで critical になる。",
       },
       {
         text: "Ask the model to explain its reasoning for each label in the comment it posts.",
@@ -370,27 +370,28 @@ export const s5: Question[] = [
     id: "s5-15",
     scenario: "s5",
     tasks: ["4.3"],
-    stem: "A downstream script posts review findings as inline comments. It needs the file, the line, a severity, and the problem for each finding, but today it has to parse free-form Markdown, and it breaks whenever the wording changes. What should you do?",
+    stem: "Your CI review returns findings as JSON whose schema makes file and line required. Some real findings concern the pull request as a whole, such as a new module with no tests. The model now attaches them to an arbitrary line, and developers find those comments confusing. What should you change?",
     options: [
       {
-        text: "Add an example of the Markdown layout to the prompt and keep parsing it with regular expressions.",
-        why: "例で揃いやすくはなるが、文章の読み解きは壊れやすいまま。",
+        text: "Keep line required and instruct the model to use line 1 for findings that do not belong to a specific line.",
+        why: "決め打ちの行も作り話の値。読み手には誤った場所を指すコメントに見える。",
       },
       {
-        text: "Have Claude return findings as JSON that matches a schema with those fields, and validate it.",
-        why: "正解。機械で使う出力はスキーマに合う JSON で受け取り、検証する（CI なら --output-format json と --json-schema など）。",
+        text: "Make line nullable, and have the posting script put findings without a line in a general PR comment.",
+        why: "正解。当てはまらないことがある項目は null 可にし、null のときの扱いを下流で決める。必須にすると値を作り出す。",
       },
       {
-        text: "Ask a second model call to convert the Markdown into structured data before posting.",
-        why: "変換の段が増えるだけで、そこでも崩れうる。最初から構造化して出させる。",
+        text: "Drop any finding that has no specific line, since inline comments are the only output the team reads.",
+        why: "テストの無いモジュールのような大事な指摘を捨てている。",
       },
       {
-        text: "Post the whole review as a single comment so that no parsing is needed at all.",
-        why: "行ごとのコメントという目的を捨てている。",
+        text: "Change line to a free-text string so the model can write whole PR there when needed.",
+        why: "行番号の型を失い、投稿のスクリプトが文章を読み解く必要が戻ってくる。null で表せば済む。",
       },
     ],
     answer: 1,
-    point: "機械が使う出力は、スキーマに合う JSON で出させて検証する（自由な文章を読み解かない）",
+    point:
+      "当てはまらないことがある項目（行番号など）は null 可にし、null の扱いを下流で決める（必須だと値を作り出す）",
   },
   {
     id: "s5-16",

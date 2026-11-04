@@ -44,15 +44,15 @@ export const s4: Question[] = [
       },
       {
         text: "Read the whole file, then Write it back with the one intended value changed.",
-        why: "正解。Edit が一意な目印を見つけられないときは、Read で全体を読み、意図した 1 か所だけ直して Write で書く。",
+        why: "Edit で直せないときの最後の手段。ファイル全体を書き直すと関係ない行まで変える危険があるので、先に目印を一意にする。",
       },
       {
-        text: "Delete the config file and ask the engineer to recreate it with the new default value.",
-        why: "道具の使い方の問題を人に押し付けている。確実に直す手段がある。",
+        text: "Retry Edit with a longer anchor that adds nearby lines unique to that spot, such as its section header.",
+        why: "正解。目印が一意でないなら、その場所にしか無い前後の行（節の見出しなど）まで含めて目印を広げ、Edit をやり直す。",
       },
     ],
-    answer: 2,
-    point: "Edit の目印が一意でなく失敗したら、Read で全体を読み Write で書き直す",
+    answer: 3,
+    point: "Edit の目印が一意でないなら、前後の行まで含めて一意にしてやり直す。Read＋Write での書き直しは最後の手段",
   },
   {
     id: "s4-03",
@@ -203,8 +203,8 @@ export const s4: Question[] = [
         why: "毎回縮めると、まだ要る情報まで要約で落ちる。探索の出力を本体に入れない設計のほうが筋が良い。",
       },
       {
-        text: "Switch to a model with a larger context window so the raw output fits alongside the question.",
-        why: "溢れるのを遅らせるだけで、長い文脈の真ん中が落ちやすい問題は残る。",
+        text: "Have the agent jot a summary of each file into a notes file as it reads, still in the main session.",
+        why: "書き残すのは良い習慣だが、生の出力はそれでも本体の文脈に溜まる。探索そのものを外に出す。",
       },
     ],
     answer: 1,
@@ -240,19 +240,19 @@ export const s4: Question[] = [
     id: "s4-10",
     scenario: "s4",
     tasks: ["3.2"],
-    stem: "Your team's /scaffold skill generates boilerplate files. You want it to create and write files but never run shell commands or delete anything, and to prompt developers for a component name when they invoke it without one. Which frontmatter fits?",
+    stem: "Your team's /scaffold skill generates boilerplate files. You want it to create and write files but never run shell commands or delete anything, and to show developers, as they type the command, that it expects a component name. Which frontmatter fits?",
     options: [
       {
         text: "context: fork so it runs in a separate context, plus a CLAUDE.md note asking developers to pass a name.",
         why: "context: fork は文脈を分けるだけで、使えるツールは絞らない。引数の案内も CLAUDE.md では出ない。",
       },
       {
-        text: "allowed-tools limited to file reading and writing tools, and argument-hint describing the component name.",
-        why: "正解。allowed-tools でスキルの間に使えるツールを絞り（壊す操作をさせない）、argument-hint で必要な引数を示す。",
+        text: "disallowed-tools listing Bash and other destructive tools, plus argument-hint naming the component argument.",
+        why: "正解。disallowed-tools はスキルの間、書いたツールを使えなくする。argument-hint は打つときに必要な引数を示す。",
       },
       {
-        text: "disable-model-invocation, so that the skill cannot run any tool except the ones a developer approves manually.",
-        why: "disable-model-invocation はモデルが自分からスキルを呼ぶのを止める設定。ツールの制限にはならない。",
+        text: "allowed-tools listing only the file read and write tools, plus argument-hint naming the component argument.",
+        why: "allowed-tools は書いたツールを承認なしで使えるようにするだけで、ほかのツールは禁止しない。Bash も呼べるまま。",
       },
       {
         text: 'A system prompt instruction inside SKILL.md saying "Never use Bash and always ask for a name."',
@@ -260,7 +260,8 @@ export const s4: Question[] = [
       },
     ],
     answer: 1,
-    point: "スキルのツールは allowed-tools で絞り、必要な引数は argument-hint で示す",
+    point:
+      "スキルの間に使わせないツールは disallowed-tools で外す（allowed-tools は承認なしで使えるようにするだけ）。引数は argument-hint で示す",
   },
   {
     id: "s4-11",
@@ -412,8 +413,8 @@ export const s4: Question[] = [
         why: "言い回しでの終了判定は壊れやすい。終わりは stop_reason で判断し、上限は別に置く。",
       },
       {
-        text: "A larger and more capable model, since the real problem is that the current one cannot solve flaky tests.",
-        why: "より強いモデルでも、解けない問題で回り続ける危険は残る。止める仕組みが要る。",
+        text: "An instruction to post a progress summary to the engineer every 20 tool calls.",
+        why: "進み具合は見えるが、止まる仕組みにはならない。誰も見ていなければ回り続ける。",
       },
     ],
     answer: 0,
@@ -478,8 +479,8 @@ export const s4: Question[] = [
     stem: "You need to add the same health-check endpoint to 30 microservices. Each service is independent, but each has its own framework quirks. A single agent working through all 30 in one session runs out of context around service 12. How should you structure the job?",
     options: [
       {
-        text: "Use a model with a larger context window so that all 30 services fit in one session.",
-        why: "入っても、後半ほど前のサービスの細部が混ざりやすい。独立した作業は分けたほうがよい。",
+        text: "Hand all 30 services to one subagent so that the main session's context stays clean.",
+        why: "文脈が尽きる場所がサブエージェントに移るだけ。独立した単位ごとに分ける。",
       },
       {
         text: "Ask the agent to summarize its progress every five services and continue in the same session.",
