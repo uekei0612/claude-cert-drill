@@ -77,6 +77,13 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f/mock");
   await shot("08-mock-intro");
   await clickText("始める");
+  // 本番と同じ 60 問（4 シナリオ × 15 問）
+  const total = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => k.startsWith("claude-cert-drill"))))
+        .activeMock.questionIds.length,
+  );
+  if (total !== 60) throw new Error(`模擬試験が 60 問でない：${total}`);
   await click(".option");
   await shot("09-mock-question");
   await clickText("⚐ 旗を立てる");
@@ -110,11 +117,39 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!(await page.$(".stem .ja-sub"))) throw new Error("言語の設定が残らない");
   await clickText("英語");
 
+  // 訳はタップ：最初は英語だけ。「訳を見る」で訳が出て、次の問題ではまた閉じる。答えたら訳が出る
+  await goto("#/ccar-f/practice");
+  await clickText("訳はタップ");
+  if (await page.$(".stem .ja-sub")) throw new Error("訳はタップなのに最初から訳が出ている");
+  await clickText("訳を見る");
+  if (!(await page.$(".stem .ja-sub"))) throw new Error("訳を見るで訳が出ない");
+  await shot("18-practice-peek");
+  await click(".option");
+  await clickText("次へ");
+  if (await page.$(".stem .ja-sub")) throw new Error("次の問題で訳が閉じない");
+  await click(".option");
+  if (!(await page.$(".stem .ja-sub"))) throw new Error("答えたあとに訳が出ない");
+  await clickText("英語");
+
   // ダーク
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "dark" }]);
   await goto("#/ccar-f/practice");
   await click(".option");
   await shot("14-dark-practice");
+
+  // 見た目の切り替え：端末がダークでもライトを選べば明るい背景。再読み込みしても残る
+  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await goto("#/settings");
+  await clickText("ライト");
+  if ((await bg()) !== "rgb(250, 248, 245)") throw new Error(`ライトにならない：${await bg()}`);
+  await page.reload({ waitUntil: "networkidle0" });
+  if ((await bg()) !== "rgb(250, 248, 245)") throw new Error("見た目の設定が残らない");
+  await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "light" }]);
+  await clickText("ダーク");
+  if ((await bg()) !== "rgb(23, 21, 19)") throw new Error(`ダークにならない：${await bg()}`);
+  await shot("17-settings-dark");
+  await clickText("端末に合わせる");
+  if ((await bg()) !== "rgb(250, 248, 245)") throw new Error("端末に合わせるに戻らない");
 
   await browser.close();
   if (errors.length) {

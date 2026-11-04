@@ -19,8 +19,10 @@
   --font-en: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   color-scheme: light dark;
 }
+/* 見た目は設定で選べる（html の data-theme）。無いときは端末に合わせる。
+   暗い色は「端末がダークで、ライトを選んでいない」と「ダークを選んだ」の 2 か所に同じものを書く */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #171513;
     --surface: #211e1b;
     --surface-2: #2b2723;
@@ -35,6 +37,25 @@
     --ng-soft: #3e2227;
     --warn: #e0b350;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #171513;
+  --surface: #211e1b;
+  --surface-2: #2b2723;
+  --text: #efe9e2;
+  --muted: #a69d93;
+  --line: #3a3530;
+  --accent: #e0855a;
+  --accent-soft: #3d2a20;
+  --ok: #5cc48c;
+  --ok-soft: #1d3428;
+  --ng: #f07a88;
+  --ng-soft: #3e2227;
+  --warn: #e0b350;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 * {
@@ -210,6 +231,9 @@ a.card {
   z-index: 20;
 }
 .toast .btn {
+  /* 文が長いと押し縮められて「閉じる」が 2 行に折れるので、ボタンの幅は譲らない */
+  flex-shrink: 0;
+  white-space: nowrap;
   min-height: 36px;
   background: transparent;
   color: inherit;
@@ -573,4 +597,11 @@ textarea {
 }
 .otext {
   display: block;
+}
+/* 「訳はタップ」の訳を開くボタン。問題文のすぐ下、左に寄せて小さく */
+.qcard .peek {
+  align-self: flex-start;
+  min-height: 36px;
+  margin-top: -8px;
+  font-size: 0.9rem;
 }

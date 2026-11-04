@@ -13,6 +13,7 @@ import { Settings } from "./ui/screens/Settings";
 import { TaskDetail } from "./ui/screens/TaskDetail";
 import { Practice } from "./ui/screens/Practice";
 import { TabBar } from "./ui/TabBar";
+import { applyTheme } from "./ui/theme";
 import { UpdatePrompt } from "./ui/UpdatePrompt";
 
 /** 起動したとき、ハッシュが無ければ前回の資格を開く */
@@ -43,7 +44,11 @@ export function App() {
     if (exam && getData().settings.lastExam !== exam.id) update(d => setSettings(d, { lastExam: exam.id }));
   }, [examId, exam]);
 
-  const activeHere = useData().activeMock?.examId === examId;
+  const data = useData();
+  const theme = data.settings.theme;
+  useEffect(() => applyTheme(theme), [theme]);
+
+  const activeHere = data.activeMock?.examId === examId;
   // 練習中と、模擬試験を解いている間は、下のタブを出さず、新しい版への切り替えも待つ
   // 設定は資格の外の画面だが、前回の資格のタブを出して戻れるようにする
   const tabExam = exam ?? (route.name === "settings" ? findExam(getData().settings.lastExam ?? "") : undefined);

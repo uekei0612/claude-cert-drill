@@ -262,4 +262,265 @@ export const s4: Question[] = [
     answer: 1,
     point: "スキルのツールは allowed-tools で絞り、必要な引数は argument-hint で示す",
   },
+  {
+    id: "s4-11",
+    scenario: "s4",
+    tasks: ["2.5", "5.4"],
+    stem: "An engineer asks where a deprecated config key is still used. The agent runs Grep for the key across the whole monorepo and gets 4,000 matching lines, most of them in generated files and vendored code, which floods its context. What is a better approach?",
+    options: [
+      {
+        text: "Read every matching file in full so that no usage is missed.",
+        why: "4,000 件を読み込むのは、文脈の問題をさらに悪くする。",
+      },
+      {
+        text: "Switch to Glob, since it is the right tool for finding where things are used.",
+        why: "Glob はファイル名のパターンで探す道具。中身の文字列を探すのは Grep。",
+      },
+      {
+        text: "Use Bash to run grep with the same pattern instead, since its raw output is more compact than the Grep tool's results.",
+        why: "道具を替えても、当たる量は同じ。絞り方の問題。",
+      },
+      {
+        text: "List only matching file paths first, excluding generated and vendored code, then read the relevant files.",
+        why: "正解。まず一致したファイルの一覧だけを、要らないパスを除いて出し、必要な所だけを読む。",
+      },
+    ],
+    answer: 3,
+    point: "大きな検索は、まず範囲を絞ってファイルの一覧だけを出し、必要な所だけ読む（全部を文脈に入れない）",
+  },
+  {
+    id: "s4-12",
+    scenario: "s4",
+    tasks: ["2.5"],
+    stem: "The agent needs to change one constant in a 1,800-line file. It reads the file, then uses Write to output all 1,800 lines with the one change. Occasionally unrelated lines come back subtly altered. What should it do instead?",
+    options: [
+      {
+        text: "Use Edit to replace just the line containing the constant, using text that is unique in the file.",
+        why: "正解。小さな変更は Edit で、ファイル内で一意な目印の所だけを置き換える。ほかの行に触れない。",
+      },
+      {
+        text: "Keep using Write, but ask the model to double-check the whole file before writing it.",
+        why: "全体を書き直す限り、関係ない行を変える危険は残る。",
+      },
+      {
+        text: "Use Bash with sed so that the change happens without the model ever seeing the file.",
+        why: "置き換え自体はできるが、確認しにくく、意図しない所に当たる恐れもある。専用の Edit がある。",
+      },
+      {
+        text: "Split the file into several smaller modules first so that rewriting any one of them with Write is less risky.",
+        why: "定数 1 つのためにファイルの構成を変えるのは大きすぎる。",
+      },
+    ],
+    answer: 0,
+    point: "小さな変更は Edit（一意な目印で置き換え）。Write で全体を書き直すのは新規や全面の書き換えのとき",
+  },
+  {
+    id: "s4-13",
+    scenario: "s4",
+    tasks: ["2.4"],
+    stem: "You want to try an experimental MCP server for your own use on a project before deciding whether the team should adopt it. Teammates should not see it or be prompted about it. Where should you configure it?",
+    options: [
+      {
+        text: "In the project's .mcp.json, with a comment telling teammates to ignore it for now.",
+        why: ".mcp.json はリポジトリに入り、チーム全員に共有される。",
+      },
+      {
+        text: "In the project's CLAUDE.md, describing the server's URL so Claude can connect when needed.",
+        why: "CLAUDE.md は指示を書く所で、MCP サーバーの接続は設定しない。",
+      },
+      {
+        text: "With claude mcp add at local scope, which applies only to you in this project.",
+        why: "正解。local スコープは自分だけ・そのプロジェクトだけ。共有するなら project スコープ（.mcp.json）、全プロジェクトなら user。",
+      },
+      {
+        text: "In a branch of the repository that only you check out, with the server added to .mcp.json there.",
+        why: "ブランチを分けるのは運用が重く、マージで混ざる恐れもある。スコープで分けられる。",
+      },
+    ],
+    answer: 2,
+    point:
+      "MCP サーバーのスコープ：local＝自分×このプロジェクト／project＝.mcp.json で共有／user＝自分の全プロジェクト",
+  },
+  {
+    id: "s4-14",
+    scenario: "s4",
+    tasks: ["2.1", "2.4"],
+    stem: 'Two MCP servers are connected: one exposes search for the internal wiki, the other exposes search for the issue tracker. Both tool descriptions just say "Search for content." The agent often searches the wrong system. What is the best fix?',
+    options: [
+      {
+        text: "Disconnect one of the servers, since two search tools will always confuse the model.",
+        why: "両方とも要る機能。説明で区別できる。",
+      },
+      {
+        text: "Rewrite each description to say what it holds, what it is for, and when to use the other one.",
+        why: "正解。モデルは説明で選ぶ。中身・向いている問い・もう一方との使い分けを書けば取り違えが減る。",
+      },
+      {
+        text: 'Add a system prompt rule: "Try the wiki first, then the issue tracker if nothing is found."',
+        why: "決まった順に試すと無駄な呼び出しが増え、問いに合う方を選ぶことにもならない。",
+      },
+      {
+        text: "Merge both into one search tool that queries both systems at once and returns all of the results together in one list.",
+        why: "毎回両方を引くと結果が混ざり、文脈も増える。選べるように説明を直すほうがよい。",
+      },
+    ],
+    answer: 1,
+    point: "似たツールの取り違えは、説明に中身・使う場面・もう一方との使い分けを書いて防ぐ",
+  },
+  {
+    id: "s4-15",
+    scenario: "s4",
+    tasks: ["2.2"],
+    stem: "An MCP tool that queries the build server throws an exception when the server is down. The client receives a protocol-level error, and the agent never sees a message it can reason about, so it stops. How should the tool report this failure?",
+    options: [
+      {
+        text: "Let the exception propagate, because a protocol error makes the failure most visible.",
+        why: "プロトコルのエラーはモデルに届かず、エージェントは対処を考えられない。",
+      },
+      {
+        text: "Return an empty result so that the agent simply continues as if the build server had no data for this request.",
+        why: "失敗を空の成功に見せると、誤った結論につながる。",
+      },
+      {
+        text: 'Log the error on the server and return the text "OK" to keep the session alive.',
+        why: "失敗を隠す。エージェントは誤った前提で進む。",
+      },
+      {
+        text: "Catch it and return a tool result with isError set, saying the server is down and retryable.",
+        why: "正解。ツールの実行の失敗は、結果の中で isError として返す。モデルはそれを読んで、再試行や代わりの手を選べる。",
+      },
+    ],
+    answer: 3,
+    point: "ツールの実行の失敗は、例外（プロトコルのエラー）でなく、結果の isError でモデルに見える形で返す",
+  },
+  {
+    id: "s4-16",
+    scenario: "s4",
+    tasks: ["1.1"],
+    stem: "Asked to fix a flaky test, the agent ran for 90 minutes and over 200 tool calls, repeatedly re-running the test and making small changes. Nothing in the loop limits how long it can go on. What should you add?",
+    options: [
+      {
+        text: "A max_turns limit as a safety net, plus clear criteria for when to stop and report back.",
+        why: "正解。上限（max_turns）は暴走を止める安全装置として置き、いつ止めて報告するかの基準も渡す。",
+      },
+      {
+        text: "An instruction to finish within ten tool calls, so that the loop ends naturally.",
+        why: "指示は確率的にしか守られない。上限は仕組みで置く。",
+      },
+      {
+        text: 'A rule that the loop ends whenever the response contains the word "done".',
+        why: "言い回しでの終了判定は壊れやすい。終わりは stop_reason で判断し、上限は別に置く。",
+      },
+      {
+        text: "A larger and more capable model, since the real problem is that the current one cannot solve flaky tests.",
+        why: "より強いモデルでも、解けない問題で回り続ける危険は残る。止める仕組みが要る。",
+      },
+    ],
+    answer: 0,
+    point: "ループには max_turns などの上限を安全装置として置き、止めて報告する基準も渡す",
+  },
+  {
+    id: "s4-17",
+    scenario: "s4",
+    tasks: ["1.5"],
+    stem: "The assistant has Bash so it can run builds and tests. Security requires that it never runs destructive commands such as rm -rf on directories outside the workspace or git push --force. What is the most reliable control?",
+    options: [
+      {
+        text: "A strongly worded list of forbidden commands at the top of the system prompt.",
+        why: "指示は確率的にしか守られない。決して起きてはならないことには向かない。",
+      },
+      {
+        text: "A review of the Bash history after each session, reverting any destructive change found.",
+        why: "起きた後では取り返しがつかないこともある。実行の前に止める。",
+      },
+      {
+        text: "A PreToolUse hook that checks each Bash command against rules and blocks dangerous ones.",
+        why: "正解。実行の前にコマンドを調べて止めるフックは決定的に効く。止めた理由を返せばモデルも別の手を選べる。",
+      },
+      {
+        text: "Remove Bash entirely and give the agent no way to run builds or tests.",
+        why: "必要な仕事までできなくなる。危ないものだけを止める。",
+      },
+    ],
+    answer: 2,
+    point: "決して実行させてはならないコマンドは、PreToolUse フックで実行前に調べて止める",
+  },
+  {
+    id: "s4-18",
+    scenario: "s4",
+    tasks: ["3.1"],
+    stem: "A team wants to start using the assistant's Claude Code integration on a large legacy repository that has no CLAUDE.md. They want a useful first version quickly and to improve it over time. What is the best way to start?",
+    options: [
+      {
+        text: "Write a comprehensive CLAUDE.md by hand that documents every module before anyone uses it.",
+        why: "時間がかかり、使う前から全部を書くと、要らないことまで毎回読まれる。",
+      },
+      {
+        text: "Run /init to generate a starting CLAUDE.md, then edit it and add to it as issues come up.",
+        why: "正解。/init で土台を作り、チームで見直してから、つまずいたことを足して育てる。",
+      },
+      {
+        text: "Copy the CLAUDE.md from another team's repository, since the conventions are probably similar.",
+        why: "別のリポジトリの規約は合わないことが多い。このリポジトリから作る。",
+      },
+      {
+        text: "Skip CLAUDE.md for now and have each developer explain the conventions at the start of every session.",
+        why: "毎回の説明は人によってばらつき、忘れやすい。",
+      },
+    ],
+    answer: 1,
+    point: "CLAUDE.md の無いリポジトリは /init で土台を作り、見直して、つまずくたびに書き足して育てる",
+  },
+  {
+    id: "s4-19",
+    scenario: "s4",
+    tasks: ["1.6", "1.3"],
+    stem: "You need to add the same health-check endpoint to 30 microservices. Each service is independent, but each has its own framework quirks. A single agent working through all 30 in one session runs out of context around service 12. How should you structure the job?",
+    options: [
+      {
+        text: "Use a model with a larger context window so that all 30 services fit in one session.",
+        why: "入っても、後半ほど前のサービスの細部が混ざりやすい。独立した作業は分けたほうがよい。",
+      },
+      {
+        text: "Ask the agent to summarize its progress every five services and continue in the same session.",
+        why: "要約しても文脈は少しずつ溜まり、細部が失われる。独立した作業を同じ文脈に詰める必要がない。",
+      },
+      {
+        text: "Write a single generic patch and apply it to all 30 services without per-service checks.",
+        why: "サービスごとのくせを無視することになり、壊れるサービスが出る。",
+      },
+      {
+        text: "Run one subagent or session per service, each verifying its own change, and collect results.",
+        why: "正解。独立した単位はそれぞれ別の文脈で扱い、各自で確かめさせ、結果を集める。",
+      },
+    ],
+    answer: 3,
+    point: "独立した同種の作業は、単位ごとに別の文脈（サブエージェントやセッション）で進め、各自で確かめて結果を集める",
+  },
+  {
+    id: "s4-20",
+    scenario: "s4",
+    tasks: ["2.3"],
+    stem: 'You add an "explain this code" subagent that only needs to read the repository. Right now it inherits every tool the main agent has, including Write, Edit, Bash, and all MCP tools, and once it started editing files it was only meant to explain. What should you do?',
+    options: [
+      {
+        text: "Limit the subagent's tools to Read, Grep, and Glob, the ones its role actually needs.",
+        why: "正解。ツールは役割に要るものだけに絞る。誤用を防ぎ、選ぶ迷いも減る。",
+      },
+      {
+        text: 'Add "never edit files" to the subagent\'s prompt and keep the full tool set for flexibility.',
+        why: "道具が残っていれば使われうる。役割に要らない道具は渡さない。",
+      },
+      {
+        text: "Make the subagent ask the user for approval before every tool call it makes.",
+        why: "読むだけの呼び出しにまで承認を求めると使いものにならない。道具を絞れば済む。",
+      },
+      {
+        text: "Run the subagent on a copy of the repository so that its edits cannot do any harm.",
+        why: "被害は防げても、説明役が編集するという誤用は残る。",
+      },
+    ],
+    answer: 0,
+    point: "サブエージェントのツールは役割に要るものだけに絞る（読む役なら Read・Grep・Glob）",
+  },
 ];
