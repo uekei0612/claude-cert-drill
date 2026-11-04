@@ -11,6 +11,7 @@ import { MockResult } from "./ui/screens/MockResult";
 import { Domains } from "./ui/screens/Domains";
 import { Settings } from "./ui/screens/Settings";
 import { TaskDetail } from "./ui/screens/TaskDetail";
+import { Learn } from "./ui/screens/Learn";
 import { Practice } from "./ui/screens/Practice";
 import { TabBar } from "./ui/TabBar";
 import { applyTheme } from "./ui/theme";
@@ -61,6 +62,7 @@ export function App() {
   else if (route.name === "domains") screen = <Domains exam={exam} now={now} />;
   else if (route.name === "task")
     screen = <TaskDetail key={route.taskId} exam={exam} taskId={route.taskId} now={now} />;
+  else if (route.name === "learn") screen = <Learn key={route.taskId ?? ""} exam={exam} taskId={route.taskId} />;
   else if (route.name === "mock-result") screen = <MockResult key={route.at} exam={exam} at={route.at} />;
   else screen = <Home exam={exam} now={now} />;
 

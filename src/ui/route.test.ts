@@ -12,6 +12,8 @@ const routes: Route[] = [
   { name: "mock-result", examId: "ccar-f", at: 1793718460101 },
   { name: "domains", examId: "ccar-f" },
   { name: "task", examId: "ccar-f", taskId: "5.6" },
+  { name: "learn", examId: "ccar-f" },
+  { name: "learn", examId: "ccar-f", taskId: "2.3" },
 ];
 
 test.each(routes.map(r => [href(r), r] as const))("%s を往復できる", (h, r) => {
