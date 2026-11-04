@@ -16,6 +16,8 @@ export interface Exam {
   readonly questions: readonly Question[];
   /** 細目ごとの要点（日本語）。キーは細目の ID */
   readonly notes: Readonly<Record<string, Note>>;
+  /** 教科書（日本語）。キーは細目の ID。無い資格もある */
+  readonly lessons?: Readonly<Record<string, Lesson>>;
   /** 出題範囲外（日本語） */
   readonly outOfScope: readonly string[];
   readonly format: ExamFormat;
@@ -115,6 +117,24 @@ export interface Note {
   /** 引っかけになりやすい考え（日本語） */
   readonly traps?: readonly string[];
 }
+
+/** 教科書の 1 章（細目 1 つ）。文の中の `…` はコードとして表示する */
+export interface Lesson {
+  /** この章で身につけること（1〜2 文） */
+  readonly lead: string;
+  readonly sections: readonly LessonSection[];
+  /** 公式ドキュメント。仕様を確かめた出どころ */
+  readonly refs: readonly { readonly label: string; readonly url: string }[];
+}
+
+export interface LessonSection {
+  readonly h: string;
+  readonly body: readonly LessonBlock[];
+}
+
+/** 段落（文字列）・箇条書き・コード */
+export type LessonBlock =
+  string | { readonly list: readonly string[] } | { readonly code: string; readonly lang?: string };
 
 /** 細目の ID から分野を引く */
 export function domainOfTask(exam: Exam, taskId: string): Domain | undefined {

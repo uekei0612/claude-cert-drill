@@ -36,6 +36,25 @@ describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
     for (const t of tasks) expect(exam.notes[t.id]?.points.length, t.id).toBeGreaterThan(0);
   });
 
+  test("教科書は実在する細目にだけあり、章の形がそろっている", () => {
+    const lessons = exam.lessons ?? {};
+    for (const k of Object.keys(lessons)) expect(taskIds.has(k), k).toBe(true);
+    for (const [k, l] of Object.entries(lessons)) {
+      expect(l.lead.length, k).toBeGreaterThan(0);
+      expect(l.sections.length, k).toBeGreaterThan(1);
+      for (const s of l.sections) expect(s.body.length, `${k} ${s.h}`).toBeGreaterThan(0);
+      // 見出しは章の中で一意（画面の key に使う）
+      expect(new Set(l.sections.map(s => s.h)).size, k).toBe(l.sections.length);
+      expect(l.refs.length, k).toBeGreaterThan(0);
+      for (const r of l.refs) expect(r.url, k).toMatch(/^https:\/\//);
+      // `…` の数が合わないと、コードの表示が崩れる
+      const texts = l.sections.flatMap(s =>
+        s.body.flatMap(b => (typeof b === "string" ? [b] : "list" in b ? b.list : [])),
+      );
+      for (const t of [l.lead, ...texts]) expect((t.match(/`/g) ?? []).length % 2, `${k}: ${t}`).toBe(0);
+    }
+  });
+
   test("模擬試験の設定がシナリオの数と合う", () => {
     expect(exam.format.scenariosPerExam).toBeLessThanOrEqual(exam.scenarios.length);
     if (!exam.scenarios.length) expect(exam.format.maxQuestions).toBeGreaterThan(0);

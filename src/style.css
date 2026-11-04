@@ -282,7 +282,7 @@ a.card {
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   background: var(--surface);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
@@ -604,4 +604,51 @@ textarea {
   min-height: 36px;
   margin-top: -8px;
   font-size: 0.9rem;
+}
+
+/* 教科書 */
+.lesson h2 {
+  margin: 8px 0 0;
+  font-size: 1.1rem;
+}
+.lesson p {
+  margin: 0;
+}
+.lesson .lead {
+  background: var(--accent-soft);
+  border-color: transparent;
+  margin: 0;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 0.05em 0.3em;
+  overflow-wrap: anywhere;
+}
+pre.code {
+  margin: 0;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+pre.code code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  overflow-wrap: normal;
+}
+.lesson-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.lesson-nav .next {
+  grid-column: 2;
+  text-align: right;
 }
