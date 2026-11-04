@@ -24,8 +24,12 @@ describe("parseData", () => {
       },
     });
     expect(Object.keys(d.items)).toEqual(["ccar-f:s1-01"]);
-    expect(d.settings).toEqual({ practiceSize: 10, lang: "en", lastExam: "ccar-f" });
+    expect(d.settings).toEqual({ practiceSize: 10, lang: "en", theme: "system", lastExam: "ccar-f" });
     expect(d.mocks["ccar-f"]).toHaveLength(1);
+  });
+  test("見た目：知らない値は端末に合わせるに戻す", () => {
+    expect(parseData({ settings: { theme: "dark" } }).settings.theme).toBe("dark");
+    expect(parseData({ settings: { theme: "sepia" } }).settings.theme).toBe("system");
   });
   test("記録でないものは空の記録", () => {
     expect(parseData(null)).toEqual(emptyData());

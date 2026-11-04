@@ -3,10 +3,11 @@ import { useState } from "preact/hooks";
 import { APP_ENV, APP_VERSION } from "../../env";
 import { exams, findExam } from "../../exams";
 import { resetAll, resetExam, setSettings } from "../../store/actions";
-import { PRACTICE_SIZES, QUESTION_LANGS } from "../../store/schema";
+import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
 import { LANG_LABEL } from "../LangSwitch";
 import { exportJson, importJson, setData, update, useData } from "../../store/store";
 import { href } from "../route";
+import { THEME_LABEL } from "../theme";
 
 export function Settings() {
   const data = useData();
@@ -88,6 +89,22 @@ export function Settings() {
         <p class="muted small">
           本番の試験は英語です。日本語は理解の確認用に使い、慣れてきたら英語で解くのがおすすめです。解説は常に日本語です。
         </p>
+      </section>
+
+      <section class="card">
+        <h2>見た目</h2>
+        <div class="seg" role="group" aria-label="見た目">
+          {THEMES.map(t => (
+            <button
+              key={t}
+              class={t === data.settings.theme ? "on" : ""}
+              aria-pressed={t === data.settings.theme}
+              onClick={() => update(d => setSettings(d, { theme: t }))}
+            >
+              {THEME_LABEL[t]}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section class="card">
