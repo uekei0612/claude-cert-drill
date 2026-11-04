@@ -21,8 +21,8 @@ export const s2: Question[] = [
         why: "CLAUDE.md はセッションの開始時に読まれる。複製し直す必要は無い。",
       },
       {
-        text: "The new developer needs to run /compact first, because their session history is too long for CLAUDE.md to fit into the context window.",
-        why: "/compact は会話を縮める機能で、指示ファイルが読まれない問題とは関係が無い。",
+        text: "The new developer's .claude/settings.local.json is overriding the instructions in the project's CLAUDE.md.",
+        why: "settings.local.json は権限などの設定の置き場で、CLAUDE.md の指示を上書きしない。人によって効かないのは、指示がユーザーの階層にしか無いことが典型。",
       },
     ],
     answer: 1,
@@ -89,7 +89,7 @@ export const s2: Question[] = [
     options: [
       {
         text: "Add allowed-tools: Read so the skill cannot produce as much output.",
-        why: "allowed-tools は使えるツールを絞る設定で、出力の量の問題は解決しない。分析に必要なツールまで奪う。",
+        why: "allowed-tools は書いたツールを承認なしで使えるようにする設定で、ほかのツールを禁止もしない。出力の量とは関係が無い。",
       },
       {
         text: "Add argument-hint so that developers are prompted to pass a narrower directory each time they run the skill.",
@@ -256,8 +256,8 @@ export const s2: Question[] = [
         why: "正解。以前の文脈がほぼ有効なら再開し、変わったファイルを具体的に伝えて、その部分だけ調べ直させる。",
       },
       {
-        text: "Use fork_session to create a branch, then compare the forked session's analysis with the original.",
-        why: "fork_session は共通の分析から別々の方針を試すためのもの。変更されたファイルの再確認という目的に合わない。",
+        text: "Use --fork-session to create a branch, then compare the forked session's analysis with the original.",
+        why: "--fork-session は共通の分析から別々の方針を試すためのもの。変更されたファイルの再確認という目的に合わない。",
       },
     ],
     answer: 2,
@@ -348,8 +348,8 @@ export const s2: Question[] = [
     stem: "You added .claude/rules/migrations.md with conventions for database migration files. You notice it is loaded in every session, even when nobody is touching migrations. What should you change?",
     options: [
       {
-        text: "Move the file into the db/migrations/ directory and rename it to CLAUDE.md.",
-        why: "そのディレクトリの CLAUDE.md は、そのファイルを読むときに効く。だが規約の置き場を .claude/rules から移すより、ルールに paths を付ければ済む。",
+        text: "Move the conventions into the root CLAUDE.md under a Migrations heading, next to the other project rules.",
+        why: "ルートの CLAUDE.md は常に読み込まれる。今と同じく、マイグレーションを触らない作業でも読まれる。",
       },
       {
         text: "Shorten the file so that the cost of loading it in every session becomes negligible.",
@@ -456,8 +456,8 @@ export const s2: Question[] = [
         why: "見出しを付けても全部が毎回読まれる。関係ない規約が混ざる原因が残る。",
       },
       {
-        text: "Split the repository so that each package has its own repo and its own CLAUDE.md.",
-        why: "設定のためにリポジトリの構成を変えるのは大きすぎる。ディレクトリごとに置ける。",
+        text: "Move the frontend conventions into .claude/rules/frontend.md, with no paths field.",
+        why: "paths の無いルールは常に読み込まれる。ファイルを分けても、Go の作業で読まれることは変わらない。",
       },
       {
         text: "Keep shared conventions at the root and move frontend ones to packages/web/CLAUDE.md.",
