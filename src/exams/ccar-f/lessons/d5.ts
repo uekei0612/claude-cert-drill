@@ -27,13 +27,14 @@ open_issue: 再送品が未着
       {
         h: "真ん中は読み落とされやすい",
         body: [
-          "長い入力では、最初と最後はよく使われ、真ん中の情報が落ちやすくなります（lost in the middle）。大事な結論や要点を先頭に置き、見出しやタグで区切って、どこに何があるかを分かるようにします。",
+          "長い入力では、最初と最後はよく使われ、真ん中の情報が落ちやすくなります（lost in the middle）。まとめた結果を渡すときは、大事な結論や要点を先頭に置き、見出しやタグで区切って、どこに何があるかを分かるようにします。",
+          "公式のプロンプトの指針は、長い文書をプロンプトの上のほうに置き、質問や指示はその後ろ（最後）に書くことを勧めています。質問を最後に置くと、複数の文書を渡したときなどに応答の質が上がる、としています。",
         ],
       },
       {
         h: "ツールの結果を溜めすぎない",
         body: [
-          "注文検索のツールが 40 項目を返しても、判断に要るのは 5 項目かもしれません。全部を会話に溜めると、文脈が早く埋まり、大事な項目が埋もれます。溜める前に必要な項目だけに絞ります（ツールの側で絞る、PostToolUse フックで絞る）。",
+          "注文検索のツールが 50 項目を返しても、判断に要るのは 5 項目かもしれません。全部を会話に溜めると、文脈が早く埋まり、大事な項目が埋もれます。溜める前に必要な項目だけに絞ります（ツールの側で絞る、PostToolUse フックで絞る）。",
           "サブエージェントにも、長い文章ではなく、構造化した事実・出典・関連度を返させます。上流のエージェントがそのまま使え、文脈も節約できます。",
         ],
       },
@@ -52,7 +53,7 @@ open_issue: 再送品が未着
     ],
     refs: [
       {
-        label: "Claude prompting best practices（Long context prompting）",
+        label: "Prompting best practices（Long context prompting）",
         url: `${API}/build-with-claude/prompt-engineering/claude-prompting-best-practices#long-context-prompting`,
       },
       { label: "Context windows", url: `${API}/build-with-claude/context-windows` },
@@ -109,7 +110,7 @@ open_issue: 再送品が未着
     ],
     refs: [
       {
-        label: "Claude prompting best practices",
+        label: "Prompting best practices",
         url: `${API}/build-with-claude/prompt-engineering/claude-prompting-best-practices`,
       },
     ],
@@ -197,7 +198,7 @@ open_issue: 再送品が未着
       },
     ],
     refs: [
-      { label: "Subagents（Claude Code）", url: `${CC}/sub-agents` },
+      { label: "Create custom subagents（Claude Code）", url: `${CC}/sub-agents` },
       { label: "Commands（/compact・/context）", url: `${CC}/commands` },
     ],
   },

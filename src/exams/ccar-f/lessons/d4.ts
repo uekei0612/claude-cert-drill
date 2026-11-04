@@ -10,7 +10,7 @@ export const d4: Record<string, Lesson> = {
       {
         h: "曖昧な指示は精度を上げない",
         body: [
-          "レビューのプロンプトに「慎重に」「確信が高いものだけ報告して」と書いても、誤検出はほとんど減りません。Claude には「何が報告に値するか」の線がまだ見えていないからです。",
+          "レビューのプロンプトに「慎重に」「確信が高いものだけ報告して」と書いても、誤検出はほとんど減りません。「何が報告に値するか」の線引きが、Claude に伝わっていないからです。",
           "効くのは、報告する種類と報告しない種類を具体的に決めることです。",
           {
             lang: "text",
@@ -49,7 +49,7 @@ export const d4: Record<string, Lesson> = {
     refs: [
       { label: "Prompt engineering overview", url: `${API}/build-with-claude/prompt-engineering/overview` },
       {
-        label: "Claude prompting best practices",
+        label: "Prompting best practices",
         url: `${API}/build-with-claude/prompt-engineering/claude-prompting-best-practices`,
       },
     ],
@@ -61,15 +61,15 @@ export const d4: Record<string, Lesson> = {
       {
         h: "例が最も効く場面",
         body: [
-          "指示を詳しく書いても、出力の形や判断がぶれるとき、最も効くのは例を見せることです。例は「こういう場面ではこう判断する」を、言葉より正確に伝えます。",
+          "指示を詳しく書いても、出力の形や判断がぶれるとき、最も効くのは例を見せることです。例は「こういう場面ではこう判断する」を、説明の文章より正確に伝えます。",
           {
             list: [
-              "迷う場面の例を 2〜4 個",
+              "迷う場面の例を数個（公式の指針は 3〜5 個を勧めている）。似た例ばかりにせず、場面を散らす",
               "それぞれに、なぜその判断で、なぜ他の判断ではないかの理由も添える",
               "出力の形（場所・問題・重大度・直し方）も例で見せる",
             ],
           },
-          "理由を添えた例は、例に無い新しい場面にも判断を広げさせます。例をそのまま真似させるためのものではありません。",
+          "理由を添えた例があると、Claude は例に無い場面にも同じ考え方を当てはめられます。例は、そのまま真似させるためのものではありません。",
         ],
       },
       {
@@ -90,7 +90,7 @@ export const d4: Record<string, Lesson> = {
   </example>
 </examples>`,
           },
-          "XML のタグで例を囲むと、指示と例の境目がはっきりします。",
+          "例を `<example>` のタグで囲み（複数なら全体を `<examples>` で囲む）、指示と例の境目をはっきりさせます。",
         ],
       },
       {
@@ -102,13 +102,13 @@ export const d4: Record<string, Lesson> = {
       {
         h: "試験での考え方",
         body: [
-          "「詳しい指示を足しても揃わない」→ 理由つきの例を 2〜4 個。「温度を下げる」「指示を大文字で強調する」は形のぶれを根本から直しません。",
+          "「詳しい指示を足しても揃わない」→ 迷う場面の、理由つきの例を数個。「温度を下げる」「指示を大文字で強調する」は形のぶれを根本から直しません。",
         ],
       },
     ],
     refs: [
       {
-        label: "Claude prompting best practices（例の使い方）",
+        label: "Prompting best practices（例の使い方）",
         url: `${API}/build-with-claude/prompt-engineering/claude-prompting-best-practices`,
       },
     ],
@@ -124,7 +124,7 @@ export const d4: Record<string, Lesson> = {
             list: [
               "ツールの `input_schema` に抜き出したい形を書き、Claude にそのツールを呼ばせる。`tool_use` の `input` が、そのまま構造化した結果になる（試験の中心はこの方法）",
               "structured outputs（JSON outputs）：リクエストの `output_config.format` に `json_schema` を渡すと、応答の文章がスキーマに合う JSON になる",
-              "strict tool use：ツール定義に `strict: true` を付けると、ツールの名前と入力がスキーマどおりになることが保証される",
+              "strict tool use：ツール定義に `strict: true` を付けると、ツールの名前と入力がスキーマどおりになることが保証される（ツールが呼ばれること自体は保証しない）",
             ],
           },
           {
@@ -177,7 +177,7 @@ export const d4: Record<string, Lesson> = {
               "原文の書式の揺れ（「2026年11月4日」「11/4/26」）は、正規化の規則をプロンプトに書く（日付は ISO 8601、など）",
             ],
           },
-          "structured outputs のスキーマには制約があります。オブジェクトには `additionalProperties: false` が要り、`minimum`・`maximum`・`minLength` などの数や長さの制約は使えません（使うと 400 エラー）。そうした検査はアプリの側で行います。",
+          "structured outputs のスキーマには制約があります。オブジェクトには `additionalProperties: false` が要り、`minimum`・`maximum`・`minLength` などの数や長さの制約は使えません（そのまま送ると 400 エラー。SDK の補助関数の多くは、制約を外して説明文に書き移す）。どちらにしても制約は守られる保証がないので、そうした検査はアプリの側で行います。",
         ],
       },
       {
@@ -267,7 +267,7 @@ export const d4: Record<string, Lesson> = {
               "使わない：人や後続の工程が結果を待っている処理。マージ前のチェック、顧客への返答",
             ],
           },
-          "1 つのリクエストは 1 回の Messages API の呼び出しです。Claude がツールを呼び、アプリが実行して結果を返し、また Claude が続ける、という往復は 1 つのリクエストの中では起きません。往復が要る処理はバッチに向きません。",
+          "1 つのリクエストは 1 回の Messages API の呼び出しです。ツールの定義や過去の会話を入れることはできます（ウェブ検索などのサーバー側のツールは、その中で動きます）。しかし、Claude がアプリ側のツールを呼び、アプリが実行して結果を返し、また Claude が続ける、という往復は 1 つのリクエストの中では起きません。往復のたびに次のバッチを待つことになるので、往復が要る処理はバッチに向きません。",
         ],
       },
       {
@@ -280,7 +280,7 @@ export const d4: Record<string, Lesson> = {
       {
         h: "締め切りからの逆算",
         body: [
-          "「結果は 30 時間以内に要る」という約束なら、処理に最大 24 時間かかるので、溜まった依頼は遅くとも 6 時間ごとに提出する必要があります（6 + 24 = 30）。",
+          "「依頼から 36 時間以内に結果を返す」という約束なら、処理に最大 24 時間かかるので、溜まった依頼を提出する間隔は 12 時間が理論上の上限です（12 + 24 = 36）。結果の取り込みや失敗の出し直しにも時間が要るので、実際はそれより短い間隔で提出します。",
         ],
       },
       {

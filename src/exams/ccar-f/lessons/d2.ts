@@ -11,7 +11,7 @@ export const d2: Record<string, Lesson> = {
       {
         h: "選ぶ手がかりは説明",
         body: [
-          "Claude はツールの `name`・`description`・`input_schema` を読んで、どのツールを呼ぶかを決めます。公式ドキュメントは、説明を詳しく書くことを「ツールの性能に効く、群を抜いて大事な要素」としています。目安は 1 つのツールにつき 3〜4 文以上です。",
+          "Claude はツールの `name`・`description`・`input_schema` を読んで、どのツールを呼ぶかを決めます。公式ドキュメントは、説明を詳しく書くことを「ツールの性能を左右する、群を抜いて大事な要素」としています。目安は 1 つのツールにつき 3〜4 文以上です。",
           {
             list: [
               "何をするツールか",
@@ -28,8 +28,8 @@ export const d2: Record<string, Lesson> = {
           {
             lang: "json",
             code: `// 悪い：短すぎて、似たツールと区別できない
-{ "name": "get_customer", "description": "Gets a customer." }
-{ "name": "lookup_order", "description": "Looks up an order." }
+{ "name": "get_customer", "description": "顧客を取得する。" }
+{ "name": "lookup_order", "description": "注文を調べる。" }
 
 // 良い：入力の形・使う場面・境目を書く
 {
@@ -63,14 +63,14 @@ export const d2: Record<string, Lesson> = {
       {
         h: "試験での考え方",
         body: [
-          "ツールの取り違えには、まず説明を詳しくする答えが最も効き、費用も小さい。少数ショットの例を足す・別の分類器を挟む・ツールを減らす、は説明を直してから考える手です。",
+          "ツールの取り違えには、まず説明を詳しくするのが、最も効果が大きく手間も少ない答えです。少数ショットの例を足す・別の分類器を挟む・ツールを減らす、は説明を直してから考える手です。",
         ],
       },
     ],
     refs: [
       { label: "Define tools（説明の書き方の指針）", url: `${API}/agents-and-tools/tool-use/define-tools` },
       {
-        label: "Writing tools for agents（Anthropic）",
+        label: "Writing effective tools for AI agents（Anthropic）",
         url: "https://www.anthropic.com/research/writing-tools-for-agents",
       },
     ],
@@ -97,7 +97,7 @@ export const d2: Record<string, Lesson> = {
               "権限の問題：この経路では解決できない。人への引き継ぎなどへ",
             ],
           },
-          "結果の本文に、種類・再試行してよいか・人が読める説明を入れておくと、Claude が分岐できます。項目名はプロトコルで決まっていないので、チームで決めて全ツールで揃えます。",
+          "結果の本文に、種類・再試行してよいか・人が読める説明を入れておくと、Claude が次の手を選び分けられます。項目名はプロトコルで決まっていないので、チームで決めて全ツールで揃えます。",
           {
             lang: "json",
             code: `{
@@ -144,10 +144,10 @@ export const d2: Record<string, Lesson> = {
       {
         h: "ツールは役割に合わせて絞る",
         body: [
-          "1 つのエージェントにツールを 18 個も渡すと、選ぶ精度が落ちます。役割に要るものだけ（目安は数個）にします。",
+          "1 つのエージェントにツールを 20 個近く渡すと、選ぶ精度が落ちます。役割に要るものだけ（目安は数個）にします。",
           {
             list: [
-              "専門外のツールを持たせない。まとめ役にウェブ検索を渡すと、まとめずに検索を始める",
+              "専門外のツールを持たせない。まとめ役にウェブ検索を渡すと、まとめる代わりに検索を始めてしまうことがある",
               "他の役割の機能で、頻繁に要るものだけは範囲を絞って渡す（まとめ役に、事実を 1 つ確かめるだけの `verify_fact`）。それ以外はコーディネーター経由で頼む",
               "汎用のツールは、制約つきのものに置き換える（どんな URL でも取れる `fetch_url` ではなく、社内文書の URL だけを受け付ける `load_document`）",
             ],
@@ -166,14 +166,14 @@ export const d2: Record<string, Lesson> = {
               '`{"type": "none"}`：ツールを呼ばない（ツールが無いときの既定）',
             ],
           },
-          "`any` と `tool` では API が応答の頭を埋めてツールを呼ばせるので、ツールの前に説明の文章は出ません。強制した呼び出しでは思考（thinking）も飛ばされます。",
+          "`any` と `tool` では、API が応答の冒頭をツールの呼び出しで埋める（prefill）ので、ツールの前に説明の文章は出ません。強制した呼び出しでは思考（thinking）も飛ばされます。",
           "使いどころ：最初に必ず `extract_metadata` を呼ばせてから中身の処理に進みたいなら、1 回目の呼び出しだけ名前を指定して強制し、2 回目からは `auto` に戻します。",
         ],
       },
       {
         h: "新しいモデルでの注意",
         body: [
-          '2026-11 時点の公式ドキュメントでは、Claude Opus 5.5・Sonnet 5.5・Fable 5.1 などの一部のモデルは `any` と `tool` を受け付けず、400 エラーを返します。また手動の拡張思考（`thinking: {type: "enabled"}`）とも併用できません。そうしたモデルでは、`auto` に strict tool use（ツール定義に `strict: true`）を組み合わせるか、structured outputs で応答の形を固定します。',
+          '2026-11 時点の公式ドキュメントでは、Claude Opus 5.5・Sonnet 5.5・Fable 5.1・Mythos 5.1 は `any` と `tool` を受け付けず、400 エラーを返します。ほかのモデルでも、手動の拡張思考（`thinking: {type: "enabled"}`）とは併用できません。そうした場面では、`auto` に strict tool use（ツール定義に `strict: true`）を組み合わせるか、structured outputs で応答の形を固定します。strict tool use が保証するのは入力の形までで、ツールが呼ばれること自体は保証しないので、呼ぶようにプロンプトでも指示します。',
           "試験は「`tool_choice` で強制できる」という前提の問題を出します。考え方（必ずツールを呼ばせたいなら強制、文章も許すなら auto）として覚え、実装するときはモデルの対応を確かめます。",
         ],
       },
@@ -207,13 +207,13 @@ export const d2: Record<string, Lesson> = {
               "ユーザー：`~/.claude.json`。自分だけ・全プロジェクト",
             ],
           },
-          "チームの全員に同じツールを使わせたいならプロジェクト、個人で試すだけならローカルかユーザーです。同じ名前のサーバーが複数の場所にあれば、ローカル → プロジェクト → ユーザーの順で優先されます（中身は混ざらず、勝った方の定義だけが使われる）。",
+          "チームの全員に同じツールを使わせたいならプロジェクト、個人で試すだけならローカルかユーザーです。同じ名前のサーバーが複数の場所にあれば、ローカル → プロジェクト → ユーザーの順で優先されます（項目ごとに混ざることはなく、優先された場所の定義がまるごと使われる）。",
           {
             lang: "bash",
             code: `# チームで共有（.mcp.json に書かれる）
 claude mcp add --transport http shared-server --scope project https://example.com/mcp
-# ローカルで動かすサーバー（-- の後ろがサーバーのコマンド）
-claude mcp add --transport stdio airtable --env AIRTABLE_API_KEY=xxx -- npx -y airtable-mcp-server`,
+# 手元で動かすサーバー（-- の後ろがサーバーを起動するコマンド）
+claude mcp add --env AIRTABLE_API_KEY=xxx --transport stdio airtable -- npx -y airtable-mcp-server`,
           },
         ],
       },
@@ -239,7 +239,7 @@ claude mcp add --transport stdio airtable --env AIRTABLE_API_KEY=xxx -- npx -y a
       {
         h: "ツールの見え方",
         body: [
-          "設定したサーバーのツールは、接続したときに見つかり、すべて同時に使えます。名前は `mcp__<サーバー名>__<ツール名>` の形になり、フックの `matcher` や権限の規則でもこの名前を使います。",
+          "設定したすべてのサーバーのツールが、同時に使える候補になります（Claude Code では既定で tool search が働き、起動時に読むのはツールの名前だけで、定義は必要になったときに読み込まれます）。名前は `mcp__<サーバー名>__<ツール名>` の形になり、フックの `matcher` や権限の規則でもこの名前を使います。",
           "MCP ツールの説明が薄いと、Claude は組み込みの `Grep` などで済ませようとします。MCP ツールにしかできないこと（社内のチケットを横断して探せる、など）と、返す内容を説明に書きます。",
           "MCP のリソースで「中身の一覧」（課題の要約、文書の階層、データベースのスキーマ）を見せると、Claude が手探りでツールを呼ぶ回数が減ります。",
         ],
@@ -259,7 +259,7 @@ claude mcp add --transport stdio airtable --env AIRTABLE_API_KEY=xxx -- npx -y a
     ],
     refs: [
       { label: "Connect Claude Code to tools via MCP", url: `${CC}/mcp` },
-      { label: "MCP in the SDK", url: `${CC}/agent-sdk/mcp` },
+      { label: "Connect to external tools with MCP（Agent SDK）", url: `${CC}/agent-sdk/mcp` },
     ],
   },
 
@@ -279,7 +279,7 @@ claude mcp add --transport stdio airtable --env AIRTABLE_API_KEY=xxx -- npx -y a
               "Bash：テストやビルドなど、コマンドを動かす",
             ],
           },
-          "「中身で探すなら Grep、名前で探すなら Glob」が一番よく問われます。",
+          "「中身で探すなら Grep、名前で探すなら Glob」が基本です。",
         ],
       },
       {
