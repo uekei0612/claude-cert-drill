@@ -26,11 +26,11 @@ export const notes: Record<string, Note> = {
   },
   "1.3": {
     points: [
-      'サブエージェントは Task ツールで起動する。コーディネーターの allowedTools に "Task" が要る',
+      'サブエージェントは Agent ツール（v2.1.63 までの名前は Task）で起動する。コーディネーターの allowedTools に "Agent" が要る',
       "AgentDefinition に説明・システムプロンプト・使えるツールを定義する",
       "必要な情報（前の工程の結果すべて）はサブエージェントのプロンプトに明示して渡す。共有メモリは無い",
       "本文とメタデータ（URL、文書名、ページ）を分けた構造化データで渡すと出典が保たれる",
-      "並列にしたいときは、1 回の応答で Task 呼び出しを複数出す",
+      "並列にしたいときは、1 回の応答で Agent ツールの呼び出しを複数出す",
       "コーディネーターのプロンプトには手順ではなく、目的と品質の基準を書く",
     ],
   },
@@ -61,7 +61,7 @@ export const notes: Record<string, Note> = {
   "1.7": {
     points: [
       "--resume <セッション名> で特定の過去のセッションを続けられる",
-      "fork_session で、共通の分析から独立した分岐を作り、別々の方針を試せる",
+      "分岐（SDK は fork_session、CLI は --fork-session）で、共通の分析から独立した分岐を作り、別々の方針を試せる",
       "再開する前にファイルが変わったなら、どのファイルが変わったかを伝えて、そこだけ調べ直させる",
       "以前のツール結果が古くなっているなら、再開するより、要約を入れた新しいセッションで始めるほうが確実",
     ],
@@ -128,10 +128,10 @@ export const notes: Record<string, Note> = {
   "3.2": {
     points: [
       "プロジェクトのコマンドは .claude/commands/（リポジトリで共有）、個人のコマンドは ~/.claude/commands/",
-      "スキルは .claude/skills/<名前>/SKILL.md。frontmatter に context: fork・allowed-tools・argument-hint など",
+      "スキルは .claude/skills/<名前>/SKILL.md。frontmatter に context: fork・allowed-tools・disallowed-tools・argument-hint など",
       "context: fork：スキルを別のサブエージェントの文脈で動かし、長い出力で本体の会話を汚さない",
-      "allowed-tools：スキルの間に使えるツールを絞る（壊す操作をさせない）",
-      "argument-hint：引数なしで呼ばれたときに、必要な引数を示す",
+      "allowed-tools：書いたツールを承認なしで使えるようにする（ほかのツールは禁止しない）。使わせないツールは disallowed-tools で外す",
+      "argument-hint：コマンドを打つときの補完に、必要な引数を表示する",
       "個人用に変えたいときは ~/.claude/skills/ に別名で作る（チームのものを上書きしない）",
       "いつも効かせたい規約は CLAUDE.md、必要なときだけ呼ぶ作業手順はスキル",
     ],

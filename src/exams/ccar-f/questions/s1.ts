@@ -47,8 +47,8 @@ export const s1: Question[] = [
         why: "例は守る率を上げるが、保証はしない。金銭の操作の前提条件には決定的な強制が要る。",
       },
       {
-        text: "Lower the temperature so the model follows the system prompt more consistently.",
-        why: "温度は出力のばらつきを変えるだけで、手順の順序を保証しない。",
+        text: "Set tool_choice to force get_customer on the first turn of every conversation.",
+        why: "最初に呼ばせても、確認が成功したか、返金する顧客と同じ人かは保証されない。返金の直前に前提を確かめるゲートが要る。",
       },
     ],
     answer: 1,
@@ -173,8 +173,8 @@ export const s1: Question[] = [
         why: "「重要な数字を残せ」は曖昧で、要約のたびに少しずつ落ちる危険は残る。",
       },
       {
-        text: "Switch to a model with a larger context window so summarization is never needed.",
-        why: "長い会話では結局溢れる。また長い入力の真ん中は落ちやすく、記憶の確実さは保証されない。",
+        text: "Have the summarizer produce a structured summary with dedicated fields for amounts and dates.",
+        why: "形を整えても、要約し直すたびに前の要約から写し直すので、値が崩れる危険は残る。事実は要約の対象から外して持つ。",
       },
       {
         text: "Keep amounts, dates, order numbers, and promises in a case-facts block sent with every prompt, outside the summary.",
@@ -274,7 +274,7 @@ export const s1: Question[] = [
       },
       {
         text: "Shorten the system prompt so that the model has more of its context window left for the reply.",
-        why: "max_tokens は出力の上限で、文脈の窓の空きとは別物。プロンプトを削っても出力の上限は増えない。",
+        why: "max_tokens は出力の上限で、コンテキストウィンドウの空きとは別物。プロンプトを削っても出力の上限は増えない。",
       },
       {
         text: 'Handle "max_tokens" as its own case: retry the turn with a higher max_tokens instead of ending.',
@@ -292,15 +292,15 @@ export const s1: Question[] = [
     id: "s1-12",
     scenario: "s1",
     tasks: ["1.1", "2.3"],
-    stem: "In one response the model asks for two things at once: a get_customer call and a lookup_order call. Your loop runs both tools, then sends each result back in its own separate user message, and the API rejects the next request. How should the results be returned?",
+    stem: "In one response the model asks for two things at once: a get_customer call and a lookup_order call. Your loop runs both tools, returns the get_customer result, and holds the lookup_order result for the following turn. The API rejects the request. How should the results be returned?",
     options: [
       {
         text: "Put both tool_result blocks, each with its matching tool_use_id, in the one next user message.",
         why: "正解。1 回の応答に複数の tool_use があれば、すべての tool_result を次の 1 つのユーザーメッセージにまとめ、tool_use_id で対応させる。",
       },
       {
-        text: "Return only the get_customer result now and send the lookup_order result after the model replies.",
-        why: "求められた呼び出しの結果を返さないまま次に進むと、対応しない tool_use が残りリクエストが拒否される。",
+        text: "Put each tool_result in an assistant message right after the tool_use it answers.",
+        why: "tool_result はユーザーメッセージで返す。アシスタントのメッセージには入れられない。",
       },
       {
         text: "Disable parallel tool use for the whole agent so the model can only ever request one tool per turn.",
@@ -400,8 +400,8 @@ export const s1: Question[] = [
     stem: "A support conversation runs for more than 40 turns across three separate issues. Near the end, the agent forgets that the second issue, a missing item, was never resolved and tells the customer everything is done. What change best prevents this?",
     options: [
       {
-        text: "Switch to a model with a larger context window so that the whole conversation always fits, however long it runs.",
-        why: "全部が入っても、長い会話の途中にある情報は見落とされやすい。容量ではなく、状態の持ち方の問題。",
+        text: "Have the agent restate all open issues from the conversation at the start of each reply.",
+        why: "毎回モデルが会話から拾い直すので、見落としは同じように起こりうる。用件の状態はコードの側で持つ。",
       },
       {
         text: "Summarize the conversation every ten turns and replace the older turns with the summary.",

@@ -47,8 +47,8 @@ export const s6: Question[] = [
         why: '正解。"any" ならどれかのツールを必ず呼ぶ。どのツールかはモデルが文書を見て選べる。',
       },
       {
-        text: '"none", and parse the text summaries with a separate extraction step.',
-        why: "ツールを使わせない設定。構造化出力の確実さを自分から捨てている。",
+        text: "Classify the document in a first call, then name the matching tool in tool_choice on a second call.",
+        why: "動くが、呼び出しが倍になり、分類の誤りも加わる。any なら 1 回で種類の判断とツールの選択ができる。",
       },
     ],
     answer: 2,
@@ -507,8 +507,8 @@ export const s6: Question[] = [
         why: "同じ文脈での見直しは、自分の誤りに気づきにくい。",
       },
       {
-        text: "Extract the fields twice with the same prompt and keep the second result.",
-        why: "2 回目を採る理由が無い。違いを比べなければ意味が無い。",
+        text: "Add few-shot examples showing these fields extracted correctly from real contracts.",
+        why: "精度は上がりうるが、誤りを見つける手立てにはならない。検証を通る誤りは、独立したもう 1 回と突き合わせて捕まえる。",
       },
       {
         text: "Use a longer and more detailed prompt for the single pass.",
