@@ -110,6 +110,20 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!(await page.$(".stem .ja-sub"))) throw new Error("言語の設定が残らない");
   await clickText("英語");
 
+  // 訳はタップ：最初は英語だけ。「訳を見る」で訳が出て、次の問題ではまた閉じる。答えたら訳が出る
+  await goto("#/ccar-f/practice");
+  await clickText("訳はタップ");
+  if (await page.$(".stem .ja-sub")) throw new Error("訳はタップなのに最初から訳が出ている");
+  await clickText("訳を見る");
+  if (!(await page.$(".stem .ja-sub"))) throw new Error("訳を見るで訳が出ない");
+  await shot("18-practice-peek");
+  await click(".option");
+  await clickText("次へ");
+  if (await page.$(".stem .ja-sub")) throw new Error("次の問題で訳が閉じない");
+  await click(".option");
+  if (!(await page.$(".stem .ja-sub"))) throw new Error("答えたあとに訳が出ない");
+  await clickText("英語");
+
   // ダーク
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "dark" }]);
   await goto("#/ccar-f/practice");

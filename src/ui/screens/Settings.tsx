@@ -4,10 +4,16 @@ import { APP_ENV, APP_VERSION } from "../../env";
 import { exams, findExam } from "../../exams";
 import { resetAll, resetExam, setSettings } from "../../store/actions";
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
-import { LANG_LABEL } from "../LangSwitch";
 import { exportJson, importJson, setData, update, useData } from "../../store/store";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";
+
+const SETTING_LABEL: Record<(typeof QUESTION_LANGS)[number], string> = {
+  en: "英語",
+  peek: "英語（訳はタップ）",
+  both: "英語＋訳",
+  ja: "日本語",
+};
 
 export function Settings() {
   const data = useData();
@@ -81,13 +87,13 @@ export function Settings() {
           >
             {QUESTION_LANGS.map(l => (
               <option key={l} value={l}>
-                {l === "both" ? "英語＋日本語訳" : LANG_LABEL[l]}
+                {SETTING_LABEL[l]}
               </option>
             ))}
           </select>
         </label>
         <p class="muted small">
-          本番の試験は英語です。日本語は理解の確認用に使い、慣れてきたら英語で解くのがおすすめです。解説は常に日本語です。
+          本番の試験は英語です。まず「訳はタップ」で英語を先に読み、詰まったときだけ訳を開くのがおすすめです。解説は常に日本語です。
         </p>
       </section>
 
