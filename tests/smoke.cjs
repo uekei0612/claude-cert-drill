@@ -73,6 +73,26 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!(await text()).includes("stop_reason")) throw new Error("要点が出ない");
   await shot("07-task");
 
+  // 教科書：目次 → 細目の画面から章へ → 次の章。どの章も横にはみ出さない（コードは枠の中で横に送る）
+  await goto("#/ccar-f/learn");
+  if (!(await text()).includes("エージェントループの設計と実装")) throw new Error("教科書の目次が出ない");
+  await shot("19-learn-toc");
+  await goto("#/ccar-f/task/1.1");
+  await clickText("教科書で読む");
+  if (!(await text()).includes("最小のループ")) throw new Error("細目から章に移れない");
+  await shot("20-learn-chapter");
+  await clickText("次の章");
+  if (!(await text()).includes("ハブ＆スポーク")) throw new Error("次の章に進めない");
+  const wide = [];
+  for (const id of ["1.1", "1.5", "2.2", "2.4", "3.2", "3.6", "4.3", "5.6"]) {
+    await goto(`#/ccar-f/learn/${id}`);
+    const w = await page.evaluate(() => document.documentElement.scrollWidth);
+    if (w > 390) wide.push(`${id}: ${w}px`);
+  }
+  if (wide.length) throw new Error(`教科書が横にはみ出す：${wide.join(", ")}`);
+  await goto("#/ccar-f/learn/3.6");
+  await shot("21-learn-cli");
+
   // 模擬試験：始めて 2 問答え、旗を立て、一覧から提出
   await goto("#/ccar-f/mock");
   await shot("08-mock-intro");

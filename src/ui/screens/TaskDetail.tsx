@@ -47,6 +47,11 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
       <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: taskId })}>
         この細目を練習する（{qs.length + related.length} 問）
       </a>
+      {exam.lessons?.[taskId] && (
+        <a class="btn block" href={href({ name: "learn", examId: exam.id, taskId })}>
+          教科書で読む
+        </a>
+      )}
 
       {note && (
         <section class="card">

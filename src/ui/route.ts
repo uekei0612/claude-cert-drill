@@ -12,7 +12,9 @@ export type Route =
   /** 終えた模擬試験の見直し。at は finishedAt */
   | { readonly name: "mock-result"; readonly examId: string; readonly at: number }
   | { readonly name: "domains"; readonly examId: string }
-  | { readonly name: "task"; readonly examId: string; readonly taskId: string };
+  | { readonly name: "task"; readonly examId: string; readonly taskId: string }
+  /** 教科書。taskId が無ければ目次 */
+  | { readonly name: "learn"; readonly examId: string; readonly taskId?: string };
 
 export function parseRoute(hash: string): Route {
   const [path = "", query = ""] = hash.replace(/^#\/?/, "").split("?");
@@ -35,6 +37,8 @@ export function parseRoute(hash: string): Route {
       return { name: "domains", examId };
     case "task":
       return arg ? { name: "task", examId, taskId: arg } : { name: "domains", examId };
+    case "learn":
+      return arg ? { name: "learn", examId, taskId: arg } : { name: "learn", examId };
     default:
       return { name: "home", examId };
   }
@@ -58,6 +62,8 @@ export function href(r: Route): string {
       return `#/${r.examId}/domains`;
     case "task":
       return `#/${r.examId}/task/${encodeURIComponent(r.taskId)}`;
+    case "learn":
+      return `#/${r.examId}/learn${r.taskId ? `/${encodeURIComponent(r.taskId)}` : ""}`;
   }
 }
 

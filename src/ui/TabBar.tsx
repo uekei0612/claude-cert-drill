@@ -3,6 +3,7 @@ import { href, type Route } from "./route";
 
 const TABS = [
   { name: "home", label: "ホーム" },
+  { name: "learn", label: "教科書" },
   { name: "domains", label: "分野" },
   { name: "mock", label: "模擬試験" },
   { name: "settings", label: "設定" },
