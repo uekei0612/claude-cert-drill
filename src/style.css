@@ -210,6 +210,9 @@ a.card {
   z-index: 20;
 }
 .toast .btn {
+  /* 文が長いと押し縮められて「閉じる」が 2 行に折れるので、ボタンの幅は譲らない */
+  flex-shrink: 0;
+  white-space: nowrap;
   min-height: 36px;
   background: transparent;
   color: inherit;
