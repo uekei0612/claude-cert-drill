@@ -91,6 +91,13 @@ describe("mock", () => {
     expect(order.slice(0, 4).every(s => s === p.scenarioIds[0])).toBe(true);
     expect(p.limitMs).toBe(8 * 120 * 1000);
   });
+  test("本番の問題数があれば、シナリオごとにその割り当て分だけ選ぶ", () => {
+    const exam = { ...fixture, format: { ...fixture.format, questions: 4 } };
+    const p = planMock(exam, seeded(3));
+    expect(p.questionIds).toHaveLength(4);
+    for (const sid of p.scenarioIds) expect(p.questionIds.filter(id => id.startsWith(`${sid}-`))).toHaveLength(2);
+    expect(p.limitMs).toBe(4 * 120 * 1000);
+  });
   test("採点：未回答は誤答、出た分野で配点を割り直す", () => {
     const ids = ["s1-01", "s1-02", "s1-04"]; // d1 2 問、d2 1 問
     const s = scoreMock(fixture, ids, { "s1-01": 0, "s1-02": 1 });

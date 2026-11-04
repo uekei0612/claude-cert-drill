@@ -262,4 +262,265 @@ export const s5: Question[] = [
     answer: 2,
     point: "テストの基準・フィクスチャは CLAUDE.md に書き、既存のテストを文脈に渡して重複を避ける",
   },
+  {
+    id: "s5-11",
+    scenario: "s5",
+    tasks: ["3.6"],
+    stem: "Your CI job runs claude -p to review a pull request and run the test suite. It fails because Claude tries to run npm test and there is no one to approve the command. You do not want to allow arbitrary shell commands. What should you do?",
+    options: [
+      {
+        text: "Run Claude Code with all permission checks skipped so that nothing in the job ever waits for an approval.",
+        why: "承認待ちは消えるが、何でも実行できる状態になる。必要なものだけ許す。",
+      },
+      {
+        text: "Pass --allowedTools with only the specific commands the job needs, such as Bash(npm test:*).",
+        why: "正解。CI では要るツールとコマンドだけを --allowedTools（または設定の許可）で前もって許す。",
+      },
+      {
+        text: "Tell Claude in the prompt not to run any commands and to describe the tests instead.",
+        why: "テストを実際に動かすという目的が果たせない。",
+      },
+      {
+        text: "Remove -p so that the job runs in interactive mode and can wait for the approval prompt.",
+        why: "CI には承認する人がいない。対話モードでは入力待ちで止まる。",
+      },
+    ],
+    answer: 1,
+    point: "CI では要るコマンドだけを --allowedTools（例：Bash(npm test:*)）で前もって許す。全部を許さない",
+  },
+  {
+    id: "s5-12",
+    scenario: "s5",
+    tasks: ["3.6"],
+    stem: "On a few very large pull requests, the CI review ran for a long time and made far more turns than usual, which drove up cost. You want a hard bound on how much work a single review can do. What should you add?",
+    options: [
+      {
+        text: "A sentence in the prompt asking Claude to keep the review brief on large pull requests.",
+        why: "指示は確率的。確かな上限にならない。",
+      },
+      {
+        text: "A step that skips the review for any pull request with more than a set number of changed lines.",
+        why: "大きな変更ほどレビューの価値がある。止めるのではなく上限を設ける。",
+      },
+      {
+        text: "A smaller model for every review so that each turn costs less.",
+        why: "1 回あたりは安くなっても、往復の数に上限が無いままで、レビューの質も落ちうる。",
+      },
+      {
+        text: "A --max-turns limit on the claude -p invocation, together with a CI job timeout.",
+        why: "正解。--max-turns で往復の数を、CI のタイムアウトで時間を確かに縛る。",
+      },
+    ],
+    answer: 3,
+    point: "CI のレビューの量は --max-turns（と CI のタイムアウト）で確かに縛る",
+  },
+  {
+    id: "s5-13",
+    scenario: "s5",
+    tasks: ["4.1", "4.2"],
+    stem: "The review labels findings as critical, major, or minor, but the labels are inconsistent: a missing null check is critical in one PR and minor in another. Developers no longer trust the severity. What is the best fix?",
+    options: [
+      {
+        text: "Define each level with explicit criteria and give concrete example findings for each level.",
+        why: "正解。各段階の基準をはっきり書き、段階ごとの具体例を見せる。あいまいな言葉だけでは判断がぶれる。",
+      },
+      {
+        text: "Drop severity entirely and post every finding without any label.",
+        why: "優先度の手がかりが消える。基準を直せば役に立つ。",
+      },
+      {
+        text: "Lower the temperature to zero so that the same kind of issue always receives the same severity label in every PR.",
+        why: "ばらつきの原因は基準のあいまいさ。温度を下げても、PR ごとの文脈の違いで判断は変わる。",
+      },
+      {
+        text: "Ask the model to explain its reasoning for each label in the comment it posts.",
+        why: "理由を書かせても、基準が無ければ判断はそろわない。",
+      },
+    ],
+    answer: 0,
+    point: "重大度のばらつきは、段階ごとのはっきりした基準と具体例で直す",
+  },
+  {
+    id: "s5-14",
+    scenario: "s5",
+    tasks: ["4.1"],
+    stem: 'To cut false positives, you added "Only report issues you are highly confident about" to the review prompt. The number of comments barely changed, and style nitpicks and remarks about untouched code still appear. What should you do instead?',
+    options: [
+      {
+        text: "Repeat the confidence instruction several times throughout the prompt.",
+        why: "あいまいな指示を繰り返しても、何を出すかの基準ははっきりしない。",
+      },
+      {
+        text: "Ask for a numeric confidence score and drop any finding below 0.8.",
+        why: "自己申告の確信度は較正されていない。閾値で切っても狙った種類が消えるとは限らない。",
+      },
+      {
+        text: "List which categories to report and which to skip, such as style or lines the PR did not change.",
+        why: "正解。「確信が高い」はあいまい。報告する種類と、出さない種類（書き方・変更していない行など）をはっきり書く。",
+      },
+      {
+        text: "Cap the review at three comments per pull request, whatever the size of the change, so only the top issues are posted.",
+        why: "本当の問題が 4 つ目にあれば落ちる。数ではなく基準で絞る。",
+      },
+    ],
+    answer: 2,
+    point: "「確信の高いものだけ」はあいまい。報告する種類・出さない種類をはっきり書く",
+  },
+  {
+    id: "s5-15",
+    scenario: "s5",
+    tasks: ["4.3"],
+    stem: "A downstream script posts review findings as inline comments. It needs the file, the line, a severity, and the problem for each finding, but today it has to parse free-form Markdown, and it breaks whenever the wording changes. What should you do?",
+    options: [
+      {
+        text: "Add an example of the Markdown layout to the prompt and keep parsing it with regular expressions.",
+        why: "例で揃いやすくはなるが、文章の読み解きは壊れやすいまま。",
+      },
+      {
+        text: "Have Claude return findings as JSON that matches a schema with those fields, and validate it.",
+        why: "正解。機械で使う出力はスキーマに合う JSON で受け取り、検証する（CI なら --output-format json と --json-schema など）。",
+      },
+      {
+        text: "Ask a second model call to convert the Markdown into structured data before posting.",
+        why: "変換の段が増えるだけで、そこでも崩れうる。最初から構造化して出させる。",
+      },
+      {
+        text: "Post the whole review as a single comment so that no parsing is needed at all.",
+        why: "行ごとのコメントという目的を捨てている。",
+      },
+    ],
+    answer: 1,
+    point: "機械が使う出力は、スキーマに合う JSON で出させて検証する（自由な文章を読み解かない）",
+  },
+  {
+    id: "s5-16",
+    scenario: "s5",
+    tasks: ["4.5"],
+    stem: "A colleague proposes moving the pull request review onto the Message Batches API to save 50%. The review is agentic: it reads files and runs tests through tools during a multi-turn session, and developers expect feedback within minutes. What is the best response?",
+    options: [
+      {
+        text: "Agree, because batches usually return results within minutes for small requests such as a single review.",
+        why: "誤り。バッチは最長 24 時間の処理で、すぐの返事は保証されない。",
+      },
+      {
+        text: "Agree, but split each review into one batch request per file to keep latency down.",
+        why: "分けても返る時間は保証されず、ファイルをまたぐ確認や途中でのツール実行もできない。",
+      },
+      {
+        text: "Agree, and run the tools on your side after the batch returns its final answer.",
+        why: "ツールの結果を見て次を判断するのがエージェントの流れ。最後にまとめて動かすのでは成り立たない。",
+      },
+      {
+        text: "Decline: batches suit work that can wait, and one request cannot run a multi-turn tool loop.",
+        why: "正解。バッチは待てる大量の処理向けで、1 つのリクエストの中で何往復ものツールのやり取りはできない。",
+      },
+    ],
+    answer: 3,
+    point:
+      "Message Batches API は待てる大量の処理向け（最長 24 時間）。即時の返事や、途中でツールを回す何往復のやり取りには使えない",
+  },
+  {
+    id: "s5-17",
+    scenario: "s5",
+    tasks: ["4.6", "4.1"],
+    stem: "About a quarter of the review's findings turn out to be wrong when developers check them. You want to filter out bad findings before they are posted, without losing real ones. Which design fits best?",
+    options: [
+      {
+        text: "Have a separate instance check each finding against the code and keep only those it confirms.",
+        why: "正解。生成した文脈を持たない別のインスタンスに、所見ごとにコードと照らして確かめさせる。自己レビューより偏りが少ない。",
+      },
+      {
+        text: "Ask the same session that produced the findings to reread each of them and remove any that it now doubts.",
+        why: "同じ文脈は自分の推論に引きずられやすい。別のインスタンスで確かめる。",
+      },
+      {
+        text: "Run the same review prompt three times and post the findings that appear at least once.",
+        why: "1 回でも出たものを残すと、誤りはむしろ増える。",
+      },
+      {
+        text: "Post only the first five findings in the order the model produced them.",
+        why: "出た順は正しさと関係ない。",
+      },
+    ],
+    answer: 0,
+    point: "所見の誤りは、生成の文脈を持たない別のインスタンスで 1 件ずつ確かめて落とす",
+  },
+  {
+    id: "s5-18",
+    scenario: "s5",
+    tasks: ["4.4"],
+    stem: "Developers can dismiss review comments, and they dismiss a lot of them. You want to improve the review prompt over time based on this signal. What is the most useful thing to set up?",
+    options: [
+      {
+        text: "A weekly count of dismissed comments, shown on a dashboard for the team.",
+        why: "数だけでは、どの種類の所見が外れているのかが分からない。",
+      },
+      {
+        text: "An automatic rule that stops posting any new comment that closely resembles one that was dismissed before.",
+        why: "似ているだけで本物まで止める恐れがある。まず傾向を分析してプロンプトを直す。",
+      },
+      {
+        text: "Record each finding's category and pattern with whether it was dismissed, and review by category.",
+        why: "正解。所見ごとに種類や型を記録して却下と結びつければ、どの種類が外れているかが分かり、その種類を直せる。",
+      },
+      {
+        text: "A request that developers write a paragraph explaining each dismissal in detail.",
+        why: "手間が大きく続かない。種類を構造化して記録すれば集計できる。",
+      },
+    ],
+    answer: 2,
+    point: "改善の手がかりは、所見の種類・型と却下を結びつけて記録し、種類ごとに分析する",
+  },
+  {
+    id: "s5-19",
+    scenario: "s5",
+    tasks: ["4.2"],
+    stem: 'The review keeps flagging intentional patterns, such as an empty catch block with a comment explaining why it is safe, as bugs. The prompt already says "Do not flag intentional code." What is the most effective addition?',
+    options: [
+      {
+        text: 'Make the instruction stronger: "NEVER flag intentional code under any circumstances."',
+        why: "強調しても、何が意図的かの判断はあいまいなまま。",
+      },
+      {
+        text: "A few examples contrasting an acceptable intentional pattern with a real bug, with the reasoning.",
+        why: "正解。境目の判断は、許される書き方と本物の不具合を並べた例と理由で見せると効く。",
+      },
+      {
+        text: "A list of every file in the repository where intentional patterns are known to exist.",
+        why: "一覧は保守できず、新しいコードにも効かない。判断の仕方を見せる。",
+      },
+      {
+        text: "A rule to skip all catch blocks during review, since that is where most of these false positives have occurred.",
+        why: "本当に危ない catch まで見逃す。",
+      },
+    ],
+    answer: 1,
+    point: "境目の判断（意図的な書き方か不具合か）は、両方を並べた few-shot の例と理由で教える",
+  },
+  {
+    id: "s5-20",
+    scenario: "s5",
+    tasks: ["4.6"],
+    stem: "Each finding now comes with a confidence level from a separate verification pass. You want developers to see the most reliable feedback first, without throwing away less certain findings entirely. How should findings be routed?",
+    options: [
+      {
+        text: "Post every finding inline, ordered by confidence, so that nothing at all is hidden from the developers.",
+        why: "全部を行ごとに出すと、低い確信の所見が誤検出として信頼を下げる。",
+      },
+      {
+        text: "Post only the high-confidence findings and delete the rest so they do not add noise.",
+        why: "本物が混ざっている低い確信の所見を失う。",
+      },
+      {
+        text: "Ask the model to merge low-confidence findings into a single vague warning at the top.",
+        why: "あいまいな警告は誰も読まず、具体的な手がかりも失われる。",
+      },
+      {
+        text: "Post high-confidence findings inline and list lower-confidence ones in a collapsed summary.",
+        why: "正解。確かなものは目立つ場所に、確かさの低いものは控えめな場所にまとめて残す。信頼を守りつつ情報も失わない。",
+      },
+    ],
+    answer: 3,
+    point: "確信度で出し先を分ける：確かなものは行ごとのコメント、低いものは控えめな要約に残す",
+  },
 ];

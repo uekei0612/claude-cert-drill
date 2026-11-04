@@ -1,4 +1,5 @@
 /* 模擬試験。本番と同じくシナリオをランダムに選び、その問題をシナリオごとにまとめて出す。
+   本番の問題数（format.questions）があれば、それをシナリオの数で割った数ずつ選ぶ（本番と同じ長さにする）。
    シナリオの無い資格は、配点に比例して分野から問題を選ぶ。採点はまとめて最後に行う */
 import type { Exam, Question } from "../exams/types";
 import { domainOf } from "../exams/types";
@@ -19,11 +20,14 @@ export function planMock(exam: Exam, rng: Rng): MockPlan {
     const chosen = shuffle(rng, withQuestions)
       .slice(0, f.scenariosPerExam)
       .sort((a, b) => exam.scenarios.indexOf(a) - exam.scenarios.indexOf(b));
+    const perScenario = f.questions ? Math.ceil(f.questions / f.scenariosPerExam) : Infinity;
     const questionIds = chosen.flatMap(s =>
       shuffle(
         rng,
         exam.questions.filter(q => q.scenario === s.id),
-      ).map(q => q.id),
+      )
+        .slice(0, perScenario)
+        .map(q => q.id),
     );
     return {
       questionIds,

@@ -77,6 +77,13 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f/mock");
   await shot("08-mock-intro");
   await clickText("始める");
+  // 本番と同じ 60 問（4 シナリオ × 15 問）
+  const total = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => k.startsWith("claude-cert-drill"))))
+        .activeMock.questionIds.length,
+  );
+  if (total !== 60) throw new Error(`模擬試験が 60 問でない：${total}`);
   await click(".option");
   await shot("09-mock-question");
   await clickText("⚐ 旗を立てる");
