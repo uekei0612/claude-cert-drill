@@ -598,3 +598,10 @@ textarea {
 .otext {
   display: block;
 }
+/* 「訳はタップ」の訳を開くボタン。問題文のすぐ下、左に寄せて小さく */
+.qcard .peek {
+  align-self: flex-start;
+  min-height: 36px;
+  margin-top: -8px;
+  font-size: 0.9rem;
+}

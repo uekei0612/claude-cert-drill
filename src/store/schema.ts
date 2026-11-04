@@ -4,9 +4,9 @@ import type { ItemStat } from "../engine/schedule";
 
 export const VERSION = 1;
 
-/** 問題文の言語。en＝英語（本番と同じ）、ja＝日本語、both＝英語の下に日本語 */
-export type QuestionLang = "en" | "ja" | "both";
-export const QUESTION_LANGS: readonly QuestionLang[] = ["en", "ja", "both"];
+/** 問題文の言語。en＝英語（本番と同じ）、peek＝英語で、訳はタップで開く、both＝英語の下に日本語、ja＝日本語 */
+export type QuestionLang = "en" | "peek" | "both" | "ja";
+export const QUESTION_LANGS: readonly QuestionLang[] = ["en", "peek", "both", "ja"];
 
 /** 見た目。system＝端末に合わせる */
 export type Theme = "system" | "light" | "dark";
