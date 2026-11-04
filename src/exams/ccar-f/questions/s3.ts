@@ -262,4 +262,264 @@ export const s3: Question[] = [
     answer: 3,
     point: "途中で範囲が分かる調査は、発見に応じて分解し直す動的な分解（固定のパイプラインではなく）",
   },
+  {
+    id: "s3-11",
+    scenario: "s3",
+    tasks: ["1.2"],
+    stem: "The synthesis agent reports that the draft has no data on adoption in Asia, one of the topic's main angles. Currently the coordinator passes the draft straight to the report writing agent anyway. What should the coordinator do?",
+    options: [
+      {
+        text: "Send targeted follow-up searches for the gap, then re-run synthesis before writing the report.",
+        why: "正解。コーディネーターは結果を評価し、足りない所を狙って再度振る。埋まってから次の工程へ進める。",
+      },
+      {
+        text: "Tell the report writing agent to fill in the missing section from its own general knowledge, marking it as a draft.",
+        why: "出典の無い主張が入る。すべての主張に出典を付けるという要件に反する。",
+      },
+      {
+        text: "Restart the whole research run from scratch with a longer and more detailed topic prompt.",
+        why: "うまくいった部分まで捨てることになる。抜けた所だけを補えばよい。",
+      },
+      {
+        text: "Publish the report without that section and rely on readers to notice what is missing.",
+        why: "抜けを読み手に気づかせる設計は不親切で、少なくとも抜けていることを明記すべき。補えるなら補う。",
+      },
+    ],
+    answer: 0,
+    point: "コーディネーターは結果を評価し、抜けを狙って再度振ってから次の工程へ（そのまま流さない）",
+  },
+  {
+    id: "s3-12",
+    scenario: "s3",
+    tasks: ["1.3"],
+    stem: "You defined four subagents in the agents option of the Agent SDK, each with a description, prompt, and tools. In testing, the coordinator never delegates. It does all the searching and writing itself. What is the most likely cause?",
+    options: [
+      {
+        text: "The subagent prompts are too long, so the coordinator cannot read their definitions.",
+        why: "コーディネーターが判断に使うのは主に description。プロンプトの長さは振らない理由にならない。",
+      },
+      {
+        text: "Subagents can only be started by the user, not by another agent, in the Agent SDK.",
+        why: "誤り。コーディネーターがサブエージェントを起動するのが基本の使い方。",
+      },
+      {
+        text: "The coordinator's allowed tools do not include the tool used to spawn subagents (Task).",
+        why: "正解。サブエージェントは Task ツールで起動する。コーディネーターの allowedTools に入っていなければ振れない。",
+      },
+      {
+        text: "All four subagents share the same model, so the coordinator sees no benefit in delegating.",
+        why: "モデルが同じでも、文脈を分け、役割に絞れる利点がある。振らない理由にならない。",
+      },
+    ],
+    answer: 2,
+    point: "コーディネーターが振らない → allowedTools に Task が無い（サブエージェントは Task で起動する）",
+  },
+  {
+    id: "s3-13",
+    scenario: "s3",
+    tasks: ["2.1"],
+    stem: "The document analysis agent has a single tool, analyze_document(document, instructions). It is used for summarizing, pulling out statistics, and checking specific claims, and the results vary widely in shape and quality. How should you redesign it?",
+    options: [
+      {
+        text: "Keep the one tool and add a long list of example instruction strings to its description.",
+        why: "何でもできる 1 つのツールのままでは、目的ごとの入出力が定まらない。",
+      },
+      {
+        text: "Split it into purpose-specific tools such as extract_statistics and verify_claim.",
+        why: "正解。目的ごとのツールにし、それぞれの入力・出力・使う場面を説明に書く。結果の形もそろう。",
+      },
+      {
+        text: "Replace it with a general-purpose Bash tool so the agent can process documents however it likes.",
+        why: "さらに汎用になり、結果のばらつきも危険も増える。",
+      },
+      {
+        text: "Add a mode parameter with free-text values so the agent can describe the kind of analysis it wants.",
+        why: "自由な文字列では選び方も結果の形も定まらない。分けるなら、はっきり分ける。",
+      },
+    ],
+    answer: 1,
+    point: "何でもする汎用ツールは、目的ごとのツールに分け、それぞれの入出力と使う場面を説明に書く",
+  },
+  {
+    id: "s3-14",
+    scenario: "s3",
+    tasks: ["2.3", "4.3"],
+    stem: "The synthesis agent should always finish by calling one of two tools: submit_findings or report_insufficient_evidence. Sometimes it replies in plain prose instead, and the coordinator cannot parse the result. What should you configure?",
+    options: [
+      {
+        text: 'Set tool_choice to "auto" and add both tools to the end of the system prompt.',
+        why: "auto はツールを使うかどうかをモデルに任せる。文章で答えることを防げない。",
+      },
+      {
+        text: "Set tool_choice to submit_findings by name so that the agent always produces structured output.",
+        why: "名指しすると、証拠が足りないときも submit_findings を強いられる。2 つのうちどちらかを選ばせたい。",
+      },
+      {
+        text: "Parse the prose with a regular expression whenever no tool call is found in the response.",
+        why: "後始末としては壊れやすい。出させ方の側で決める。",
+      },
+      {
+        text: 'Set tool_choice to "any" so the agent must call one of the tools but may choose which one.',
+        why: '正解。"any" はいずれかのツールの呼び出しを強制し、どれを呼ぶかはモデルが選ぶ。',
+      },
+    ],
+    answer: 3,
+    point: "「どれかのツールを必ず、どれかは任せる」は tool_choice: any。特定の 1 つなら名指し",
+  },
+  {
+    id: "s3-15",
+    scenario: "s3",
+    tasks: ["5.3"],
+    stem: "The web search subagent fails permanently on one of five subtopics because the main source for it is behind a paywall. The coordinator currently aborts the whole run when any subagent fails. What is the better strategy?",
+    options: [
+      {
+        text: "Continue with the other subtopics and state the coverage gap and its reason in the report.",
+        why: "正解。1 つの失敗で全体を止めない。分かったことは使い、抜けとその理由をレポートに明記する。",
+      },
+      {
+        text: "Retry the failing subtopic in a loop until it succeeds, however long that takes.",
+        why: "有料の壁は再試行で越えられない。恒久的な失敗に繰り返しは無意味。",
+      },
+      {
+        text: "Drop the failing subtopic silently so that the report looks complete to the reader.",
+        why: "抜けを隠すと、読み手は網羅されていると誤解する。",
+      },
+      {
+        text: "Ask the synthesis agent to estimate the missing subtopic from the other four results so that the report stays complete.",
+        why: "出典の無い推定が主張として混ざる。",
+      },
+    ],
+    answer: 0,
+    point: "一部の失敗で全体を止めず、分かったことで進め、抜けと理由をはっきり書く（隠さない・作らない）",
+  },
+  {
+    id: "s3-16",
+    scenario: "s3",
+    tasks: ["5.6"],
+    stem: "One source says a market is worth $4.2B and another says $6.8B. The synthesis agent flagged this as a contradiction, but the first figure is from 2021 and the second from 2024. What change would let the system handle cases like this correctly?",
+    options: [
+      {
+        text: "Tell the synthesis agent to always prefer the larger figure when two sources disagree.",
+        why: "根拠の無い選び方。時点の違いという本当の理由が見えないまま。",
+      },
+      {
+        text: "Average the two figures and cite both sources for the resulting number.",
+        why: "時点の違う数字を混ぜると、どちらの事実でもない数字になる。",
+      },
+      {
+        text: "Have subagents return the publication or data date with every finding they pass on.",
+        why: "正解。時点を所見と一緒に渡せば、統合は変化として扱える。日付が無いと矛盾に見える。",
+      },
+      {
+        text: "Discard any source older than one year so that only current figures reach synthesis.",
+        why: "推移を示す古いデータも価値がある。捨てずに時点を付ける。",
+      },
+    ],
+    answer: 2,
+    point: "所見には公開日・データの時点を付けて渡す。時点の違いを矛盾と誤解させない",
+  },
+  {
+    id: "s3-17",
+    scenario: "s3",
+    tasks: ["5.1", "1.3"],
+    stem: "Each subagent returns its full transcript, including every page it fetched, to the coordinator. After three or four delegations the coordinator's context is nearly full and its later decisions get worse. What should subagents return instead?",
+    options: [
+      {
+        text: "The full transcript, but compressed with a general-purpose text summarizer first.",
+        why: "汎用の要約は、主張と出典の対応のような大事な構造を落としうる。何を返すかを決めて構造化する。",
+      },
+      {
+        text: "A structured result with the key findings, their sources, and anything left unresolved.",
+        why: "正解。コーディネーターの判断に要るのは結論・出典・残った問題。構造化して返せば文脈も小さく済む。",
+      },
+      {
+        text: "Only a yes or no on whether the task succeeded, so the coordinator's context stays small.",
+        why: "少なすぎて、次に何をすべきかをコーディネーターが判断できない。",
+      },
+      {
+        text: "Nothing at all; subagents should write results to shared files that the coordinator never reads.",
+        why: "コーディネーターが結果を見られなければ、評価も次の振り分けもできない。",
+      },
+    ],
+    answer: 1,
+    point: "サブエージェントは全文でなく、所見・出典・未解決点を構造化して返す（コーディネーターの文脈を守る）",
+  },
+  {
+    id: "s3-18",
+    scenario: "s3",
+    tasks: ["1.6"],
+    stem: "A separate weekly job produces the same competitor brief every Monday: fetch five known sources, extract pricing changes, compare with last week, and write a summary. The steps never change. How should this task be decomposed?",
+    options: [
+      {
+        text: "Let a coordinator agent plan the steps from scratch every week based on what it finds.",
+        why: "毎回計画させると、決まった手順がぶれ、費用も増える。動的な分解は範囲が読めないとき向け。",
+      },
+      {
+        text: "Give one agent all the instructions in a single prompt and let it decide the order of the steps itself each week.",
+        why: "順序が決まっているのに任せると、工程を飛ばしたりぶれたりする。",
+      },
+      {
+        text: "Spawn a separate subagent for every source and every comparison, then let them coordinate.",
+        why: "サブエージェントどうしで調整させると流れが見えにくくなる。固定の手順には大げさ。",
+      },
+      {
+        text: "Use a fixed sequence of prompts, each step feeding its output to the next, with checks between.",
+        why: "正解。手順が決まっていて毎回同じなら、固定の連鎖（プロンプトチェーン）にして間で確かめるのが確実。",
+      },
+    ],
+    answer: 3,
+    point: "手順が決まっている繰り返しの作業は、固定のプロンプトチェーン。動的な分解は範囲が読めないとき",
+  },
+  {
+    id: "s3-19",
+    scenario: "s3",
+    tasks: ["5.6"],
+    stem: "Readers of the final reports cannot tell which conclusions are backed by several independent studies and which rest on a single blog post. Every claim is already cited. What should change in how the report presents findings?",
+    options: [
+      {
+        text: "Separate well-supported findings from contested or single-source ones, and say which is which.",
+        why: "正解。出典があるだけでは足りない。裏付けの強さで分け、確かなこと・争いのあること・1 つの出典だけのことを区別して示す。",
+      },
+      {
+        text: "Remove every claim that is supported by only one source, so the report contains only strong ones.",
+        why: "価値のある新しい知見まで消える。消すのではなく、強さを示す。",
+      },
+      {
+        text: "Add more citations to each claim by searching for additional sources that say the same thing.",
+        why: "同じ内容の出典を増やしても、独立しているとは限らない。強さを示すことが要る。",
+      },
+      {
+        text: "Write the whole report in a more cautious tone so that no single claim sounds too certain.",
+        why: "一律に弱めると、確かなことと不確かなことの区別がかえって消える。",
+      },
+    ],
+    answer: 0,
+    point: "出典の有無だけでなく、裏付けの強さ（確立・争いあり・単一出典）を区別して示す",
+  },
+  {
+    id: "s3-20",
+    scenario: "s3",
+    tasks: ["1.2"],
+    stem: 'Logs show the web search subagent and the document analysis subagent often cover the same reports, while some angles of the topic are covered by neither. The coordinator delegates with prompts like "research the topic". What should change?',
+    options: [
+      {
+        text: "Let the two subagents message each other directly so they can agree on who covers what.",
+        why: "サブエージェントどうしを直接つなぐと流れが追えなくなる。分担はコーディネーターが決める。",
+      },
+      {
+        text: "Merge the two subagents into one, so that duplication between them becomes impossible.",
+        why: "重複は消えても、抜けは残る。専門を分けた利点も失う。",
+      },
+      {
+        text: "Have the coordinator give each subagent an explicit scope: which angles and sources it owns.",
+        why: "正解。重複と抜けは、振るときの範囲があいまいなせい。コーディネーターが切り口と情報源の分担をはっきり渡す。",
+      },
+      {
+        text: "Run the subagents one after another so that the second can see what the first already did.",
+        why: "直列にすると遅くなり、範囲の抜けも直らない。",
+      },
+    ],
+    answer: 2,
+    point: "サブエージェントの重複と抜けは、コーディネーターが範囲（切り口・情報源）をはっきり分けて渡して防ぐ",
+  },
 ];
