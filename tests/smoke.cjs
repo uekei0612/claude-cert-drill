@@ -77,6 +77,15 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f/learn");
   if (!(await text()).includes("エージェントループの設計と実装")) throw new Error("教科書の目次が出ない");
   await shot("19-learn-toc");
+  // はじめに → 次の章で 1.1 へ。用語の枠・手順・まとめが出る
+  await clickText("0 はじめに");
+  if (!(await page.$(".lesson dl.terms"))) throw new Error("はじめにに用語の一覧が出ない");
+  if (!(await page.$(".lesson ol.steps"))) throw new Error("はじめにに手順が出ない");
+  if (!(await page.$(".lesson .summary"))) throw new Error("はじめににまとめが出ない");
+  await shot("22-learn-primer");
+  await clickText("次の章");
+  if (!(await text()).includes("最小のループ")) throw new Error("はじめにから 1.1 に進めない");
+  if (!(await page.$(".lesson .note"))) throw new Error("1.1 に注意の枠が出ない");
   await goto("#/ccar-f/task/1.1");
   await clickText("教科書で読む");
   if (!(await text()).includes("最小のループ")) throw new Error("細目から章に移れない");
@@ -84,7 +93,7 @@ const OUT = process.argv[3] || "/tmp/shots";
   await clickText("次の章");
   if (!(await text()).includes("ハブ＆スポーク")) throw new Error("次の章に進めない");
   const wide = [];
-  for (const id of ["1.1", "1.5", "2.2", "2.4", "3.2", "3.6", "4.3", "5.6"]) {
+  for (const id of ["intro", "1.1", "1.5", "2.2", "2.3", "2.4", "3.2", "3.6", "4.3", "4.5", "5.4", "5.6"]) {
     await goto(`#/ccar-f/learn/${id}`);
     const w = await page.evaluate(() => document.documentElement.scrollWidth);
     if (w > 390) wide.push(`${id}: ${w}px`);

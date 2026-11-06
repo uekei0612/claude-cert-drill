@@ -3,7 +3,7 @@
    シナリオの文・要点・問題はすべて自分の言葉で書く（ガイドの本文やサンプル問題は載せない）。 */
 import type { Domain, Exam, Scenario } from "../types";
 import { ja } from "./ja";
-import { lessons } from "./lessons";
+import { lessons, primer } from "./lessons";
 import { notes } from "./notes";
 import { questions } from "./questions";
 
@@ -235,6 +235,7 @@ export const ccarF: Exam = {
   questions,
   notes,
   lessons,
+  primer,
   translations: { ja },
   outOfScope: [
     "Claude のファインチューニング、独自モデルの学習",
