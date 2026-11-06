@@ -1,6 +1,7 @@
 /* 載せているすべての資格の形を検査する。問題は手で書くので、形の誤りはここで落とす */
 import { describe, expect, test } from "vitest";
 import { exams } from "./index";
+import { overflows } from "./figure";
 import { PRIMER_ID, allTasks, type Lesson } from "./types";
 
 describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
@@ -64,24 +65,67 @@ describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
           if ("steps" in b) return [...b.steps];
           if ("note" in b) return [b.note];
           if ("terms" in b) return b.terms.flat();
+          if ("figure" in b) return [b.caption];
+          if ("quiz" in b) return [b.quiz, ...b.choices, b.why];
           return [];
         }),
       );
       for (const t of [l.lead, ...l.summary, ...texts]) expect((t.match(/`/g) ?? []).length % 2, `${k}: ${t}`).toBe(0);
-      // 用語・手順・箇条書きの中で同じ項目が重ならない（画面の key に使う）
+      // 用語・手順・箇条書き・選択肢の中で同じ項目が重ならない（画面の key に使う）
       for (const s of l.sections)
         for (const b of s.body) {
-          const items =
-            typeof b === "string" || "code" in b || "note" in b
+          const items: readonly string[] =
+            typeof b === "string"
               ? []
               : "terms" in b
                 ? b.terms.map(t => t[0])
                 : "list" in b
                   ? b.list
-                  : b.steps;
+                  : "steps" in b
+                    ? b.steps
+                    : "quiz" in b
+                      ? b.choices
+                      : [];
           expect(new Set(items).size, `${k} ${s.h}`).toBe(items.length);
         }
+      // 図は SVG で、説明がある
+      for (const s of l.sections)
+        for (const b of s.body)
+          if (typeof b !== "string" && "figure" in b) {
+            expect(b.figure.startsWith("<svg "), `${k} ${s.h}`).toBe(true);
+            expect(b.caption.trim().length, `${k} ${s.h}`).toBeGreaterThan(10);
+          }
     }
+  });
+
+  test("図の文字はどれも枠に収まる", () => {
+    expect(overflows).toEqual([]);
+  });
+
+  test("教科書の各章（はじめにを除く）に、「試験での考え方」の例題が 1 問ずつある", () => {
+    const quizzes = Object.entries(exam.lessons ?? {}).map(([k, l]) => {
+      const found = l.sections.flatMap(s =>
+        s.body.flatMap(b => (typeof b !== "string" && "quiz" in b ? [[s.h, b] as const] : [])),
+      );
+      expect(found.length, k).toBe(1);
+      const [h, q] = found[0]!;
+      expect(h, k).toBe("試験での考え方");
+      expect(q.choices.length, k).toBeGreaterThanOrEqual(3);
+      expect(q.choices.length, k).toBeLessThanOrEqual(4);
+      expect(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.choices.length, k).toBe(true);
+      expect(q.why.trim().length, k).toBeGreaterThan(20);
+      return [k, q] as const;
+    });
+    if (!quizzes.length) return;
+    // 正解の位置が偏らない（どの位置も 4 割まで）
+    const at = [0, 1, 2, 3].map(i => quizzes.filter(([, q]) => q.answer === i).length);
+    for (const n of at) expect(n / quizzes.length, at.join(" ")).toBeLessThanOrEqual(0.4);
+    // 正解が一番長い選択肢になっている例題は半分まで（長さで当てられないように）
+    const longest = quizzes.filter(([, q]) => {
+      const lens = q.choices.map(c => c.length);
+      return lens[q.answer] === Math.max(...lens);
+    });
+    expect(longest.length / quizzes.length, longest.map(([k]) => k).join(" ")).toBeLessThanOrEqual(0.5);
   });
 
   test("模擬試験の設定がシナリオの数と合う", () => {

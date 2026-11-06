@@ -83,9 +83,18 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!(await page.$(".lesson ol.steps"))) throw new Error("はじめにに手順が出ない");
   if (!(await page.$(".lesson .summary"))) throw new Error("はじめににまとめが出ない");
   await shot("22-learn-primer");
+  if (!(await page.$(".lesson figure.fig svg"))) throw new Error("はじめにに図が出ない");
   await clickText("次の章");
   if (!(await text()).includes("最小のループ")) throw new Error("はじめにから 1.1 に進めない");
   if (!(await page.$(".lesson .note"))) throw new Error("1.1 に注意の枠が出ない");
+  if (!(await page.$(".lesson figure.fig svg"))) throw new Error("1.1 に図が出ない");
+  // 例題：答えは最初は閉じていて、開くと出る
+  if (!(await page.$(".lesson .quiz"))) throw new Error("1.1 に例題が出ない");
+  if (await page.$eval(".lesson .quiz details", d => d.open)) throw new Error("例題の答えが最初から開いている");
+  await page.$eval(".lesson .quiz summary", s => s.click());
+  if (!(await page.$eval(".lesson .quiz details", d => d.open))) throw new Error("例題の答えが開かない");
+  await page.$eval(".lesson .quiz", e => e.scrollIntoView());
+  await page.screenshot({ path: path.join(OUT, "23-learn-quiz.png") });
   await goto("#/ccar-f/task/1.1");
   await clickText("教科書で読む");
   if (!(await text()).includes("最小のループ")) throw new Error("細目から章に移れない");
