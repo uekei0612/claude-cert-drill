@@ -14,6 +14,8 @@ export function inline(text: string): ComponentChildren[] {
     );
 }
 
+const LETTERS = ["A", "B", "C", "D"];
+
 function Block({ b }: { b: LessonBlock }) {
   if (typeof b === "string") return <p>{inline(b)}</p>;
   if ("list" in b)
@@ -49,6 +51,37 @@ function Block({ b }: { b: LessonBlock }) {
           </div>
         ))}
       </dl>
+    );
+  if ("figure" in b)
+    return (
+      <figure class="fig">
+        {/* 図は教科書の中で自分で組んだ SVG（外からの入力ではない） */}
+        <div
+          class="fig-svg"
+          role="img"
+          aria-label={b.caption.replace(/`/g, "")}
+          dangerouslySetInnerHTML={{ __html: b.figure }}
+        />
+        <figcaption>{inline(b.caption)}</figcaption>
+      </figure>
+    );
+  if ("quiz" in b)
+    return (
+      <div class="quiz">
+        <strong>例題</strong>
+        <p>{inline(b.quiz)}</p>
+        <ol>
+          {b.choices.map(c => (
+            <li key={c}>{inline(c)}</li>
+          ))}
+        </ol>
+        <details>
+          <summary>答えと考え方を見る</summary>
+          <p>
+            <strong>答え：{LETTERS[b.answer]}</strong> {inline(b.why)}
+          </p>
+        </details>
+      </div>
     );
   return (
     <pre class="code" lang="en" data-lang={b.lang}>

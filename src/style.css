@@ -693,6 +693,134 @@ pre.code code {
   color: var(--muted);
   font-size: 0.92rem;
 }
+/* 図（SVG の色は CSS の変数で付ける＝ダークでもそのまま読める） */
+.lesson figure.fig {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.lesson .fig-svg {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 6px;
+}
+.lesson .fig-svg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 440px;
+  margin: 0 auto;
+}
+.fig text {
+  font-family: var(--font);
+}
+.fig .ft {
+  fill: var(--text);
+}
+.fig .fs {
+  fill: var(--muted);
+}
+.fig .fc {
+  fill: var(--accent);
+}
+.fig .fo {
+  fill: var(--ok);
+}
+.fig .fn {
+  fill: var(--ng);
+}
+.fig .fb {
+  fill: var(--surface-2);
+  stroke: var(--line);
+  stroke-width: 1.2;
+}
+.fig .fb.k-accent {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+.fig .fb.k-ok {
+  fill: var(--ok-soft);
+  stroke: var(--ok);
+}
+.fig .fb.k-ng {
+  fill: var(--ng-soft);
+  stroke: var(--ng);
+}
+.fig .fb.k-muted {
+  fill: none;
+  stroke: var(--muted);
+}
+.fig .fa {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.fig .fm {
+  fill: var(--muted);
+  stroke: none;
+}
+.fig .t-accent {
+  stroke: var(--accent);
+}
+.fig .fm.t-accent {
+  fill: var(--accent);
+}
+.fig .t-ng {
+  stroke: var(--ng);
+}
+.fig .fm.t-ng {
+  fill: var(--ng);
+}
+.fig .dash {
+  stroke-dasharray: 4 3;
+}
+.lesson figcaption {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+/* 例題：答えは開いてから見る */
+.lesson .quiz {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+  background: var(--surface);
+}
+.lesson .quiz > strong {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+.lesson .quiz ol {
+  margin: 0;
+  padding-left: 1.8em;
+  list-style: upper-alpha;
+  display: grid;
+  gap: 4px;
+}
+.lesson .quiz summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+}
+.lesson .quiz summary::-webkit-details-marker {
+  display: none;
+}
+.lesson .quiz summary::before {
+  content: "▸";
+}
+.lesson .quiz details[open] summary::before {
+  content: "▾";
+}
+.lesson .quiz details[open] summary {
+  margin-bottom: 4px;
+}
 .lesson .summary {
   border-color: var(--ok);
   background: var(--ok-soft);

@@ -141,7 +141,7 @@ export interface LessonSection {
   readonly body: readonly LessonBlock[];
 }
 
-/** 段落（文字列）・箇条書き・番号つきの手順・注意の枠・用語・コード */
+/** 段落（文字列）・箇条書き・番号つきの手順・注意の枠・用語・図・例題・コード */
 export type LessonBlock =
   | string
   | { readonly list: readonly string[] }
@@ -150,6 +150,10 @@ export type LessonBlock =
   | { readonly note: string; readonly kind: "point" | "warn" }
   /** [言葉, 説明] の並び */
   | { readonly terms: readonly (readonly [string, string])[] }
+  /** 図。figure は SVG の文字列（src/exams/figure.ts で組む）、caption は図の説明（読み上げにも使う） */
+  | { readonly figure: string; readonly caption: string }
+  /** 例題。選択肢は 3〜4 個、answer は正解の位置（0 始まり）、why は答えの理由と他の選択肢が誤りの理由 */
+  | { readonly quiz: string; readonly choices: readonly string[]; readonly answer: number; readonly why: string }
   | { readonly code: string; readonly lang?: string };
 
 /** 教科書の「はじめに」の ID（URL の #/<資格>/learn/intro） */
