@@ -1,7 +1,7 @@
 /* 載せているすべての資格の形を検査する。問題は手で書くので、形の誤りはここで落とす */
 import { describe, expect, test } from "vitest";
 import { exams } from "./index";
-import { allTasks } from "./types";
+import { PRIMER_ID, allTasks, type Lesson } from "./types";
 
 describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
   const tasks = allTasks(exam);
@@ -39,19 +39,48 @@ describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
   test("教科書は実在する細目にだけあり、章の形がそろっている", () => {
     const lessons = exam.lessons ?? {};
     for (const k of Object.keys(lessons)) expect(taskIds.has(k), k).toBe(true);
-    for (const [k, l] of Object.entries(lessons)) {
+    const chapters: [string, Lesson][] = [
+      ...(exam.primer ? [[PRIMER_ID, exam.primer] as [string, Lesson]] : []),
+      ...Object.entries(lessons),
+    ];
+    for (const [k, l] of chapters) {
       expect(l.lead.length, k).toBeGreaterThan(0);
       expect(l.sections.length, k).toBeGreaterThan(1);
       for (const s of l.sections) expect(s.body.length, `${k} ${s.h}`).toBeGreaterThan(0);
-      // 見出しは章の中で一意（画面の key に使う）
+      // 見出しは章の中で一意（画面の key に使う）。「この章のまとめ」は画面が足すので使わない
       expect(new Set(l.sections.map(s => s.h)).size, k).toBe(l.sections.length);
+      expect(
+        l.sections.some(s => s.h.includes("まとめ")),
+        k,
+      ).toBe(false);
+      expect(l.summary.length, `${k} まとめ`).toBeGreaterThan(1);
       expect(l.refs.length, k).toBeGreaterThan(0);
       for (const r of l.refs) expect(r.url, k).toMatch(/^https:\/\//);
       // `…` の数が合わないと、コードの表示が崩れる
       const texts = l.sections.flatMap(s =>
-        s.body.flatMap(b => (typeof b === "string" ? [b] : "list" in b ? b.list : [])),
+        s.body.flatMap(b => {
+          if (typeof b === "string") return [b];
+          if ("list" in b) return [...b.list];
+          if ("steps" in b) return [...b.steps];
+          if ("note" in b) return [b.note];
+          if ("terms" in b) return b.terms.flat();
+          return [];
+        }),
       );
-      for (const t of [l.lead, ...texts]) expect((t.match(/`/g) ?? []).length % 2, `${k}: ${t}`).toBe(0);
+      for (const t of [l.lead, ...l.summary, ...texts]) expect((t.match(/`/g) ?? []).length % 2, `${k}: ${t}`).toBe(0);
+      // 用語・手順・箇条書きの中で同じ項目が重ならない（画面の key に使う）
+      for (const s of l.sections)
+        for (const b of s.body) {
+          const items =
+            typeof b === "string" || "code" in b || "note" in b
+              ? []
+              : "terms" in b
+                ? b.terms.map(t => t[0])
+                : "list" in b
+                  ? b.list
+                  : b.steps;
+          expect(new Set(items).size, `${k} ${s.h}`).toBe(items.length);
+        }
     }
   });
 

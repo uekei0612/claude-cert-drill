@@ -18,6 +18,8 @@ export interface Exam {
   readonly notes: Readonly<Record<string, Note>>;
   /** 教科書（日本語）。キーは細目の ID。無い資格もある */
   readonly lessons?: Readonly<Record<string, Lesson>>;
+  /** 教科書の「はじめに」（細目に入る前の基礎と用語）。目次の先頭に出す */
+  readonly primer?: Primer;
   /** 出題範囲外（日本語） */
   readonly outOfScope: readonly string[];
   readonly format: ExamFormat;
@@ -123,8 +125,15 @@ export interface Lesson {
   /** この章で身につけること（1〜2 文） */
   readonly lead: string;
   readonly sections: readonly LessonSection[];
+  /** この章のまとめ（覚えておくこと、1 行ずつ） */
+  readonly summary: readonly string[];
   /** 公式ドキュメント。仕様を確かめた出どころ */
   readonly refs: readonly { readonly label: string; readonly url: string }[];
+}
+
+/** 教科書の「はじめに」。細目の章と同じ形に、目次での名前を足したもの */
+export interface Primer extends Lesson {
+  readonly title: string;
 }
 
 export interface LessonSection {
@@ -132,9 +141,19 @@ export interface LessonSection {
   readonly body: readonly LessonBlock[];
 }
 
-/** 段落（文字列）・箇条書き・コード */
+/** 段落（文字列）・箇条書き・番号つきの手順・注意の枠・用語・コード */
 export type LessonBlock =
-  string | { readonly list: readonly string[] } | { readonly code: string; readonly lang?: string };
+  | string
+  | { readonly list: readonly string[] }
+  | { readonly steps: readonly string[] }
+  /** point：覚えておきたいこと、warn：間違えやすいこと */
+  | { readonly note: string; readonly kind: "point" | "warn" }
+  /** [言葉, 説明] の並び */
+  | { readonly terms: readonly (readonly [string, string])[] }
+  | { readonly code: string; readonly lang?: string };
+
+/** 教科書の「はじめに」の ID（URL の #/<資格>/learn/intro） */
+export const PRIMER_ID = "intro";
 
 /** 細目の ID から分野を引く */
 export function domainOfTask(exam: Exam, taskId: string): Domain | undefined {

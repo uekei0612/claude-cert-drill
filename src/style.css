@@ -643,6 +643,63 @@ pre.code code {
   font-size: inherit;
   overflow-wrap: normal;
 }
+.lesson ol.steps {
+  margin: 0;
+  padding-left: 1.6em;
+  display: grid;
+  gap: 6px;
+}
+.lesson ol.steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+.lesson .note {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+.lesson .note.warn {
+  border-left-color: var(--ng);
+  background: var(--ng-soft);
+}
+.lesson .note strong {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+.lesson .note.warn strong {
+  color: var(--ng);
+}
+.lesson dl.terms {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.lesson dl.terms > div {
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+}
+.lesson dl.terms > div:first-child {
+  border-top: none;
+}
+.lesson dl.terms dt {
+  font-weight: 700;
+}
+.lesson dl.terms dd {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.lesson .summary {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+.lesson .summary h2 {
+  margin: 0;
+}
 .lesson-nav {
   display: grid;
   grid-template-columns: 1fr 1fr;
