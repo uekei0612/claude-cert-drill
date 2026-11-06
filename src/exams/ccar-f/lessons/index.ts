@@ -7,3 +7,4 @@ import { d4 } from "./d4";
 import { d5 } from "./d5";
 
 export const lessons: Record<string, Lesson> = { ...d1, ...d2, ...d3, ...d4, ...d5 };
+export { primer } from "./primer";
