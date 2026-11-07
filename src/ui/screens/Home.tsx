@@ -79,7 +79,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
       <section class="stack" aria-labelledby="dom-h">
         <div class="row between">
           <h2 id="dom-h">分野</h2>
-          <a class="small" href={href({ name: "domains", examId: exam.id })}>
+          <a class="small tap" href={href({ name: "domains", examId: exam.id })}>
             細目ごとに見る
           </a>
         </div>

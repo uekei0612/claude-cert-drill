@@ -26,3 +26,8 @@ test("知らない形は資格のホームか一覧に倒す", () => {
   expect(parseRoute("#/ccar-f/task")).toEqual({ name: "domains", examId: "ccar-f" });
   expect(parseRoute("#/ccar-f/mock/abc")).toEqual({ name: "mock", examId: "ccar-f" });
 });
+
+test("壊れた % の並びでも例外にならない", () => {
+  expect(() => parseRoute("#/%E0%A4%A")).not.toThrow();
+  expect(parseRoute("#/ccar-f/learn/%E0%A4%A")).toEqual({ name: "learn", examId: "ccar-f", taskId: "%E0%A4%A" });
+});

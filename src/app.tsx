@@ -45,6 +45,12 @@ export function App() {
     if (exam && getData().settings.lastExam !== exam.id) update(d => setSettings(d, { lastExam: exam.id }));
   }, [examId, exam]);
 
+  // 画面を移ったら先頭から見せる（ハッシュの移動ではブラウザが位置を戻さず、前の画面の位置が残る）
+  const here = href(route);
+  useEffect(() => {
+    scrollTo(0, 0);
+  }, [here]);
+
   const data = useData();
   const theme = data.settings.theme;
   useEffect(() => applyTheme(theme), [theme]);

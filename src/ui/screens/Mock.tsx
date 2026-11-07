@@ -102,6 +102,7 @@ export function Mock({ exam }: { exam: Exam }) {
   if (list)
     return (
       <main class="page drill">
+        <h1 class="sr-only">模擬試験の問題の一覧</h1>
         {header}
         <p class="muted small">番号を押すとその問題へ。旗は見直したい問題の印です。</p>
         <div class="qgrid">
@@ -135,6 +136,7 @@ export function Mock({ exam }: { exam: Exam }) {
 
   return (
     <main class="page drill">
+      <h1 class="sr-only">模擬試験</h1>
       {header}
       <LangSwitch exam={exam} />
       <div class="progress" aria-hidden="true">

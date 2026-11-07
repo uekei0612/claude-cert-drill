@@ -18,7 +18,15 @@ export type Route =
 
 export function parseRoute(hash: string): Route {
   const [path = "", query = ""] = hash.replace(/^#\/?/, "").split("?");
-  const parts = path.split("/").filter(Boolean).map(decodeURIComponent);
+  // 壊れた % の並び（#/%E0%A4%A など）で例外にしない。そのままの文字として扱う
+  const decode = (s: string) => {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  };
+  const parts = path.split("/").filter(Boolean).map(decode);
   const q = new URLSearchParams(query);
   const [examId, screen, arg] = parts;
   if (!examId) return { name: "picker" };

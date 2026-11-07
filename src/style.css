@@ -6,7 +6,8 @@
   --text: #1f1b16;
   --muted: #6b635a;
   --line: #e2dcd3;
-  --accent: #b4532a;
+  --accent: #a24a22;
+  --on-accent: #ffffff;
   --accent-soft: #f6e4da;
   --ok: #1f7a4d;
   --ok-soft: #dcf1e5;
@@ -14,6 +15,11 @@
   --ng-soft: #f8dfe2;
   --warn: #9a6a00;
   --radius: 12px;
+  /* 横向きの iPhone は、ノッチやホームバーの分だけ左右が欠ける。画面の端までの余白はこの 2 つで取る */
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --gut-l: max(16px, var(--safe-l));
+  --gut-r: max(16px, var(--safe-r));
   --tap: 44px;
   --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
   --font-en: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
@@ -30,6 +36,7 @@
     --muted: #a69d93;
     --line: #3a3530;
     --accent: #e0855a;
+    --on-accent: #1a1410;
     --accent-soft: #3d2a20;
     --ok: #5cc48c;
     --ok-soft: #1d3428;
@@ -46,6 +53,7 @@
   --muted: #a69d93;
   --line: #3a3530;
   --accent: #e0855a;
+  --on-accent: #1a1410;
   --accent-soft: #3d2a20;
   --ok: #5cc48c;
   --ok-soft: #1d3428;
@@ -102,7 +110,7 @@ p {
 .page {
   max-width: 720px;
   margin: 0 auto;
-  padding: max(16px, env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  padding: max(16px, env(safe-area-inset-top)) var(--gut-r) calc(24px + env(safe-area-inset-bottom)) var(--gut-l);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -165,7 +173,7 @@ a.card {
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .btn.ghost {
   background: transparent;
@@ -206,16 +214,16 @@ a.card {
 
 .env-banner {
   background: #f97316;
-  color: #fff;
+  color: #1a1a1a;
   text-align: center;
   font-size: 0.75rem;
-  padding: calc(2px + env(safe-area-inset-top)) 8px 2px;
+  padding: calc(2px + env(safe-area-inset-top)) max(8px, var(--safe-r)) 2px max(8px, var(--safe-l));
 }
 
 .toast {
   position: fixed;
-  left: 16px;
-  right: 16px;
+  left: var(--gut-l);
+  right: var(--gut-r);
   /* 下に出すと練習中の選択肢に重なり、押し間違いの元になるので上に出す */
   top: calc(8px + env(safe-area-inset-top));
   margin: 0 auto;
@@ -234,7 +242,6 @@ a.card {
   /* 文が長いと押し縮められて「閉じる」が 2 行に折れるので、ボタンの幅は譲らない */
   flex-shrink: 0;
   white-space: nowrap;
-  min-height: 36px;
   background: transparent;
   color: inherit;
   border-color: currentColor;
@@ -271,8 +278,14 @@ a.card {
   background: var(--accent-soft);
 }
 .btn.small {
-  min-height: 36px;
   font-size: 0.85rem;
+}
+/* 文の中でなく単独で置いたリンクは、指で押せる大きさにする */
+a.tap {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 4px;
 }
 
 /* 下のタブ */
@@ -285,7 +298,7 @@ a.card {
   grid-template-columns: repeat(5, 1fr);
   background: var(--surface);
   border-top: 1px solid var(--line);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding: 0 var(--safe-r) env(safe-area-inset-bottom) var(--safe-l);
   z-index: 10;
 }
 .tabbar a {
@@ -323,12 +336,13 @@ a.card {
 .scenario {
   background: var(--surface-2);
   border-radius: var(--radius);
-  padding: 10px 14px;
+  padding: 0 14px 10px;
 }
 .scenario summary {
   cursor: pointer;
   font-weight: 600;
-  min-height: 28px;
+  min-height: var(--tap);
+  padding: 9px 0;
 }
 .scenario p {
   margin-top: 8px;
@@ -418,8 +432,8 @@ a.card {
 .sticky-next {
   position: sticky;
   bottom: 0;
-  margin: 0 -16px;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  margin: 0 calc(-1 * var(--gut-r)) 0 calc(-1 * var(--gut-l));
+  padding: 12px var(--gut-r) calc(12px + env(safe-area-inset-bottom)) var(--gut-l);
   background: var(--bg);
   border-top: 1px solid var(--line);
   display: flex;
@@ -433,8 +447,8 @@ a.card {
   position: sticky;
   top: 0;
   z-index: 5;
-  margin: 0 -16px;
-  padding: 6px 8px;
+  margin: 0 calc(-1 * var(--gut-r)) 0 calc(-1 * var(--gut-l));
+  padding: 6px max(8px, var(--safe-r)) 6px max(8px, var(--safe-l));
   background: var(--bg);
   border-bottom: 1px solid var(--line);
   display: flex;
@@ -525,6 +539,8 @@ ul.small,
 }
 select,
 textarea {
+  /* iPhone は入力欄の文字が 16px 未満だと、タップしたとき画面を勝手に拡大する */
+  font-size: 1rem;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
@@ -533,7 +549,6 @@ textarea {
 }
 textarea {
   width: 100%;
-  font-size: 0.85rem;
 }
 .btn.file {
   position: relative;
@@ -548,6 +563,53 @@ textarea {
 .btn.danger {
   color: var(--ng);
   border-color: var(--ng);
+}
+
+/* 練習の上の帯：「やめる」は縮めず、長い題名は折り返して右に寄せる
+   （下の「行の右端は折り返さない」より強くしないと、題名がはみ出して「やめる」が縦に折れる） */
+.row.between.drill-head > .btn {
+  flex: none;
+  white-space: nowrap;
+}
+.row.between.drill-head > .head-label:last-child {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: normal;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+/* チェックボックス付きの行（押す所を 44px に） */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  font-size: 0.9rem;
+}
+.check input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+}
+/* 見出しだけを読み上げに残す（画面には出さない） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+/* ダブルタップでの拡大を止めて、押したときの反応を速くする */
+a,
+button,
+summary,
+label,
+select {
+  touch-action: manipulation;
 }
 
 /* 行の右端（配点・件数など）は折り返さない */
@@ -571,7 +633,7 @@ textarea {
   background: var(--surface);
 }
 .seg button {
-  min-height: 36px;
+  min-height: var(--tap);
   padding: 0 14px;
   border: 0;
   background: transparent;
@@ -585,7 +647,7 @@ textarea {
 }
 .seg button.on {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 /* 併記の訳は英語の下に小さく */
 .ja-sub {
