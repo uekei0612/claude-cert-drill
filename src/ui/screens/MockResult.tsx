@@ -78,14 +78,12 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
 
       {ids.length > 0 && (
         <section class="stack">
-          <div class="row between">
-            <h2>見直し</h2>
-            <LangSwitch exam={exam} />
-            <label class="row small">
-              <input type="checkbox" checked={onlyWrong} onChange={e => setOnlyWrong(e.currentTarget.checked)} />
-              間違えた問題だけ
-            </label>
-          </div>
+          <h2>見直し</h2>
+          <LangSwitch exam={exam} />
+          <label class="check">
+            <input type="checkbox" checked={onlyWrong} onChange={e => setOnlyWrong(e.currentTarget.checked)} />
+            間違えた問題だけ
+          </label>
           {shown.map(id => {
             const q = byId.get(id)!;
             const chosen = r.answers?.[id];

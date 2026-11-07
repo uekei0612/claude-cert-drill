@@ -111,6 +111,28 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f/learn/3.6");
   await shot("21-learn-cli");
 
+  // 画面を移ったら先頭から（ホームを下まで送ってから別のタブへ。前の位置が残らない）
+  await goto("#/ccar-f");
+  await page.evaluate(() => scrollTo(0, 1e6));
+  await clickText("分野");
+  if ((await page.evaluate(() => Math.round(scrollY))) !== 0)
+    throw new Error("画面を移っても、前の画面のスクロール位置が残る");
+
+  // 練習の上の帯：題名の長い細目でも、「やめる」が縦に折れず、横にはみ出さない（320 幅）
+  await page.setViewport({ width: 320, height: 568, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await goto("#/ccar-f/practice?only=1.5");
+  const head = await page.evaluate(() => {
+    const r = document.querySelector(".drill-head > .btn").getBoundingClientRect();
+    return { w: Math.round(r.width), h: Math.round(r.height), sw: document.documentElement.scrollWidth };
+  });
+  if (head.w < 44 || head.h > 60) throw new Error(`練習の「やめる」が縦に折れる：${head.w}×${head.h}`);
+  if (head.sw > 320) throw new Error(`練習の画面が横にはみ出す：${head.sw}px`);
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+
+  // 壊れた URL でも落ちない（errors に例外が入れば最後に失敗にする）
+  await goto("#/%E0%A4%A");
+  await goto("#/ccar-f");
+
   // 模擬試験：始めて 2 問答え、旗を立て、一覧から提出
   await goto("#/ccar-f/mock");
   await shot("08-mock-intro");
@@ -135,6 +157,12 @@ const OUT = process.argv[3] || "/tmp/shots";
   await clickText("提出して採点する");
   await new Promise(r => setTimeout(r, 500));
   if (!(await text()).includes("模擬試験の結果")) throw new Error("結果が出ない");
+  // 見直しの言語切り替えが、狭い幅でも縦に折れない
+  const seg = await page.$$eval(".seg button", bs =>
+    bs.map(b => b.getBoundingClientRect()).map(r => [r.width, r.height]),
+  );
+  if (!seg.length || seg.some(([w, h]) => w < 44 || h < 44 || h > 60))
+    throw new Error(`見直しの言語切り替えが崩れている：${JSON.stringify(seg)}`);
   await shot("11-mock-result");
   await click(".review-row");
   await shot("12-mock-review");
