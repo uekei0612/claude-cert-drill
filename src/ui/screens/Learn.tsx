@@ -1,6 +1,5 @@
 /* 教科書。目次（はじめに → 分野 → 細目）と章。章は前後の章へ順に読み進められる */
 import type { ComponentChildren } from "preact";
-import { useEffect } from "preact/hooks";
 import type { Exam, Lesson, LessonBlock } from "../../exams/types";
 import { PRIMER_ID, domainOfTask, findTask } from "../../exams/types";
 import { href } from "../route";
@@ -134,8 +133,6 @@ function Body({ lesson }: { lesson: Lesson }) {
 }
 
 export function Learn({ exam, taskId }: { exam: Exam; taskId?: string }) {
-  // 章を移ったら先頭から読む（ハッシュの移動では位置が残る）
-  useEffect(() => scrollTo(0, 0), [taskId]);
   const lessons = exam.lessons ?? {};
   const primer = exam.primer;
   const order = [

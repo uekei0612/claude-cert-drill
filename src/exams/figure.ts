@@ -6,6 +6,8 @@ export type Tone = "text" | "muted" | "accent" | "ok" | "ng";
 type Pt = readonly [number, number];
 
 const FS = 13;
+/** 図の幅（viewBox）。文字がこの外へ出ないかも確かめる */
+const FIG_W = 340;
 const TONE: Record<Tone, string> = { text: "ft", muted: "fs", accent: "fc", ok: "fo", ng: "fn" };
 
 /** 文字列の幅の見積もり（全角 1 字＝文字の大きさ、半角は 0.62 字分） */
@@ -34,6 +36,12 @@ export function text(x: number, y: number, label: string | readonly string[], o:
   const fs = o.fs ?? FS;
   const lh = fs * 1.35;
   const top = y - ((ls.length - 1) * lh) / 2;
+  const anchor = o.anchor ?? "middle";
+  for (const l of ls) {
+    const w = textWidth(l, fs);
+    const [a, b] = anchor === "start" ? [x, x + w] : anchor === "end" ? [x - w, x] : [x - w / 2, x + w / 2];
+    if (a < 0 || b > FIG_W) overflows.push(`「${l}」が図の幅 ${FIG_W} からはみ出す`);
+  }
   return ls
     .map(
       (l, i) =>
@@ -86,10 +94,16 @@ export function line(pts: readonly Pt[], o: { dashed?: boolean; tone?: "muted" |
   return `<path d="${d}" class="fa t-${o.tone ?? "muted"}${o.dashed ? " dash" : ""}"/>`;
 }
 
-const marker = (tone: string) =>
-  `<marker id="fig-ah-${tone}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="fm t-${tone}"/></marker>`;
+let seq = 0;
+
+const marker = (tone: string, id: string) =>
+  `<marker id="${id}-${tone}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="fm t-${tone}"/></marker>`;
 
 /** 図の全体。部品を並べて SVG の文字列にする */
 export function svg(w: number, h: number, parts: readonly string[]): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" aria-hidden="true"><defs>${["muted", "accent", "ng"].map(marker).join("")}</defs>${parts.join("")}</svg>`;
+  // 矢じり（marker）の id は、図ごとに変える（同じページに複数の図があっても重ならない）
+  const id = `fig${++seq}`;
+  const body = parts.join("").replaceAll("url(#fig-ah-", `url(#${id}-`);
+  const defs = ["muted", "accent", "ng"].map(t => marker(t, id)).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" aria-hidden="true"><defs>${defs}</defs>${body}</svg>`;
 }

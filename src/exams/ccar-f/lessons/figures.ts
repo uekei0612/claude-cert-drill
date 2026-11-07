@@ -1,7 +1,7 @@
 /* 教科書 CCAR-F の図。座標は幅 340 の図の中の位置。文字が枠に収まるかはテストで確かめる */
 import { arrow, box, line, svg, text } from "../../figure";
 
-const S = { fs: 11, tone: "muted" } as const;
+const S = { fs: 12, tone: "muted" } as const;
 
 /** はじめに：ツールの 1 往復（アプリと Claude のやり取り） */
 export const toolRoundTrip = svg(340, 246, [
@@ -153,8 +153,8 @@ export const subagentContext = svg(340, 170, [
   box(215, 10, 115, 150, []),
   text(272.5, 28, "サブエージェント", { fs: 12, bold: true }),
   text(272.5, 82, ["渡された文字列", "読んだファイル", "検索の結果"], { fs: 12 }),
-  text(272.5, 138, "（親には戻らない）", { fs: 10, tone: "muted" }),
-  text(170, 44, ["プロンプトの", "文字列だけ"], { fs: 11, tone: "accent" }),
+  text(272.5, 138, "（親には戻らない）", { fs: 12, tone: "muted" }),
+  text(170, 44, ["プロンプトの", "文字列だけ"], { fs: 12, tone: "accent" }),
   arrow(
     [
       [127, 62],
@@ -162,7 +162,7 @@ export const subagentContext = svg(340, 170, [
     ],
     { tone: "accent" },
   ),
-  text(170, 104, ["最後の", "報告だけ"], { fs: 11, tone: "accent" }),
+  text(170, 104, ["最後の", "報告だけ"], { fs: 12, tone: "accent" }),
   arrow(
     [
       [213, 122],
@@ -189,15 +189,15 @@ export const hookPoints = svg(340, 278, [
       [97.5, y + 22],
     ]),
   ),
-  text(192, 83, ["止める（deny）", "書き換える・確認する"], { fs: 11, anchor: "start" }),
+  text(192, 83, ["止める（deny）", "書き換える・確認する"], { fs: 12, anchor: "start" }),
   text(192, 139, "ここで実際に動く", { ...S, anchor: "start" }),
-  text(192, 188, ["情報を足す", "結果を差し替える"], { fs: 11, anchor: "start" }),
-  text(192, 214, "取り消しはできない", { fs: 11, anchor: "start", tone: "ng" }),
+  text(192, 188, ["情報を足す", "結果を差し替える"], { fs: 12, anchor: "start" }),
+  text(192, 214, "取り消しはできない", { fs: 12, anchor: "start", tone: "ng" }),
 ]);
 
 /** 1.6：固定のパイプラインと動的な分解 */
 export const twoDecompositions = svg(340, 180, [
-  text(10, 16, "固定のパイプライン：工程は前もって決まっている", { fs: 11, anchor: "start", bold: true }),
+  text(10, 16, "固定のパイプライン：工程は前もって決まっている", { fs: 12, anchor: "start", bold: true }),
   box(10, 30, 92, 32, "洗い出す"),
   box(124, 30, 92, 32, "整理する"),
   box(238, 30, 92, 32, "報告する"),
@@ -209,7 +209,7 @@ export const twoDecompositions = svg(340, 180, [
     [216, 46],
     [236, 46],
   ]),
-  text(10, 90, "動的な分解：調べながら決める", { fs: 11, anchor: "start", bold: true }),
+  text(10, 90, "動的な分解：調べながら決める", { fs: 12, anchor: "start", bold: true }),
   box(10, 104, 84, 32, "構造をつかむ", { fs: 12 }),
   box(116, 104, 96, 32, "重要な所を探す", { fs: 12 }),
   box(234, 104, 96, 32, "計画して進める", { fs: 12, kind: "accent" }),
@@ -230,7 +230,7 @@ export const twoDecompositions = svg(340, 180, [
     ],
     { tone: "accent", dashed: true },
   ),
-  text(167, 168, "分かったことで計画を直す", { fs: 11, tone: "accent" }),
+  text(167, 168, "分かったことで計画を直す", { fs: 12, tone: "accent" }),
 ]);
 
 /** 1.6・4.6：2 段のレビュー */
@@ -258,7 +258,7 @@ export const sessionFork = svg(340, 200, [
   text(10, 12, "会話の履歴の流れ", { ...S, anchor: "start" }),
   box(10, 30, 130, 44, ["セッション A", "認証を分析"]),
   box(192, 30, 138, 44, ["A の続き", "リファクタリング"]),
-  text(166, 42, "--resume", { fs: 11, tone: "accent" }),
+  text(166, 42, "--resume", { fs: 12, tone: "accent" }),
   arrow(
     [
       [140, 54],
@@ -275,14 +275,14 @@ export const sessionFork = svg(340, 200, [
     ],
     { tone: "accent" },
   ),
-  text(133, 122, "--fork-session", { fs: 11, tone: "accent" }),
+  text(133, 122, "--fork-session", { fs: 12, tone: "accent" }),
   text(10, 172, "A は変わらない。B は A の履歴のコピーから始まる", { ...S, anchor: "start" }),
-  text(10, 190, "ファイルは A も B も同じものを見る（コピーされない）", { fs: 11, anchor: "start", tone: "ng" }),
+  text(10, 190, "ファイルは A も B も同じものを見る（コピーされない）", { fs: 12, anchor: "start", tone: "ng" }),
 ]);
 
 /** 2.4：MCP のスコープと優先順位 */
 export const mcpScopes = svg(340, 192, [
-  text(28, 12, "強い", { fs: 11, tone: "accent", bold: true }),
+  text(28, 12, "強い", { fs: 12, tone: "accent", bold: true }),
   arrow(
     [
       [28, 22],
@@ -301,9 +301,9 @@ export const claudeMdLoading = svg(340, 212, [
   box(10, 10, 190, 30, "~/.claude/CLAUDE.md", { fs: 12 }),
   box(10, 50, 190, 30, "repo/CLAUDE.md", { fs: 12 }),
   box(10, 90, 190, 30, "repo/CLAUDE.local.md", { fs: 12 }),
-  text(208, 25, "① 起動時に読む", { fs: 11, anchor: "start" }),
-  text(208, 65, "② 起動時に読む", { fs: 11, anchor: "start" }),
-  text(208, 105, "③ 起動時に読む", { fs: 11, anchor: "start" }),
+  text(208, 25, "① 起動時に読む", { fs: 12, anchor: "start" }),
+  text(208, 65, "② 起動時に読む", { fs: 12, anchor: "start" }),
+  text(208, 105, "③ 起動時に読む", { fs: 12, anchor: "start" }),
   line(
     [
       [10, 134],
@@ -313,7 +313,7 @@ export const claudeMdLoading = svg(340, 212, [
   ),
   text(10, 148, "ここから下は、触ったときに読む", { ...S, anchor: "start" }),
   box(30, 162, 190, 30, "packages/api/CLAUDE.md", { fs: 12 }),
-  text(228, 177, ["④ api の中の", "ファイルを触ったら"], { fs: 11, anchor: "start" }),
+  text(228, 177, ["④ api の中の", "ファイルを触ったら"], { fs: 12, anchor: "start" }),
 ]);
 
 /** 4.4：検証して直させる */
@@ -350,17 +350,17 @@ export const validateRetry = svg(340, 252, [
 
 /** 4.5：締め切りから提出の間隔を逆算する */
 export const batchDeadline = svg(340, 146, [
-  text(20, 30, "依頼が届く", { fs: 11, anchor: "start" }),
+  text(20, 30, "依頼が届く", { fs: 12, anchor: "start" }),
   arrow([
     [26, 40],
     [26, 68],
   ]),
-  text(120, 30, "提出", { fs: 11 }),
+  text(120, 30, "提出", { fs: 12 }),
   arrow([
     [120, 40],
     [120, 68],
   ]),
-  text(332, 30, "締め切り", { fs: 11, anchor: "end", tone: "ng" }),
+  text(332, 30, "締め切り", { fs: 12, anchor: "end", tone: "ng" }),
   line(
     [
       [320, 40],
@@ -376,17 +376,17 @@ export const batchDeadline = svg(340, 146, [
   ]),
   ...(
     [
-      [20, "0"],
+      [20, "0 時間"],
       [120, "12"],
       [220, "24"],
-      [320, "36 時間"],
+      [320, "36"],
     ] as const
   ).map(
-    ([x, l]) =>
+    ([x, l], i) =>
       line([
         [x, 114],
         [x, 122],
-      ]) + text(x, 134, l, S),
+      ]) + text(x, 134, l, i === 0 ? { ...S, anchor: "start" } : S),
   ),
 ]);
 

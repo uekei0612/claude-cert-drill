@@ -137,11 +137,12 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
 
   return (
     <main class="page drill">
-      <header class="row between">
+      <h1 class="sr-only">練習</h1>
+      <header class="row between drill-head">
         <a class="btn ghost" href={back}>
           やめる
         </a>
-        <span class="muted small">
+        <span class="muted small head-label">
           {label && `${label}・`}
           {pos + 1} / {queue.length}
           {isRetry && "（やり直し）"}
