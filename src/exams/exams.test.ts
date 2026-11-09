@@ -37,6 +37,45 @@ describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
     for (const t of tasks) expect(exam.notes[t.id]?.points.length, t.id).toBeGreaterThan(0);
   });
 
+  test("「はじめに」が、章に何度も出る基本の言葉を先に説明している", () => {
+    if (!exam.primer) return;
+    const defined = new Set<string>();
+    for (const sec of exam.primer.sections)
+      for (const b of sec.body) {
+        if (typeof b !== "string" && "terms" in b) for (const [t] of b.terms) defined.add(t.replaceAll("`", ""));
+      }
+    // 1.1 より前に意味が分かっていないと読めない言葉（リクエストと応答の形、ツールの往復、止まる理由）
+    const core = [
+      "model",
+      "max_tokens",
+      "system",
+      "messages",
+      "メッセージ",
+      "ブロック",
+      "end_turn",
+      "tool_use",
+      "stop_sequence",
+      "pause_turn",
+      "refusal",
+      "name",
+      "description",
+      "input_schema",
+      "セッション",
+      "組み込みツール",
+      "CI",
+    ];
+    for (const t of core) expect(defined.has(t), `「はじめに」に ${t} の説明が無い`).toBe(true);
+    // リクエストと応答の実物（tool_use / tool_result を含む）を見せている
+    const code = exam.primer.sections.flatMap(sec =>
+      sec.body.flatMap(b => (typeof b !== "string" && "code" in b ? [b.code] : [])),
+    );
+    for (const key of ['"messages"', '"stop_reason"', '"tool_use"', '"tool_result"', '"input_schema"'])
+      expect(
+        code.some(c => c.includes(key)),
+        `「はじめに」のコード例に ${key} が無い`,
+      ).toBe(true);
+  });
+
   test("教科書は実在する細目にだけあり、章の形がそろっている", () => {
     const lessons = exam.lessons ?? {};
     for (const k of Object.keys(lessons)) expect(taskIds.has(k), k).toBe(true);

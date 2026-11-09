@@ -21,6 +21,7 @@ export const d1: Record<string, Lesson> = {
         h: "なぜループが要るのか",
         body: [
           "「注文 ORD-1234 が届かない」という問い合わせに答えるには、注文を調べ、配送状況を調べ、必要なら顧客の情報も見る、と何段階かの作業が要ります。しかも、どの順で何を調べるかは、調べた結果によって変わります。",
+          "この章には `messages`・`tools`・`stop_reason`・`tool_use`・`tool_result` が出てきます。意味があいまいなら、先に「はじめに」の「Claude を呼ぶ」と「ツール」の節で、実際のリクエストと応答の形を見てください。",
           "Claude は 1 回の呼び出しで、ツールを 1 回（または同時に数個）呼ぶことしかできません。そこで、呼び出しを繰り返し、そのたびにツールの結果を渡して、次の手を Claude に選ばせます。この繰り返しがエージェントループです。",
         ],
       },
@@ -116,8 +117,8 @@ while (true) {
       {
         h: "Agent SDK ではループを SDK が回す",
         body: [
-          "Claude Agent SDK の `query()` は、このループ（ツールの実行と結果の返却）を内部で回します。アプリは流れてくるメッセージを読み、最後の `result` メッセージで結果を受け取ります。",
-          "`maxTurns`（Python は `max_turns`）や `maxBudgetUsd` で上限を決められます。上限に当たると、`result` の `subtype` が `error_max_turns` や `error_max_budget_usd` になります。成功して終わったときの `success` と区別して扱います。",
+          "Claude Agent SDK の `query()` は、このループ（ツールの実行と結果の返却）を内部で回します。アプリは、Claude の応答やツールの実行を知らせるメッセージが順に流れてくるのを読み、最後に届く `result` メッセージで、終わり方と最終的な答えを受け取ります。",
+          "`maxTurns`（Python は `max_turns`）や `maxBudgetUsd` で上限を決められます。上限に当たると、`result` メッセージの `subtype`（終わり方の種類）が `error_max_turns` や `error_max_budget_usd` になります。成功して終わったときの `success` と区別して扱います。",
         ],
       },
       {
@@ -493,7 +494,7 @@ const refundGate: HookCallback = async input => {
             caption:
               "フックが割り込む 2 つの位置。PreToolUse は実行の前、PostToolUse は実行の後で、Claude が結果を読む前",
           },
-          "Agent SDK では、`options.hooks` に、イベント名ごとに `matcher`（対象のツール名）とコールバックを渡します。`matcher` には `Write|Edit` のような並びや、`^mcp__` のような正規表現も書けます。Claude Code では、`settings.json` の `hooks` にシェルのコマンドとして書けます。",
+          "Agent SDK では、`options.hooks` に、イベント名ごとに `matcher`（対象のツール名）とコールバックを渡します。`matcher` には `Write|Edit` のような並びや、`^mcp__` のような正規表現（文字列の形を表す書き方。`^mcp__` は「`mcp__` で始まる」）も書けます。Claude Code では、`settings.json` の `hooks` にシェルのコマンドとして書けます。",
         ],
       },
       {
@@ -516,7 +517,7 @@ const refundGate: HookCallback = async input => {
           "何も言うことがなければ `{}` を返します。複数のフックが別々の判断を返したときは、`deny` ＞ `defer` ＞ `ask` ＞ `allow` の順で、厳しいほうが勝ちます。",
           "使い方の例：一定額を超える返金を止めて、人への引き継ぎに回す。止めた理由に「人に引き継いでください」と書けば、Claude は引き継ぎの流れに進みます。",
           {
-            note: "シェルのコマンドで書くフックでは、終了コード `2` が「止める」です（標準エラーに書いた文が理由になる）。`1` などほかのコードはエラーとして記録されるだけで、呼び出しは止まりません。「エラーで終われば止まるはず」と考えると、すり抜けます。",
+            note: "シェルのコマンドで書くフックでは、終了コード（コマンドが終わるときに返す番号。`0` は成功）`2` が「止める」です（標準エラーに書いた文が理由になる）。`1` などほかのコードはエラーとして記録されるだけで、呼び出しは止まりません。「エラーで終われば止まるはず」と考えると、すり抜けます。",
             kind: "warn",
           },
         ],
@@ -535,7 +536,7 @@ const refundGate: HookCallback = async input => {
           {
             steps: [
               "各ツールが、ばらばらの形式で結果を返す",
-              "PostToolUse のフックが、日付をどれも ISO 8601（`2026-11-04`）に、状態のコードを意味の分かる名前（`shipped`）に直す",
+              "PostToolUse のフックが、日付をどれも ISO 8601（年-月-日の国際的な書き方。`2026-11-04`）に、状態のコードを意味の分かる名前（`shipped`）に直す",
               "Claude は揃った形の結果だけを読む",
             ],
           },
