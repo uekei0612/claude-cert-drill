@@ -2,7 +2,7 @@
    reveal のときは、選択肢ごとに正誤と解説を出す（誤答の解説がそのまま弱点の地図になる）。
    lang で問題文の言語を選ぶ（訳が無い問題は英語で出す）。peek は英語だけを出し、「訳を見る」を押すか
    答えたら併記に変わる（英語を先に読ませるため。訳を開くのはその問題だけで、次の問題ではまた閉じる） */
-import { useState } from "preact/hooks";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { Exam, Question } from "../exams/types";
 import { domainOf, findTask } from "../exams/types";
 import type { QuestionLang } from "../store/schema";
@@ -21,6 +21,20 @@ export interface QuestionCardProps {
   /** シナリオを最初から開いておくか（シナリオが変わった最初の問題など） */
   readonly scenarioOpen?: boolean;
   readonly lang?: QuestionLang;
+}
+
+/** 答えを押したあと、押した選択肢を押す前と同じ画面の位置に戻す。
+    答えると各選択肢の下に解説が入り（表示が「訳を見る」なら問題文に訳も入り）、押した選択肢がその分だけ下にずれる。
+    iPhone の Safari はこのずれをブラウザが打ち消さないので、描画の前に自分でスクロールして戻す。
+    戻した位置で下の「次へ」の帯に隠れるなら、その分だけ上げる */
+function keepInPlace(el: HTMLElement, top: number): void {
+  const r = el.getBoundingClientRect();
+  let dy = r.top - top;
+  const bar = document.querySelector(".sticky-next");
+  const limit = (bar ? bar.getBoundingClientRect().top : innerHeight) - 8;
+  const hidden = r.bottom - dy - limit;
+  if (hidden > 0) dy += Math.min(hidden, r.top - dy - 8);
+  if (Math.abs(dy) >= 1) scrollBy(0, dy);
 }
 
 /** 英語・日本語・併記のどれかで文を出す */
@@ -63,6 +77,16 @@ export function QuestionCard({
   const [openedId, setOpenedId] = useState<string | undefined>();
   const peeking = lang === "peek";
   const shown: Exclude<QuestionLang, "peek"> = peeking ? (reveal || openedId === q.id ? "both" : "en") : lang;
+  // 押した選択肢と、押したときの画面上の位置（描き直したら 1 回だけ使って捨てる）
+  const anchor = useRef<{ orig: number; top: number } | undefined>(undefined);
+  const list = useRef<HTMLOListElement>(null);
+  useLayoutEffect(() => {
+    const a = anchor.current;
+    anchor.current = undefined;
+    if (!a || !reveal) return;
+    const el = list.current?.querySelector<HTMLElement>(`[data-orig="${a.orig}"]`);
+    if (el) keepInPlace(el, a.top);
+  });
   return (
     <article class="qcard">
       {scenario && (
@@ -88,7 +112,7 @@ export function QuestionCard({
           訳を見る
         </button>
       )}
-      <ol class="options" role="list">
+      <ol class="options" role="list" ref={list}>
         {order.map((orig, i) => {
           const o = q.options[orig]!;
           const isAnswer = orig === q.answer;
@@ -100,7 +124,11 @@ export function QuestionCard({
                 class={`option ${state}`}
                 disabled={reveal || !onChoose}
                 aria-pressed={isChosen}
-                onClick={() => onChoose?.(orig)}
+                data-orig={orig}
+                onClick={e => {
+                  anchor.current = { orig, top: e.currentTarget.getBoundingClientRect().top };
+                  onChoose?.(orig);
+                }}
               >
                 <span class="letter">{LETTERS[i]}</span>
                 <span class="otext">
