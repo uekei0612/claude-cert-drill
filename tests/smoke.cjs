@@ -193,7 +193,18 @@ const OUT = process.argv[3] || "/tmp/shots";
   await click(".option");
   await clickText("次へ");
   if (await page.$(".stem .ja-sub")) throw new Error("次の問題で訳が閉じない");
-  await click(".option");
+  // 答えても、押した選択肢は画面の同じ位置に残る（上に解説と訳が入っても下にずれない。#22）
+  const moved = await page.evaluate(async () => {
+    const el = document.querySelectorAll(".option")[2];
+    el.scrollIntoView({ block: "center" });
+    await new Promise(r => requestAnimationFrame(r));
+    const before = el.getBoundingClientRect().top;
+    el.click();
+    await new Promise(r => requestAnimationFrame(r));
+    const after = document.querySelector('.option[data-orig="' + el.dataset.orig + '"]').getBoundingClientRect().top;
+    return Math.round(after - before);
+  });
+  if (Math.abs(moved) > 2) throw new Error(`答えたら押した選択肢が ${moved}px ずれた`);
   if (!(await page.$(".stem .ja-sub"))) throw new Error("答えたあとに訳が出ない");
   await clickText("英語");
 

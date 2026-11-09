@@ -332,6 +332,8 @@ a.tap {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* 答えたときのずれは QuestionCard が自分で戻す。ブラウザの scroll anchoring と二重に補正しない */
+  overflow-anchor: none;
 }
 .scenario {
   background: var(--surface-2);
