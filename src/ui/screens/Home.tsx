@@ -2,6 +2,7 @@
 import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../engine/progress";
 import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
+import { savedIds } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
@@ -17,6 +18,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const active = data.activeMock?.examId === exam.id ? data.activeMock : undefined;
   const lastMock = data.mocks[exam.id]?.[0];
   const target = exam.format.target;
+  const saved = savedIds(data, exam.id).filter(id => exam.questions.some(q => q.id === id)).length;
 
   return (
     <main class="page with-tabs">
@@ -55,6 +57,14 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
 
       <a class="btn primary block" href={href({ name: "practice", examId: exam.id })}>
         {due ? `今日の練習（復習 ${due} 問から）` : all.seen < all.total ? "練習する（新しい問題から）" : "練習する"}
+      </a>
+
+      <a class="card tight" href={href({ name: "saved", examId: exam.id })}>
+        <div class="row between">
+          <span>★ 振り返り</span>
+          <span class="muted small">{saved} 問</span>
+        </div>
+        {!saved && <span class="muted small">答えのあとの「☆ 後で振り返る」で印を付けた問題が集まります</span>}
       </a>
 
       {weak.length > 0 && (

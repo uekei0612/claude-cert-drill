@@ -6,12 +6,14 @@ export type Route =
   | { readonly name: "picker" }
   | { readonly name: "settings" }
   | { readonly name: "home"; readonly examId: string }
-  /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"） */
+  /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"、後で振り返る印を付けた問題 "saved"） */
   | { readonly name: "practice"; readonly examId: string; readonly only?: string }
   | { readonly name: "mock"; readonly examId: string }
   /** 終えた模擬試験の見直し。at は finishedAt */
   | { readonly name: "mock-result"; readonly examId: string; readonly at: number }
   | { readonly name: "domains"; readonly examId: string }
+  /** 後で振り返る印を付けた問題の一覧 */
+  | { readonly name: "saved"; readonly examId: string }
   | { readonly name: "task"; readonly examId: string; readonly taskId: string }
   /** 教科書。taskId が無ければ目次 */
   | { readonly name: "learn"; readonly examId: string; readonly taskId?: string };
@@ -43,6 +45,8 @@ export function parseRoute(hash: string): Route {
       return { name: "mock", examId };
     case "domains":
       return { name: "domains", examId };
+    case "saved":
+      return { name: "saved", examId };
     case "task":
       return arg ? { name: "task", examId, taskId: arg } : { name: "domains", examId };
     case "learn":
@@ -68,6 +72,8 @@ export function href(r: Route): string {
       return `#/${r.examId}/mock/${r.at}`;
     case "domains":
       return `#/${r.examId}/domains`;
+    case "saved":
+      return `#/${r.examId}/saved`;
     case "task":
       return `#/${r.examId}/task/${encodeURIComponent(r.taskId)}`;
     case "learn":

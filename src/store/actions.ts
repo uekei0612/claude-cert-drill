@@ -8,6 +8,20 @@ export const answer = (d: Data, examId: string, questionId: string, ok: boolean,
   return { ...d, items: { ...d.items, [k]: review(d.items[k], ok, now) } };
 };
 
+/** 後で振り返る印を付ける・外す */
+export function toggleSaved(d: Data, examId: string, questionId: string, now: number): Data {
+  const k = itemKey(examId, questionId);
+  const { [k]: had, ...rest } = d.saved ?? {};
+  return { ...d, saved: had === undefined ? { ...rest, [k]: now } : rest };
+}
+
+/** 印を付けた問題の ID（新しく付けた順） */
+export const savedIds = (d: Data, examId: string): string[] =>
+  Object.entries(d.saved ?? {})
+    .filter(([k]) => k.startsWith(`${examId}:`))
+    .sort((a, b) => b[1] - a[1])
+    .map(([k]) => k.slice(examId.length + 1));
+
 export const setSettings = (d: Data, s: Partial<Settings>): Data => ({ ...d, settings: { ...d.settings, ...s } });
 
 export const startMock = (d: Data, m: ActiveMock): Data => ({ ...d, activeMock: m });
@@ -48,7 +62,8 @@ export function finishMock(d: Data, score: MockScore, now: number): Data {
 export function resetExam(d: Data, examId: string): Data {
   const items = Object.fromEntries(Object.entries(d.items).filter(([k]) => !k.startsWith(`${examId}:`)));
   const { [examId]: _drop, ...mocks } = d.mocks;
-  const cleared = { ...d, items, mocks };
+  const saved = Object.fromEntries(Object.entries(d.saved ?? {}).filter(([k]) => !k.startsWith(`${examId}:`)));
+  const cleared = { ...d, items, mocks, saved };
   return d.activeMock?.examId === examId ? abandonMock(cleared) : cleared;
 }
 
