@@ -58,6 +58,8 @@ export interface Data {
   /** 資格 ID → 終えた模擬試験（新しい順、最大 20） */
   readonly mocks: Readonly<Record<string, readonly MockResult[]>>;
   readonly activeMock?: ActiveMock;
+  /** 後で振り返る印。"<資格ID>:<問題ID>" → 印を付けた時刻 */
+  readonly saved?: Readonly<Record<string, number>>;
 }
 
 export const DEFAULT_SETTINGS: Settings = { practiceSize: 10, lang: "en", theme: "system" };
@@ -172,7 +174,10 @@ export function parseData(raw: unknown): Data {
           .filter((m): m is MockResult => !!m)
           .sort((a, b) => b.finishedAt - a.finishedAt)
           .slice(0, MAX_MOCKS);
+  const saved: Record<string, number> = {};
+  if (isObj(raw.saved)) for (const [k, v] of Object.entries(raw.saved)) if (num(v) && KEY_RE.test(k)) saved[k] = v;
   const am = activeMock(raw.activeMock);
   const data: Data = { version: VERSION, settings: settings(raw.settings), items, mocks };
-  return am ? { ...data, activeMock: am } : data;
+  const withSaved = Object.keys(saved).length ? { ...data, saved } : data;
+  return am ? { ...withSaved, activeMock: am } : withSaved;
 }

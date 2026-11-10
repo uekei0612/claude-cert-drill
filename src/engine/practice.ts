@@ -12,6 +12,8 @@ export interface PracticeOptions {
   readonly maxNew?: number;
   /** 出題を絞る（細目 "1.1"、分野 "d1"、シナリオ "s1"） */
   readonly only?: string;
+  /** 出題をこの問題に絞る（後で振り返る印を付けた問題など。only より優先） */
+  readonly ids?: readonly string[];
 }
 
 export function filterQuestions(exam: Exam, only?: string): Question[] {
@@ -26,9 +28,9 @@ export function planPractice(
   statOf: StatOf,
   now: number,
   rng: Rng,
-  { size = 10, maxNew = 6, only }: PracticeOptions = {},
+  { size = 10, maxNew = 6, only, ids }: PracticeOptions = {},
 ): string[] {
-  const pool = filterQuestions(exam, only);
+  const pool = ids ? exam.questions.filter(q => ids.includes(q.id)) : filterQuestions(exam, only);
   const due = pool
     .filter(q => statOf(q.id) && statOf(q.id)!.due <= now)
     .sort((a, b) => statOf(a.id)!.due - statOf(b.id)!.due);

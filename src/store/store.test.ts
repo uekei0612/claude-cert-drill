@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { fixture } from "../engine/fixture";
 import { planMock, scoreMock } from "../engine/mock";
 import { seeded } from "../engine/rng";
-import { abandonMock, answer, finishMock, resetExam, startMock } from "./actions";
+import { abandonMock, answer, finishMock, resetExam, savedIds, startMock, toggleSaved } from "./actions";
 import { emptyData, parseData } from "./schema";
 import { STORAGE_KEY, exportJson, getData, importJson, reloadForTest, setData } from "./store";
 
@@ -115,5 +115,25 @@ describe("模擬試験の記録", () => {
       cursor: 0,
     });
     expect(abandonMock(m)).toEqual(d);
+  });
+});
+
+describe("後で振り返る印", () => {
+  test("付ける・外す。新しく付けた順に並び、資格ごとに分かれる", () => {
+    let d = toggleSaved(emptyData(), "ccar-f", "s1-01", 1);
+    d = toggleSaved(d, "ccar-f", "s2-03", 2);
+    d = toggleSaved(d, "ccar-p", "s1-01", 3);
+    expect(savedIds(d, "ccar-f")).toEqual(["s2-03", "s1-01"]);
+    d = toggleSaved(d, "ccar-f", "s2-03", 4);
+    expect(savedIds(d, "ccar-f")).toEqual(["s1-01"]);
+    expect(savedIds(d, "ccar-p")).toEqual(["s1-01"]);
+  });
+  test("記録に残り、壊れた値は捨てる。資格の記録を消すと一緒に消える", () => {
+    const d = toggleSaved(toggleSaved(emptyData(), "ccar-f", "s1-01", 5), "ccar-p", "s1-02", 6);
+    const back = parseData({ ...JSON.parse(JSON.stringify(d)), saved: { ...d.saved, "bad key": 1, "ccar-f:x": "1" } });
+    expect(back.saved).toEqual(d.saved);
+    expect(savedIds(resetExam(d, "ccar-f"), "ccar-f")).toEqual([]);
+    expect(savedIds(resetExam(d, "ccar-f"), "ccar-p")).toEqual(["s1-02"]);
+    expect(parseData(emptyData()).saved).toBeUndefined();
   });
 });
