@@ -77,6 +77,15 @@ describe("planPractice", () => {
     expect(filterQuestions(fixture, "d2")).toHaveLength(5);
     expect(filterQuestions(fixture, "s2")).toHaveLength(4);
   });
+  test("ids を渡すとその問題だけから出す（無い ID は無視）", () => {
+    const ids = planPractice(fixture, () => undefined, NOW, seeded(4), {
+      size: 10,
+      maxNew: 10,
+      only: "d1",
+      ids: ["s2-02", "s3-04", "nope"],
+    });
+    expect([...ids].sort()).toEqual(["s2-02", "s3-04"]);
+  });
   test("選択肢の順番は 0〜3 の並べ替え", () => {
     expect([...optionOrder(seeded(5))].sort()).toEqual([0, 1, 2, 3]);
   });

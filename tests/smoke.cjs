@@ -59,12 +59,34 @@ const OUT = process.argv[3] || "/tmp/shots";
     await click(".option");
     if (!(await page.$(".why"))) throw new Error("解説が出ない");
     if (i === 0) await shot("04-practice-revealed");
+    // 1・2 問目に「後で振り返る」の印を付ける（#23）
+    if (i < 2) {
+      await click(".sticky-next .save");
+      if (!(await page.$(".sticky-next .save.on"))) throw new Error("後で振り返るの印が付かない");
+    }
     await click(".sticky-next .btn.primary");
   }
   await goto("#/ccar-f");
   const homeAfter = await text();
   if (homeAfter.includes("未解答 60 問")) throw new Error("練習の答えが記録されていない");
+  if (!/振り返り\s*2 問/.test(homeAfter)) throw new Error("ホームに振り返りの問題数が出ない");
   await shot("05-home-after");
+
+  // 振り返り：印を付けた 2 問が並び、開くと解説が出る。その 2 問だけで練習できる
+  await clickText("★ 振り返り");
+  if ((await page.$$(".review-row")).length !== 2) throw new Error("振り返りに印を付けた問題が並ばない");
+  await click(".review-row");
+  if (!(await page.$(".why"))) throw new Error("振り返りで開いても解説が出ない");
+  await shot("24-saved");
+  await clickText("この 2 問を練習する");
+  if (!/振り返り・1 \/ 2/.test(await text())) throw new Error("振り返りの 2 問だけで練習にならない");
+  await goto("#/ccar-f/saved");
+  // 印を外しても、その場では一覧から消さない（付け直せる）。次に開くと消えている
+  await click(".card .save.on");
+  if ((await page.$$(".review-row")).length !== 2) throw new Error("印を外したらその場で一覧から消えた");
+  await goto("#/ccar-f");
+  await goto("#/ccar-f/saved");
+  if ((await page.$$(".review-row")).length !== 1) throw new Error("外した印が残っている");
 
   // 分野・細目
   await goto("#/ccar-f/domains");
@@ -127,6 +149,18 @@ const OUT = process.argv[3] || "/tmp/shots";
   });
   if (head.w < 44 || head.h > 60) throw new Error(`練習の「やめる」が縦に折れる：${head.w}×${head.h}`);
   if (head.sw > 320) throw new Error(`練習の画面が横にはみ出す：${head.sw}px`);
+  // 答えたあとの下の帯（正誤・後で振り返る・次へ）も、折れず・はみ出さない
+  await click(".option");
+  const bar = await page.evaluate(() => {
+    const h = e => Math.round(document.querySelector(e).getBoundingClientRect().height);
+    return {
+      save: h(".sticky-next .save"),
+      next: h(".sticky-next .btn.primary"),
+      sw: document.documentElement.scrollWidth,
+    };
+  });
+  if (bar.save > 60 || bar.next > 60 || bar.sw > 320) throw new Error(`練習の下の帯が崩れる：${JSON.stringify(bar)}`);
+  await shot("25-practice-bar-320");
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
   // 壊れた URL でも落ちない（errors に例外が入れば最後に失敗にする）

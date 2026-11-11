@@ -5,11 +5,12 @@ import { optionOrder, planPractice } from "../../engine/practice";
 import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
-import { answer } from "../../store/actions";
+import { answer, savedIds } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { getData, update, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
+import { SaveButton } from "../SaveButton";
 import { href } from "../route";
 
 interface Done {
@@ -19,23 +20,30 @@ interface Done {
 
 function onlyLabel(exam: Exam, only?: string): string | undefined {
   if (!only) return undefined;
+  if (only === "saved") return "振り返り";
   if (/^d\d+$/.test(only)) return exam.domains.find(d => d.id === only)?.ja;
   if (/^s\d+$/.test(only)) return exam.scenarios.find(s => s.id === only)?.ja;
   const t = findTask(exam, only);
   return t ? `${t.id} ${t.ja}` : undefined;
 }
 
+/** 1 回分を組む。印を付けた問題（only が "saved"）は、回の長さで切らずに全部出す */
+function plan(exam: Exam, only: string | undefined, now: number, seed: number): string[] {
+  const d = getData();
+  const ids = only === "saved" ? savedIds(d, exam.id) : undefined;
+  return planPractice(exam, id => d.items[itemKey(exam.id, id)], now, seeded(seed), {
+    size: ids ? ids.length : d.settings.practiceSize,
+    maxNew: ids ? ids.length : undefined,
+    only,
+    ids,
+  });
+}
+
 export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: number }) {
   const lang = useData().settings.lang;
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
   const [round, setRound] = useState(0);
-  const initial = useMemo(() => {
-    const d = getData();
-    return planPractice(exam, id => d.items[itemKey(exam.id, id)], now, seeded(seed + round), {
-      size: d.settings.practiceSize,
-      only,
-    });
-  }, [exam, only, seed, round]);
+  const initial = useMemo(() => plan(exam, only, now, seed + round), [exam, only, seed, round]);
 
   const [queue, setQueue] = useState<string[]>(initial);
   const [pos, setPos] = useState(0);
@@ -48,11 +56,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   }, [initial]);
 
   const restart = () => {
-    const d = getData();
-    const next = planPractice(exam, id => d.items[itemKey(exam.id, id)], Date.now(), seeded(seed + round + 1), {
-      size: d.settings.practiceSize,
-      only,
-    });
+    const next = plan(exam, only, Date.now(), seed + round + 1);
     setRound(round + 1);
     setQueue(next);
     setPos(0);
@@ -62,16 +66,16 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   };
 
   const byId = new Map(exam.questions.map(q => [q.id, q]));
-  const back = href({ name: "home", examId: exam.id });
+  const back = href(only === "saved" ? { name: "saved", examId: exam.id } : { name: "home", examId: exam.id });
   const label = onlyLabel(exam, only);
 
   if (!queue.length)
     return (
       <main class="page">
         <a class="btn ghost" href={back}>
-          ← ホーム
+          ← 戻る
         </a>
-        <p>出せる問題がありません。</p>
+        <p>{only === "saved" ? "印を付けた問題がありません。" : "出せる問題がありません。"}</p>
       </main>
     );
 
@@ -105,7 +109,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
           続けてもう 1 回
         </button>
         <a class="btn block" href={back}>
-          ホームへ
+          {only === "saved" ? "振り返りへ" : "ホームへ"}
         </a>
       </main>
     );
@@ -167,6 +171,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
           <p class={chosen === q.answer ? "okc" : "ngc"}>
             <strong>{chosen === q.answer ? "正解" : "不正解"}</strong>
           </p>
+          <SaveButton examId={exam.id} questionId={id} />
           <button class="btn primary" onClick={next}>
             {pos + 1 < queue.length ? "次へ" : "結果を見る"}
           </button>

@@ -5,6 +5,7 @@ import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
+import { SaveButton } from "../SaveButton";
 import { href } from "../route";
 
 export function MockResult({ exam, at }: { exam: Exam; at: number }) {
@@ -103,15 +104,20 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                   </span>
                 </button>
                 {open === id && (
-                  <QuestionCard
-                    exam={exam}
-                    q={q}
-                    order={[0, 1, 2, 3]}
-                    chosen={chosen}
-                    reveal={true}
-                    scenarioOpen={false}
-                    lang={data.settings.lang}
-                  />
+                  <>
+                    <QuestionCard
+                      exam={exam}
+                      q={q}
+                      order={[0, 1, 2, 3]}
+                      chosen={chosen}
+                      reveal={true}
+                      scenarioOpen={false}
+                      lang={data.settings.lang}
+                    />
+                    <div class="row end">
+                      <SaveButton examId={exam.id} questionId={id} />
+                    </div>
+                  </>
                 )}
               </div>
             );
