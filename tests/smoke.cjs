@@ -235,10 +235,14 @@ const OUT = process.argv[3] || "/tmp/shots";
     const before = el.getBoundingClientRect().top;
     el.click();
     await new Promise(r => requestAnimationFrame(r));
-    const after = document.querySelector('.option[data-orig="' + el.dataset.orig + '"]').getBoundingClientRect().top;
-    return Math.round(after - before);
+    const a = document.querySelector('.option[data-orig="' + el.dataset.orig + '"]').getBoundingClientRect();
+    const bar = document.querySelector(".sticky-next").getBoundingClientRect();
+    return { dy: Math.round(a.top - before), gap: Math.round(bar.top - a.bottom), top: Math.round(a.top) };
   });
-  if (Math.abs(moved) > 2) throw new Error(`答えたら押した選択肢が ${moved}px ずれた`);
+  // 動かないのが基本。ただし訳が入って選択肢が伸び、下の「次へ」の帯に隠れるときは、
+  // 帯の 8px 上まで持ち上げるのが仕様（どの問題が出るかで起きたり起きなかったりする）
+  const lifted = moved.dy < 0 && Math.abs(moved.gap - 8) <= 2 && moved.top >= 8;
+  if (Math.abs(moved.dy) > 2 && !lifted) throw new Error(`答えたら押した選択肢がずれた：${JSON.stringify(moved)}`);
   if (!(await page.$(".stem .ja-sub"))) throw new Error("答えたあとに訳が出ない");
   await clickText("英語");
 
