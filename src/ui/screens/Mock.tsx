@@ -9,6 +9,7 @@ import type { Exam } from "../../exams/types";
 import { abandonMock, finishMock, patchMock, startMock } from "../../store/actions";
 import { getData, update, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
+import { pct } from "../Meter";
 import { QuestionCard } from "../QuestionCard";
 import { go, href } from "../route";
 
@@ -226,10 +227,55 @@ export function Mock({ exam }: { exam: Exam }) {
   );
 }
 
+/** 結果の推移（重み付けした正答率）。古い順に左から。点に触れると日時と値が出る。目安の線つき（#34）。
+    目安の文字は左端に置く（新しい結果ほど目安に近く、右端の点と重なりやすいため） */
+function Trend({ points, target }: { points: readonly { at: number; v: number }[]; target: number }) {
+  const W = 300;
+  const H = 72;
+  const pad = { l: 8, r: 8, t: 8, b: 8 };
+  const x = (i: number) => pad.l + (points.length === 1 ? 0 : (i * (W - pad.l - pad.r)) / (points.length - 1));
+  const y = (v: number) => pad.t + (1 - Math.max(0, Math.min(1, v))) * (H - pad.t - pad.b);
+  const when = (at: number) => new Date(at).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+  return (
+    <figure class="trend">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label={`正答率の推移：${points.map(p => `${pct(p.v)}`).join("、")}`}
+      >
+        <line class="trend-target" x1={pad.l} x2={W - pad.r} y1={y(target)} y2={y(target)} />
+        <text class="trend-label" x={pad.l} y={y(target) - 4} text-anchor="start">
+          目安 {pct(target)}
+        </text>
+        <polyline class="trend-line" points={points.map((p, i) => `${x(i)},${y(p.v)}`).join(" ")} />
+        {points.map((p, i) => (
+          <g key={p.at} class="trend-pt">
+            {/* 触れる範囲は点より大きく */}
+            <circle class="hit" cx={x(i)} cy={y(p.v)} r={12}>
+              <title>
+                {when(p.at)}：{pct(p.v)}
+              </title>
+            </circle>
+            <circle class="dot" cx={x(i)} cy={y(p.v)} r={4} />
+          </g>
+        ))}
+      </svg>
+      <figcaption class="muted small">
+        重み付けした正答率の推移（古い順・{points.length} 回）。最新 {pct(points[points.length - 1]!.v)}
+      </figcaption>
+    </figure>
+  );
+}
+
 function Intro({ exam, other }: { exam: Exam; other?: string }) {
   const f = exam.format;
   const per = Math.round(f.secondsPerQuestion / 60);
   const history = useData().mocks[exam.id] ?? [];
+  // 今回出る問題数と時間（シナリオの組み合わせで少し変わりうるので、決まった種で 1 回組んで示す）
+  const sample = planMock(exam, seeded(1));
+  const n = sample.questionIds.length;
+  const minutes = Math.round(sample.limitMs / 60_000);
+  const sameAsReal = f.questions === n && f.minutes === minutes;
   return (
     <main class="page with-tabs">
       <h1>模擬試験</h1>
@@ -240,9 +286,18 @@ function Intro({ exam, other }: { exam: Exam; other?: string }) {
             : "分野の配点に合わせて問題を選びます。"}
           答えは最後にまとめて採点します（未回答は誤答）。
         </p>
-        <p class="muted small">
-          制限時間は 1 問 {per} 分。本番は {f.questions ?? "?"} 問・{f.minutes ?? "?"}{" "}
-          分ですが、このアプリでは手元の問題で組むので、問題数は少なめです。
+        <p class="mock-size">
+          <strong>
+            {n} 問・{minutes} 分
+          </strong>
+          <span class="muted small">
+            {" "}
+            （1 問 {per} 分。
+            {sameAsReal
+              ? "本番と同じ"
+              : `本番は ${f.questions ?? "?"} 問・${f.minutes ?? "?"} 分。手元の問題で組むので本番より少なめ`}
+            ）
+          </span>
         </p>
         <p class="muted small">
           途中で閉じても続きからできます。時間はこの画面を開いている間だけ進み、中断したりアプリを閉じたりすると止まります。
@@ -260,6 +315,9 @@ function Intro({ exam, other }: { exam: Exam; other?: string }) {
       {history.length > 0 && (
         <section class="stack">
           <h2>これまでの結果</h2>
+          {history.length >= 2 && (
+            <Trend points={[...history].reverse().map(h => ({ at: h.finishedAt, v: h.weighted }))} target={f.target} />
+          )}
           {history.map(h => (
             <a
               key={h.finishedAt}

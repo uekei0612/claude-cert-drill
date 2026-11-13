@@ -264,6 +264,8 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 模擬試験：始めて 2 問答え、旗を立て、一覧から提出
   await goto("#/ccar-f/mock");
   await shot("08-mock-intro");
+  // 始める前に問題数と時間が分かる（#34）
+  if (!/60 問・120 分/.test(await text())) throw new Error("模擬試験の案内に問題数と時間が出ない");
   await clickText("始める");
   // 本番と同じ 60 問（4 シナリオ × 15 問）
   const total = await page.evaluate(
