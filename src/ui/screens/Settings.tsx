@@ -5,7 +5,7 @@ import { exams, findExam } from "../../exams";
 import { resetAll, resetExam, setExamDate, setSettings } from "../../store/actions";
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
 import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../store/store";
-import { copyToClipboard } from "../CopyButton";
+import { ManualCopy, copyToClipboard } from "../CopyButton";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";
 
@@ -20,6 +20,8 @@ export function Settings() {
   const data = useData();
   const [msg, setMsg] = useState<string | undefined>();
   const [paste, setPaste] = useState("");
+  // 自動で写せなかった記録（手で写すための欄に出す。#49）
+  const [manual, setManual] = useState<string | undefined>();
   const last = data.settings.lastExam && findExam(data.settings.lastExam);
   const answered = Object.keys(data.items).length;
   // 控えは記録とは別のキーにある。記録が変わるたびに描き直されるので、そのつど読む
@@ -34,12 +36,16 @@ export function Settings() {
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   };
   // 問題や教科書のコピーと同じ仕組みで写す（http の dev でも写せる。#46）
-  const copy = async () =>
+  const copy = async () => {
+    const text = exportJson();
+    const ok = await copyToClipboard(text);
+    setManual(ok ? undefined : text);
     setMsg(
-      (await copyToClipboard(exportJson()))
+      ok
         ? "記録をコピーしました。移したい側の「貼り付けて読み込む」に貼ってください。"
-        : "コピーできませんでした。ファイルに書き出してください。",
+        : "コピーできませんでした。下の欄から手で写すか、ファイルに書き出してください。",
     );
+  };
   const load = (text: string) => {
     try {
       const d = importJson(text);
@@ -53,7 +59,7 @@ export function Settings() {
       setPaste("");
       setMsg("読み込みました。");
     } catch (e) {
-      setMsg(`読み込めませんでした：${e instanceof Error ? e.message : String(e)}`);
+      setMsg(`読み込めませんでした。${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
@@ -178,6 +184,7 @@ export function Settings() {
             {msg}
           </p>
         )}
+        {manual !== undefined && <ManualCopy text={manual} />}
       </section>
 
       <section class="card">

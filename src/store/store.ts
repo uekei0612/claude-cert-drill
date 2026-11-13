@@ -94,11 +94,20 @@ export function restoreBackup(now = Date.now()): boolean {
 /** 書き出し用の JSON（Safari ↔ ホーム画面版の移行用） */
 export const exportJson = (d: Data = current): string => JSON.stringify({ app: "claude-cert-drill", ...d }, null, 1);
 
-/** 取り込み。JSON として読めなければ例外。形の合わない値は捨てる */
+/** 取り込み。読めないときは、理由と次にすることを日本語で書いた例外を投げる（#49）。形の合わない値は捨てる */
 export function importJson(text: string): Data {
-  const raw: unknown = JSON.parse(text);
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    throw new Error(
+      "記録の形式ではありません。書き出したファイルか、「コピーする」で写した文を、途中で切らずにそのまま使ってください。",
+    );
+  }
   if (typeof raw !== "object" || raw === null || (raw as { app?: unknown }).app !== "claude-cert-drill")
-    throw new Error("claude-cert-drill の記録ではありません");
+    throw new Error(
+      "このアプリ（claude-cert-drill）で書き出した記録ではありません。設定の「記録を移す」で書き出したものを使ってください。",
+    );
   return parseData(raw);
 }
 

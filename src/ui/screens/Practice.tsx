@@ -54,6 +54,34 @@ function plan(exam: Exam, only: string | undefined, now: number, seed: number): 
   });
 }
 
+/** 出せる問題が無いとき：理由と、次に行ける先を出す（行き止まりにしない。#49） */
+function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
+  const all = href({ name: "practice", examId: exam.id });
+  const reason =
+    only === "saved"
+      ? "後で振り返る印を付けた問題がありません。練習で答えたあとに「☆ 後で振り返る」を押すと、ここで練習できます。"
+      : parseIdsOnly(only)
+        ? "解き直す問題が見つかりません（問題が入れ替わった可能性があります）。"
+        : only
+          ? `「${onlyLabel(exam, only) ?? only}」に当てはまる問題がありません。`
+          : "この資格には、まだ問題がありません。";
+  return (
+    <section class="card stack">
+      <p>{reason}</p>
+      {exam.questions.length > 0 && (
+        <a class="btn primary block" href={all}>
+          全部の問題から練習する
+        </a>
+      )}
+      {only && only !== "saved" && !parseIdsOnly(only) && (
+        <a class="btn block" href={href({ name: "domains", examId: exam.id })}>
+          分野と細目を選び直す
+        </a>
+      )}
+    </section>
+  );
+}
+
 export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: number }) {
   const lang = useData().settings.lang;
   // キー操作（#40）。今の問題に合わせた処理を、描くたびに下で差し替える（結果の画面などでは無し）
@@ -97,7 +125,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         <a class="btn ghost" href={back}>
           ← {only === "saved" ? "振り返り" : "ホーム"}
         </a>
-        <p>{only === "saved" ? "印を付けた問題がありません。" : "出せる問題がありません。"}</p>
+        <EmptyPractice exam={exam} only={only} />
       </main>
     );
 
