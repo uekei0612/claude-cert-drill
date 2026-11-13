@@ -35,6 +35,8 @@ export interface MockResult {
   /** 見直し用：出した問題（出した順）と、選んだ元の選択肢の添字 */
   readonly questionIds?: readonly string[];
   readonly answers?: Readonly<Record<string, number>>;
+  /** 見直し用：解いたときの選択肢の並び（問題 ID → 元の添字の並び）。見直しでも同じ記号で出す（#46） */
+  readonly orders?: Readonly<Record<string, readonly number[]>>;
 }
 
 /** 解いている途中の模擬試験（閉じても続きから） */
@@ -161,7 +163,16 @@ function mockResult(x: unknown): MockResult | undefined {
     byDomain: bd,
   };
   if (!strArr(x.questionIds) || !isObj(x.answers)) return base;
-  return { ...base, questionIds: x.questionIds, answers: answersOf(x.answers) };
+  const withAnswers = { ...base, questionIds: x.questionIds, answers: answersOf(x.answers) };
+  return isObj(x.orders) ? { ...withAnswers, orders: ordersOf(x.orders) } : withAnswers;
+}
+
+/** 選択肢の並び（0〜3 の並べ替えだけを残す） */
+function ordersOf(x: Obj): Record<string, number[]> {
+  const ord: Record<string, number[]> = {};
+  for (const [k, v] of Object.entries(x))
+    if (Array.isArray(v) && v.length === 4 && [...v].sort().join() === "0,1,2,3") ord[k] = v as number[];
+  return ord;
 }
 
 function activeMock(x: unknown): ActiveMock | undefined {
@@ -170,9 +181,7 @@ function activeMock(x: unknown): ActiveMock | undefined {
   if (typeof examId !== "string" || !strArr(questionIds) || !strArr(scenarioIds) || !strArr(flags)) return undefined;
   if (![startedAt, limitMs].every(num) || !isObj(answers) || !isObj(orders)) return undefined;
   const ans = answersOf(answers);
-  const ord: Record<string, number[]> = {};
-  for (const [k, v] of Object.entries(orders))
-    if (Array.isArray(v) && v.length === 4 && [...v].sort().join() === "0,1,2,3") ord[k] = v as number[];
+  const ord = ordersOf(orders);
   return {
     examId,
     questionIds,

@@ -34,12 +34,10 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
 
   return (
     <main class="page with-tabs">
-      <header class="row between">
-        <h1>模擬試験の結果</h1>
-        <a class="btn ghost small" href={back}>
-          模擬試験へ
-        </a>
-      </header>
+      <a class="btn ghost" href={back}>
+        ← 模擬試験
+      </a>
+      <h1>模擬試験の結果</h1>
       <section class="card">
         <div class="row between">
           <span>配点で重み付けした正答率</span>
@@ -117,7 +115,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                     <QuestionCard
                       exam={exam}
                       q={q}
-                      order={[0, 1, 2, 3]}
+                      order={r.orders?.[id] ?? [0, 1, 2, 3]}
                       chosen={chosen}
                       reveal={true}
                       scenarioOpen={false}
