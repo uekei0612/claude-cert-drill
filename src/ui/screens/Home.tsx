@@ -3,9 +3,9 @@ import { dailyPlan, parseDate } from "../../engine/plan";
 import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../engine/progress";
 import type { Exam } from "../../exams/types";
 import { findTask, lessonOrder } from "../../exams/types";
-import { daysOf, readChapters, savedIds } from "../../store/actions";
-import { itemKey } from "../../store/schema";
-import { useData } from "../../store/store";
+import { daysOf, readChapters, savedIds, setSettings } from "../../store/actions";
+import { PRACTICE_SIZES, itemKey } from "../../store/schema";
+import { update, useData } from "../../store/store";
 import { Activity } from "../Activity";
 import { Meter, pct } from "../Meter";
 import { href } from "../route";
@@ -95,6 +95,23 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         </a>
       )}
 
+      <div class="row between size-row">
+        <span class="muted small" id="size-label">
+          1 回の問題数
+        </span>
+        <div class="seg" role="group" aria-labelledby="size-label">
+          {PRACTICE_SIZES.map(n => (
+            <button
+              key={n}
+              class={n === data.settings.practiceSize ? "on" : ""}
+              aria-pressed={n === data.settings.practiceSize}
+              onClick={() => update(d => setSettings(d, { practiceSize: n }))}
+            >
+              {n} 問
+            </button>
+          ))}
+        </div>
+      </div>
       <a class="btn primary block" href={href({ name: "practice", examId: exam.id })}>
         {due ? `今日の練習（復習 ${due} 問から）` : all.seen < all.total ? "練習する（新しい問題から）" : "練習する"}
       </a>
