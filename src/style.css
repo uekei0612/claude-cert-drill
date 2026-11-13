@@ -543,6 +543,14 @@ a.tap {
   width: 10px;
   height: 10px;
 }
+/* 振り返り・見直しの一覧の行：問題文の冒頭を 2 行まで（#47） */
+.row-stem {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
 /* 検索（#41） */
 .search-box {
   width: 100%;

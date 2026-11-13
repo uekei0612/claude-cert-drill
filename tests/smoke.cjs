@@ -124,6 +124,16 @@ const OUT = process.argv[3] || "/tmp/shots";
   if ((await page.$$(".review-row")).length !== 2) throw new Error("振り返りに印を付けた問題が並ばない");
   await click(".review-row");
   if (!(await page.$(".why"))) throw new Error("振り返りで開いても解説が出ない");
+  // 一覧の行には「覚えること」（答え）を出さず、問題文の冒頭を出す（#47）
+  const leak = await page.evaluate(() => {
+    const point = document
+      .querySelector(".qcard .point p")
+      .textContent.replace(/^覚えること\s*/, "")
+      .trim();
+    return [...document.querySelectorAll(".review-row")].some(r => r.textContent.includes(point));
+  });
+  if (leak) throw new Error("振り返りの一覧の行に覚えることが出ている");
+  if (!(await page.$(".review-row .row-stem"))) throw new Error("振り返りの一覧の行に問題文が出ない");
   await shot("24-saved");
   // 答えのあとから、その細目の教科書の章へ行ける（#26）
   await click(".qcard .learn-link");

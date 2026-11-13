@@ -4,7 +4,7 @@ import type { Exam } from "../../exams/types";
 import { savedIds } from "../../store/actions";
 import { getData, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
-import { QuestionCard } from "../QuestionCard";
+import { QuestionCard, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
 import { href } from "../route";
 
@@ -53,7 +53,9 @@ export function Saved({ exam }: { exam: Exam }) {
                     <span aria-hidden="true">{open === id ? "▾" : "▸"}</span>
                     <span>
                       <span class="tag">{q.tasks[0]}</span>
-                      <span class="muted small">{q.point}</span>
+                      <span class="small row-stem" lang={data.settings.lang === "ja" ? "ja" : "en"}>
+                        {stemOf(exam, q, data.settings.lang)}
+                      </span>
                     </span>
                   </button>
                   {open === id && (
