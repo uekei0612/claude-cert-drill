@@ -4,7 +4,7 @@ import { APP_ENV, APP_VERSION } from "../../env";
 import { exams, findExam } from "../../exams";
 import { resetAll, resetExam, setExamDate, setSettings } from "../../store/actions";
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
-import { exportJson, importJson, setData, update, useData } from "../../store/store";
+import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../store/store";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";
 
@@ -21,6 +21,8 @@ export function Settings() {
   const [paste, setPaste] = useState("");
   const last = data.settings.lastExam && findExam(data.settings.lastExam);
   const answered = Object.keys(data.items).length;
+  // 控えは記録とは別のキーにある。記録が変わるたびに描き直されるので、そのつど読む
+  const backup = getBackup();
 
   const download = () => {
     const blob = new Blob([exportJson()], { type: "application/json" });
@@ -43,11 +45,11 @@ export function Settings() {
       const d = importJson(text);
       if (
         !confirm(
-          `今の記録（${answered} 問分）を、読み込む記録（${Object.keys(d.items).length} 問分）で置き換えますか？`,
+          `今の記録（${answered} 問分）を、読み込む記録（${Object.keys(d.items).length} 問分）で置き換えますか？（置き換えたあと、直前の状態には戻せます）`,
         )
       )
         return;
-      setData(d);
+      replaceData(d, "読み込み");
       setPaste("");
       setMsg("読み込みました。");
     } catch (e) {
@@ -185,8 +187,10 @@ export function Settings() {
             key={e.id}
             class="btn"
             onClick={() => {
-              if (confirm(`${e.code} の記録（回答と模擬試験の結果）を消しますか？元に戻せません。`))
-                update(d => resetExam(d, e.id));
+              if (
+                confirm(`${e.code} の記録（回答と模擬試験の結果）を消しますか？（消したあと、直前の状態には戻せます）`)
+              )
+                replaceData(resetExam(data, e.id), `${e.code} の記録の消去`);
             }}
           >
             {e.code} の記録を消す
@@ -195,12 +199,34 @@ export function Settings() {
         <button
           class="btn danger"
           onClick={() => {
-            if (confirm("すべての記録と設定を消しますか？元に戻せません。")) setData(resetAll());
+            if (confirm("すべての記録と設定を消しますか？（消したあと、直前の状態には戻せます）"))
+              replaceData(resetAll(), "すべての消去");
           }}
         >
           すべて消す
         </button>
       </section>
+
+      {backup && (
+        <section class="card" aria-labelledby="backup-h">
+          <h2 id="backup-h">直前の状態に戻す</h2>
+          <p class="small">
+            {new Date(backup.at).toLocaleString("ja-JP", { dateStyle: "short", timeStyle: "short" })}
+            の「{backup.reason}」の前の記録（{Object.keys(backup.data.items).length} 問分）に戻せます。
+          </p>
+          <button
+            class="btn"
+            onClick={() => {
+              if (confirm("直前の状態に戻しますか？（今の記録は控えに残るので、もう一度戻せます）")) {
+                restoreBackup();
+                setMsg("直前の状態に戻しました。");
+              }
+            }}
+          >
+            直前の状態に戻す
+          </button>
+        </section>
+      )}
 
       <p class="muted small">
         claude-cert-drill {APP_VERSION}（{APP_ENV}）・非公式の教材で、Anthropic とは関係がありません。

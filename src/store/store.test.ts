@@ -19,7 +19,18 @@ import {
   undoAnswer,
 } from "./actions";
 import { emptyData, parseData } from "./schema";
-import { STORAGE_KEY, exportJson, getData, importJson, reloadForTest, setData } from "./store";
+import {
+  BACKUP_KEY,
+  STORAGE_KEY,
+  exportJson,
+  getBackup,
+  getData,
+  importJson,
+  reloadForTest,
+  replaceData,
+  restoreBackup,
+  setData,
+} from "./store";
 
 const NOW = Date.UTC(2026, 10, 4);
 
@@ -277,5 +288,37 @@ describe("日ごとの回答（#38）", () => {
     expect(back.days).toEqual(d.days);
     expect([...daysOf(back, "ccar-f").keys()].sort().at(-1)).toBe(newest);
     expect(resetExam(d, "ccar-f").days).toEqual({});
+  });
+});
+
+describe("直前の状態に戻す（#45）", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    reloadForTest();
+  });
+  test("読み込み・消去のあとに、直前の記録へ戻せる。戻したことも取り消せる", () => {
+    const mine = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    setData(mine);
+    expect(getBackup()).toBeUndefined();
+    const other = answer(emptyData(), "ccar-f", "s2-01", false, NOW);
+    replaceData(other, "読み込み", NOW + 1);
+    expect(getData()).toEqual(other);
+    expect(getBackup()).toMatchObject({ at: NOW + 1, reason: "読み込み" });
+    expect(restoreBackup(NOW + 2)).toBe(true);
+    expect(getData()).toEqual(mine);
+    // もう一度戻すと、戻す前（読み込んだ記録）になる
+    expect(restoreBackup(NOW + 3)).toBe(true);
+    expect(getData()).toEqual(other);
+  });
+  test("すべて消したあとも戻せる。控えが無い・壊れていれば戻さない", () => {
+    const mine = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    setData(mine);
+    replaceData(emptyData(), "すべての消去", NOW);
+    expect(restoreBackup()).toBe(true);
+    expect(getData()).toEqual(mine);
+    localStorage.setItem(BACKUP_KEY, "{broken");
+    expect(getBackup()).toBeUndefined();
+    expect(restoreBackup()).toBe(false);
+    expect(getData()).toEqual(mine);
   });
 });

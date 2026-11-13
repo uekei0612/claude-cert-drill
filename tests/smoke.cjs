@@ -366,6 +366,19 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f");
   if ((await text()).includes("試験まであと")) throw new Error("試験日を消しても逆算が残る");
   await goto("#/settings");
+  // 記録を消しても、直前の状態に戻せる（#45）
+  const countItems = () =>
+    page.evaluate(() => {
+      const k = Object.keys(localStorage).find(x => /^claude-cert-drill(-dev)?$/.test(x));
+      return Object.keys(JSON.parse(localStorage.getItem(k)).items).length;
+    });
+  const answeredBefore = await countItems();
+  if (!answeredBefore) throw new Error("消す前の記録が無い");
+  if ((await text()).includes("直前の状態に戻す")) throw new Error("控えが無いのに戻すが出ている");
+  await clickText("CCAR-F の記録を消す");
+  if ((await countItems()) !== 0) throw new Error("記録が消えない");
+  await clickText("直前の状態に戻す");
+  if ((await countItems()) !== answeredBefore) throw new Error("消した記録を直前の状態に戻せない");
 
   // 問題文の言語：日本語・併記に切り替え、設定が残ることを確かめる
   await goto("#/ccar-f/practice");
