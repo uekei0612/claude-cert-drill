@@ -33,10 +33,13 @@ export function CopyButton({
   text,
   label,
   done = "コピーしました",
+  cls = "",
 }: {
   text: () => string;
   label: string;
   done?: string;
+  /** ボタンに足す class */
+  cls?: string;
 }) {
   const [state, setState] = useState<"idle" | "ok" | "ng">("idle");
   useEffect(() => {
@@ -47,7 +50,7 @@ export function CopyButton({
   return (
     <button
       type="button"
-      class={`btn ghost small copy ${state}`}
+      class={`btn ghost small copy ${cls} ${state}`}
       onClick={async () => setState((await copyToClipboard(text())) ? "ok" : "ng")}
     >
       <span aria-live="polite">{state === "ok" ? `✓ ${done}` : state === "ng" ? "コピーできませんでした" : label}</span>
