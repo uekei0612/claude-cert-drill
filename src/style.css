@@ -543,6 +543,16 @@ a.tap {
   width: 10px;
   height: 10px;
 }
+/* キー操作の案内（#40）。マウスのある画面（PC）だけに出す */
+.kbd-hint {
+  display: none;
+  margin: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .kbd-hint {
+    display: block;
+  }
+}
 /* 模擬試験の結果の推移（#34）。線は 2px、点は 8px、目安は細い破線 */
 .trend {
   margin: 0;

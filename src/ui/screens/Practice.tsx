@@ -2,18 +2,19 @@
    間違えた問題は、その回の最後にもう一度出す（1 回だけ）。
    間違えたときは、押し間違いなら次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44）。
    正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27） */
-import { useMemo, useState } from "preact/hooks";
+import { useMemo, useRef, useState } from "preact/hooks";
 import { idsOnly, optionOrder, parseIdsOnly, planPractice } from "../../engine/practice";
 import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
 import type { ItemStat } from "../../engine/schedule";
-import { answer, markGuess, savedIds, undoAnswer } from "../../store/actions";
+import { answer, markGuess, savedIds, toggleSaved, undoAnswer } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { getData, update, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
+import { optionIndex, useKeys } from "../keys";
 import { href } from "../route";
 
 interface Done {
@@ -55,6 +56,10 @@ function plan(exam: Exam, only: string | undefined, now: number, seed: number): 
 
 export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: number }) {
   const lang = useData().settings.lang;
+  // キー操作（#40）。今の問題に合わせた処理を、描くたびに下で差し替える（結果の画面などでは無し）
+  const onKey = useRef<((key: string) => boolean) | undefined>(undefined);
+  onKey.current = undefined;
+  useKeys(key => onKey.current?.(key));
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
   const [round, setRound] = useState(0);
   const initial = useMemo(() => plan(exam, only, now, seed + round), [exam, only, seed, round]);
@@ -201,6 +206,24 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     scrollTo(0, 0);
   };
 
+  const order = orders.get(id) ?? [0, 1, 2, 3];
+  onKey.current = key => {
+    const i = optionIndex(key);
+    if (!revealed && i >= 0 && i < order.length) {
+      choose(order[i]!);
+      return true;
+    }
+    if (revealed && key === "Enter") {
+      next();
+      return true;
+    }
+    if (revealed && (key === "s" || key === "S")) {
+      update(d => toggleSaved(d, exam.id, id, Date.now()));
+      return true;
+    }
+    return false;
+  };
+
   return (
     <main class="page drill">
       <h1 class="sr-only">練習</h1>
@@ -221,7 +244,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
       <QuestionCard
         exam={exam}
         q={q}
-        order={orders.get(id) ?? [0, 1, 2, 3]}
+        order={order}
         chosen={chosen}
         reveal={revealed}
         onChoose={choose}
@@ -229,6 +252,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={lang}
       />
+      <p class="kbd-hint muted small">キー：1〜4（A〜D）で選ぶ・Enter で次へ・S で振り返りに入れる</p>
       {revealed && (
         <div class="sticky-next">
           <div class="verdict">

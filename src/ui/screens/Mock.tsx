@@ -11,6 +11,7 @@ import { getData, update, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
 import { pct } from "../Meter";
 import { QuestionCard } from "../QuestionCard";
+import { optionIndex, useKeys } from "../keys";
 import { go, href } from "../route";
 
 /** 残り時間の表示（「1:02:03」「12:34」） */
@@ -58,6 +59,10 @@ export function Mock({ exam }: { exam: Exam }) {
   const [tick, setTick] = useState(Date.now());
   /** 今回この画面を開いた時刻。隠れている間は無し（時間を進めない） */
   const since = useRef<number | undefined>(undefined);
+  // キー操作（#40）。解いている問題の画面のときだけ、下で処理を入れる
+  const onKey = useRef<((key: string) => boolean) | undefined>(undefined);
+  onKey.current = undefined;
+  useKeys(key => onKey.current?.(key));
 
   useEffect(() => {
     if (!m || m.examId !== exam.id) return;
@@ -172,6 +177,20 @@ export function Mock({ exam }: { exam: Exam }) {
       </main>
     );
 
+  const order = m.orders[id] ?? [0, 1, 2, 3];
+  const choose = (orig: number) => update(d => patchMock(d, x => ({ ...x, answers: { ...x.answers, [id]: orig } })));
+  const toggleFlag = () =>
+    update(d => patchMock(d, x => ({ ...x, flags: flagged ? x.flags.filter(f => f !== id) : [...x.flags, id] })));
+  onKey.current = key => {
+    const i = optionIndex(key);
+    if (i >= 0 && i < order.length) choose(order[i]!);
+    else if (key === "ArrowLeft" && cursor > 0) setCursor(cursor - 1);
+    else if (key === "ArrowRight" && cursor + 1 < ids.length) setCursor(cursor + 1);
+    else if (key === "f" || key === "F") toggleFlag();
+    else return false;
+    return true;
+  };
+
   return (
     <main class="page drill">
       <h1 class="sr-only">模擬試験</h1>
@@ -185,15 +204,7 @@ export function Mock({ exam }: { exam: Exam }) {
         </span>
         <div class="row">
           <LangSwitch exam={exam} />
-          <button
-            class={`btn ghost small ${flagged ? "flag-on" : ""}`}
-            aria-pressed={flagged}
-            onClick={() =>
-              update(d =>
-                patchMock(d, x => ({ ...x, flags: flagged ? x.flags.filter(f => f !== id) : [...x.flags, id] })),
-              )
-            }
-          >
+          <button class={`btn ghost small ${flagged ? "flag-on" : ""}`} aria-pressed={flagged} onClick={toggleFlag}>
             {flagged ? "⚑ 旗を外す" : "⚐ 旗を立てる"}
           </button>
         </div>
@@ -202,13 +213,14 @@ export function Mock({ exam }: { exam: Exam }) {
         key={id}
         exam={exam}
         q={q}
-        order={m.orders[id] ?? [0, 1, 2, 3]}
+        order={order}
         chosen={m.answers[id]}
         reveal={false}
-        onChoose={orig => update(d => patchMock(d, x => ({ ...x, answers: { ...x.answers, [id]: orig } })))}
+        onChoose={choose}
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={data.settings.lang}
       />
+      <p class="kbd-hint muted small">キー：1〜4（A〜D）で選ぶ・← → で前後・F で旗</p>
       <div class="sticky-next">
         <button class="btn" disabled={cursor === 0} onClick={() => setCursor(cursor - 1)}>
           ← 前へ
