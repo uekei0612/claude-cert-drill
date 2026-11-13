@@ -1,7 +1,10 @@
-/* 教科書。目次（はじめに → 分野 → 細目）と章。章は前後の章へ順に読み進められる */
+/* 教科書。目次（はじめに → 分野 → 細目）と章。章は前後の章へ順に読み進められる。
+   章と節は、Claude に解説を頼めるようにまとめてコピーできる */
 import type { ComponentChildren } from "preact";
 import type { Exam, Lesson, LessonBlock } from "../../exams/types";
 import { PRIMER_ID, domainOfTask, findTask } from "../../exams/types";
+import { CopyButton } from "../CopyButton";
+import { lessonText, sectionText } from "../copyText";
 import { href } from "../route";
 
 /** 文の中の `…` をコードとして出す */
@@ -89,14 +92,18 @@ function Block({ b }: { b: LessonBlock }) {
   );
 }
 
-function Body({ lesson }: { lesson: Lesson }) {
+/** 章の本文。節ごとに、Claude に貼るためのコピーのボタンを見出しの横に置く */
+function Body({ exam, chapter, lesson }: { exam: Exam; chapter: string; lesson: Lesson }) {
   return (
     <>
       <p class="card lead">{inline(lesson.lead)}</p>
 
       {lesson.sections.map(s => (
         <section key={s.h} class="stack">
-          <h2>{s.h}</h2>
+          <div class="row between sec-head">
+            <h2>{s.h}</h2>
+            <CopyButton label="コピー" done="コピー済み" text={() => sectionText(exam, chapter, s)} />
+          </div>
           {s.body.map((b, k) => (
             <Block key={k} b={b} />
           ))}
@@ -197,6 +204,7 @@ export function Learn({ exam, taskId }: { exam: Exam; taskId?: string }) {
         <p>この章は見つかりません。</p>
       </main>
     );
+  const chapterName = isPrimer ? titleOf(taskId) : `${taskId} ${titleOf(taskId)}`;
   const i = order.indexOf(taskId);
   const prev = i > 0 ? order[i - 1] : undefined;
   const next = i >= 0 && i < order.length - 1 ? order[i + 1] : undefined;
@@ -220,9 +228,12 @@ export function Learn({ exam, taskId }: { exam: Exam; taskId?: string }) {
             {task.title}
           </p>
         )}
+        <div class="row end">
+          <CopyButton label="この章をコピー" text={() => lessonText(exam, chapterName, lesson)} />
+        </div>
       </header>
 
-      <Body lesson={lesson} />
+      <Body exam={exam} chapter={chapterName} lesson={lesson} />
 
       {!isPrimer && (
         <div class="stack">
