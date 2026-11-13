@@ -83,6 +83,10 @@ const OUT = process.argv[3] || "/tmp/shots";
       if (Math.abs(gap) > 1) throw new Error(`一番下で帯が ${gap}px 持ち上がる`);
     }
     if (i === 0) await shot("04-practice-revealed");
+    // 間違えても元の問題数（10）は変わらず、やり直しは別に出す（#43）
+    const headLabel = await page.$eval(".head-label", e => e.textContent);
+    if (!new RegExp(`^${i + 1} / 10`).test(headLabel)) throw new Error(`練習の問題数の表示が変わる：${headLabel}`);
+    if ((await page.$(".option.ng")) && !headLabel.includes("やり直し +")) throw new Error("やり直しの数が出ない");
     // 練習の途中では章へのリンクを出さない（移ると練習の残りが消える。#26）
     if (await page.$(".qcard .learn-link")) throw new Error("練習の途中に教科書へのリンクが出ている");
     // 1・2 問目に「後で振り返る」の印を付ける（#23）
