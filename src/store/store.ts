@@ -42,6 +42,55 @@ export function useData(): Data {
   return d;
 }
 
+/* 直前の状態の控え（#45）。読み込み・消去のように記録を大きく置き換える操作の直前に、今の記録を
+   別のキーに 1 つだけ取っておき、設定から戻せるようにする。戻すときは、戻す前の記録を控えに入れ替える
+   （戻したことも取り消せる） */
+export const BACKUP_KEY = `${STORAGE_KEY}:backup`;
+
+export interface Backup {
+  /** 控えを取った時刻 */
+  readonly at: number;
+  /** 何の前の控えか（「読み込み」「CCAR-F の記録の消去」など） */
+  readonly reason: string;
+  readonly data: Data;
+}
+
+/** 今の控え。無い・壊れているときは無し */
+export function getBackup(): Backup | undefined {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(BACKUP_KEY) ?? "null");
+    if (typeof raw !== "object" || raw === null) return undefined;
+    const { at, reason, data } = raw as Record<string, unknown>;
+    if (typeof at !== "number" || typeof reason !== "string") return undefined;
+    return { at, reason, data: parseData(data) };
+  } catch {
+    return undefined;
+  }
+}
+
+function saveBackup(reason: string, now: number): void {
+  try {
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({ at: now, reason, data: current }));
+  } catch {
+    // 控えを取れなくても、操作そのものは続ける
+  }
+}
+
+/** 記録を大きく置き換える（読み込み・消去）。直前の記録を控えに取ってから置き換える */
+export function replaceData(next: Data, reason: string, now = Date.now()): void {
+  saveBackup(reason, now);
+  setData(next);
+}
+
+/** 控えの記録に戻す。戻す前の記録は控えに入れ替える。控えが無ければ false */
+export function restoreBackup(now = Date.now()): boolean {
+  const b = getBackup();
+  if (!b) return false;
+  saveBackup("直前の状態に戻す操作", now);
+  setData(b.data);
+  return true;
+}
+
 /** 書き出し用の JSON（Safari ↔ ホーム画面版の移行用） */
 export const exportJson = (d: Data = current): string => JSON.stringify({ app: "claude-cert-drill", ...d }, null, 1);
 
