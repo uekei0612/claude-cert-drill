@@ -387,6 +387,23 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!(await page.$(".stem .ja-sub"))) throw new Error("答えたあとに訳が出ない");
   await setLang("英語");
 
+  // キーだけで練習 1 回を最後まで進められる（#40）
+  await goto("#/ccar-f/practice?only=1.1");
+  await page.evaluate(() => document.activeElement && document.activeElement.blur());
+  for (let n = 0; n < 20 && !(await text()).includes("おつかれさまでした"); n++) {
+    await page.keyboard.press("2");
+    await new Promise(r => setTimeout(r, 150));
+    if (!(await page.$(".why"))) throw new Error("キーの 2 で選べない");
+    if (n === 0) {
+      await page.keyboard.press("s");
+      await new Promise(r => setTimeout(r, 100));
+      if (!(await page.$(".sticky-next .save.on"))) throw new Error("キーの S で振り返りに入らない");
+    }
+    await page.keyboard.press("Enter");
+    await new Promise(r => setTimeout(r, 150));
+  }
+  if (!(await text()).includes("おつかれさまでした")) throw new Error("キーだけで練習が終わらない");
+
   // ダーク
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "dark" }]);
   await goto("#/ccar-f/practice");
