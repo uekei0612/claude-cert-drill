@@ -2,13 +2,16 @@
    reveal のときは、選択肢ごとに正誤と解説を出す（誤答の解説がそのまま弱点の地図になる）。
    lang で問題文の言語を選ぶ（訳が無い問題は英語で出す）。peek は英語だけを出し、「訳を見る」を押すか
    答えたら併記に変わる（英語を先に読ませるため。訳を開くのはその問題だけで、次の問題ではまた閉じる）。
-   答えを見たあとは、問題・選択肢・解説をまとめて Claude に貼れるようにコピーのボタンを出す（答える前は出さない） */
+   答えを見たあとは、問題・選択肢・解説をまとめて Claude に貼れるようにコピーのボタンを出す（答える前は出さない）。
+   learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出す（間違えた直後に読めるように。#26）。
+   練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { Exam, Question } from "../exams/types";
 import { domainOf, findTask } from "../exams/types";
 import type { QuestionLang } from "../store/schema";
 import { CopyButton } from "./CopyButton";
 import { questionText } from "./copyText";
+import { href } from "./route";
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -24,6 +27,8 @@ export interface QuestionCardProps {
   /** シナリオを最初から開いておくか（シナリオが変わった最初の問題など） */
   readonly scenarioOpen?: boolean;
   readonly lang?: QuestionLang;
+  /** 答えを見たあとに、教科書の章へのリンクを出すか */
+  readonly learnLink?: boolean;
 }
 
 /** 答えを押したあと、押した選択肢を押す前と同じ画面の位置に戻す。
@@ -70,6 +75,7 @@ export function QuestionCard({
   onChoose,
   scenarioOpen,
   lang = "en",
+  learnLink = false,
 }: QuestionCardProps) {
   const scenario = exam.scenarios.find(s => s.id === q.scenario);
   const task = findTask(exam, q.tasks[0]);
@@ -155,6 +161,11 @@ export function QuestionCard({
           <p class="muted small">
             {domain?.id.toUpperCase()} {domain?.ja} ／ {task?.id} {task?.ja}
           </p>
+          {learnLink && task && exam.lessons?.[task.id] && (
+            <a class="tap small learn-link" href={href({ name: "learn", examId: exam.id, taskId: task.id })}>
+              教科書で読む（{task.id}）→
+            </a>
+          )}
         </div>
       )}
       {reveal && (

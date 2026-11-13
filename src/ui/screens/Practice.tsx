@@ -111,6 +111,11 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
                   {q.tasks[0]} {findTask(exam, q.tasks[0])?.ja}
                 </span>
                 <p>{q.point}</p>
+                {exam.lessons?.[q.tasks[0]] && (
+                  <a class="tap small learn-link" href={href({ name: "learn", examId: exam.id, taskId: q.tasks[0] })}>
+                    教科書で読む（{q.tasks[0]}）→
+                  </a>
+                )}
               </div>
             ))}
           </section>
