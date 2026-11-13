@@ -18,12 +18,7 @@ export function Saved({ exam }: { exam: Exam }) {
 
   return (
     <main class="page with-tabs">
-      <header class="row between">
-        <h1>振り返り</h1>
-        <a class="btn ghost small" href={href({ name: "home", examId: exam.id })}>
-          ホーム
-        </a>
-      </header>
+      <h1>振り返り</h1>
       {!ids.length ? (
         <section class="card">
           <p>まだ印を付けた問題はありません。</p>

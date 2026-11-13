@@ -35,9 +35,14 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
             {exam.title}
           </p>
         </div>
-        <a class="btn ghost small" href={href({ name: "picker" })}>
-          資格一覧
-        </a>
+        <nav class="row head-links" aria-label="ほかの画面">
+          <a class="btn ghost small" href={href({ name: "settings" })}>
+            設定
+          </a>
+          <a class="btn ghost small" href={href({ name: "picker" })}>
+            資格一覧
+          </a>
+        </nav>
       </header>
 
       <section class="card" aria-labelledby="ready-h">
