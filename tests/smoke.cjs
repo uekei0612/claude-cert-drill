@@ -52,6 +52,27 @@ const OUT = process.argv[3] || "/tmp/shots";
 
   await page.goto(BASE, { waitUntil: "networkidle0" });
   await page.evaluate(() => localStorage.clear());
+  // 初めて開くと、資格が 1 つならそのホームから始まり、進め方が出る（#50）
+  await page.goto("about:blank");
+  await page.goto(BASE, { waitUntil: "networkidle0" });
+  if ((await page.evaluate(() => location.hash)) !== "#/ccar-f")
+    throw new Error("初めて開いても資格のホームから始まらない");
+  if (!/はじめての方へ[\s\S]*「はじめに」を読む/.test(await text())) throw new Error("初めてなのに進め方が出ない");
+  await shot("29-first-run");
+  // 指標の「?」を押すと定義が開き、外を押すと閉じる
+  await click("#ready-h .help-btn");
+  if (!(await page.$(".help-pop")) || !(await text()).includes("本番の配点で重み付け"))
+    throw new Error("合格の目安の「?」で定義が開かない");
+  await page.mouse.click(5, 300);
+  await new Promise(r => setTimeout(r, 100));
+  if (await page.$(".help-pop")) throw new Error("外を押しても定義が閉じない");
+  // 閉じたら、次からは出さない
+  await click(".card.intro .btn.ghost.small");
+  await page.reload({ waitUntil: "networkidle0" });
+  if ((await text()).includes("はじめての方へ")) throw new Error("閉じた進め方がまた出る");
+  await goto("#/help");
+  if (!/おすすめの進め方[\s\S]*用語と指標[\s\S]*覚えた/.test(await text())) throw new Error("使い方のページが出ない");
+  await page.evaluate(() => localStorage.clear());
   await page.goto(BASE + "#/", { waitUntil: "networkidle0" });
   await shot("01-picker");
 

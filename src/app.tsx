@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { APP_ENV, APP_VERSION } from "./env";
-import { findExam } from "./exams";
+import { exams, findExam } from "./exams";
 import { setSettings } from "./store/actions";
 import { getData, update, useData } from "./store/store";
 import { go, href, useRoute } from "./ui/route";
@@ -11,6 +11,7 @@ import { MockResult } from "./ui/screens/MockResult";
 import { Domains } from "./ui/screens/Domains";
 import { Settings } from "./ui/screens/Settings";
 import { TaskDetail } from "./ui/screens/TaskDetail";
+import { Help } from "./ui/screens/Help";
 import { Learn } from "./ui/screens/Learn";
 import { Search } from "./ui/screens/Search";
 import { Practice } from "./ui/screens/Practice";
@@ -19,10 +20,13 @@ import { TabBar } from "./ui/TabBar";
 import { applyTheme } from "./ui/theme";
 import { UpdatePrompt } from "./ui/UpdatePrompt";
 
-/** 起動したとき、ハッシュが無ければ前回の資格を開く */
+/** 起動したとき、ハッシュが無ければ前回の資格を開く。初めてでも資格が 1 つだけならそのホームを開く
+    （資格一覧から始めると、何から手を付ければよいかが分からない。#50） */
 export function startRoute(): void {
+  if (location.hash) return;
   const last = getData().settings.lastExam;
-  if (!location.hash && last && findExam(last)) location.replace(href({ name: "home", examId: last }));
+  const target = last && findExam(last) ? last : exams.length === 1 ? exams[0]!.id : undefined;
+  if (target) location.replace(href({ name: "home", examId: target }));
 }
 
 /** 表に戻ったときに「今」を進める（期限の来た問題の数が変わる） */
@@ -60,10 +64,13 @@ export function App() {
   const activeHere = data.activeMock?.examId === examId;
   // 練習中と、模擬試験を解いている間は、下のタブを出さず、新しい版への切り替えも待つ
   // 設定は資格の外の画面だが、前回の資格のタブを出して戻れるようにする
-  const tabExam = exam ?? (route.name === "settings" ? findExam(getData().settings.lastExam ?? "") : undefined);
+  const tabExam =
+    exam ??
+    (route.name === "settings" || route.name === "help" ? findExam(getData().settings.lastExam ?? "") : undefined);
   const busy = route.name === "practice" || (route.name === "mock" && activeHere);
   let screen;
   if (route.name === "settings") screen = <Settings />;
+  else if (route.name === "help") screen = <Help />;
   else if (route.name === "picker" || !exam) screen = <ExamPicker />;
   else if (route.name === "practice") screen = <Practice key={href(route)} exam={exam} only={route.only} now={now} />;
   else if (route.name === "mock") screen = <Mock exam={exam} />;

@@ -21,9 +21,14 @@ export function ExamPicker() {
           <p class="muted small">{e.summary}</p>
         </a>
       ))}
-      <a class="btn ghost" href={href({ name: "settings" })}>
-        設定と記録
-      </a>
+      <div class="row wrap">
+        <a class="btn ghost" href={href({ name: "help" })}>
+          使い方
+        </a>
+        <a class="btn ghost" href={href({ name: "settings" })}>
+          設定と記録
+        </a>
+      </div>
     </main>
   );
 }

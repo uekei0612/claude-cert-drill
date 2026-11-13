@@ -22,6 +22,8 @@ export interface Settings {
   readonly lastExam?: string;
   /** 資格 ID → 試験日（"YYYY-MM-DD"）。ホームに 1 日の目安を逆算して出す（#37） */
   readonly examDates?: Readonly<Record<string, string>>;
+  /** ホームの「はじめての方へ」を閉じた（#50） */
+  readonly introDone?: boolean;
 }
 
 export interface MockResult {
@@ -133,7 +135,8 @@ function settings(x: unknown): Settings {
   if (isObj(x.examDates))
     for (const [k, v] of Object.entries(x.examDates))
       if (/^[a-z0-9-]+$/.test(k) && typeof v === "string" && parseDate(v) !== undefined) examDates[k] = v;
-  const withDates = Object.keys(examDates).length ? { ...base, examDates } : base;
+  const withDates0 = Object.keys(examDates).length ? { ...base, examDates } : base;
+  const withDates = x.introDone === true ? { ...withDates0, introDone: true } : withDates0;
   return lastExam ? { ...withDates, lastExam } : withDates;
 }
 

@@ -2,12 +2,14 @@
 import { dailyPlan, parseDate } from "../../engine/plan";
 import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../engine/progress";
 import type { Exam } from "../../exams/types";
-import { findTask, lessonOrder } from "../../exams/types";
+import { PRIMER_ID, findTask, lessonOrder } from "../../exams/types";
 import { daysOf, readChapters, savedIds, setSettings } from "../../store/actions";
 import { PRACTICE_SIZES, itemKey } from "../../store/schema";
 import { update, useData } from "../../store/store";
 import { Activity } from "../Activity";
+import { HelpTip } from "../HelpTip";
 import { Meter, pct } from "../Meter";
+import { STEPS } from "../glossary";
 import { href } from "../route";
 import { chapterTag, chapterTitle, nextChapter } from "./Learn";
 import { fmt } from "./Mock";
@@ -54,15 +56,16 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
 
       <section class="card" aria-labelledby="ready-h">
         <div class="row between">
-          <h2 id="ready-h">合格の目安</h2>
+          <h2 id="ready-h">
+            合格の目安 <HelpTip id="readiness" exam={exam} />
+          </h2>
           <span class={`big ${ready >= target ? "okc" : ""}`}>{pct(ready)}</span>
         </div>
         <Meter value={ready} mark={target} label="合格の目安" />
         <p class="muted small">
-          配点で重み付けした「覚えた問題」の割合。覚えた＝日をあけて 2
-          回続けて正解し、復習の期限を大きく過ぎていない問題。線は目安の {pct(target)}
-          （独自の基準）。未解答は覚えていない扱い。
-          {all.seen < all.total && ` 未解答 ${all.total - all.seen} 問。`}
+          配点で重み付けした「覚えた問題」
+          <HelpTip id="known" exam={exam} />
+          の割合。線は目安の {pct(target)}。{all.seen < all.total && `未解答 ${all.total - all.seen} 問。`}
         </p>
       </section>
 
@@ -93,6 +96,38 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
             {fmt(active.limitMs - active.usedMs)}（時間は止まっています）。続きから再開する
           </span>
         </a>
+      )}
+
+      {!data.settings.introDone && (
+        <section class="card intro" aria-labelledby="intro-h">
+          <div class="row between">
+            <h2 id="intro-h">はじめての方へ：進め方</h2>
+            <button class="btn ghost small" onClick={() => update(d => setSettings(d, { introDone: true }))}>
+              閉じる
+            </button>
+          </div>
+          <ol class="steps help-steps">
+            {STEPS.map(s => (
+              <li key={s.title}>
+                <strong>{s.title}</strong>
+                <span class="muted small">{s.body}</span>
+              </li>
+            ))}
+          </ol>
+          <div class="row wrap">
+            {exam.primer && (
+              <a class="btn primary" href={href({ name: "learn", examId: exam.id, taskId: PRIMER_ID })}>
+                「はじめに」を読む
+              </a>
+            )}
+            <a class="btn" href={href({ name: "practice", examId: exam.id })}>
+              すぐ練習する
+            </a>
+            <a class="btn ghost" href={href({ name: "help" })}>
+              使い方と用語
+            </a>
+          </div>
+        </section>
       )}
 
       <div class="row between size-row">
@@ -140,7 +175,9 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
 
       {weak.length > 0 && (
         <section class="stack" aria-labelledby="weak-h">
-          <h2 id="weak-h">伸ばすと効く細目</h2>
+          <h2 id="weak-h">
+            伸ばすと効く細目 <HelpTip id="gain" exam={exam} />
+          </h2>
           <p class="muted small">右の数字は、その細目の問題を全部覚えたときに合格の目安が上がる幅です。</p>
           {weak.map(w => {
             const t = findTask(exam, w.taskId);
@@ -171,7 +208,9 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
 
       <section class="stack" aria-labelledby="dom-h">
         <div class="row between">
-          <h2 id="dom-h">分野</h2>
+          <h2 id="dom-h">
+            分野 <HelpTip id="domain" exam={exam} />
+          </h2>
           <a class="small tap" href={href({ name: "domains", examId: exam.id })}>
             細目ごとに見る
           </a>

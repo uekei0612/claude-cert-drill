@@ -8,6 +8,7 @@ import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { abandonMock, finishMock, patchMock, startMock } from "../../store/actions";
 import { getData, update, useData } from "../../store/store";
+import { HelpTip } from "../HelpTip";
 import { LangSwitch } from "../LangSwitch";
 import { pct } from "../Meter";
 import { QuestionCard } from "../QuestionCard";
@@ -290,7 +291,9 @@ function Intro({ exam, other }: { exam: Exam; other?: string }) {
   const sameAsReal = f.questions === n && f.minutes === minutes;
   return (
     <main class="page with-tabs">
-      <h1>模擬試験</h1>
+      <h1>
+        模擬試験 <HelpTip id="mock" exam={exam} />
+      </h1>
       <section class="card">
         <p>
           {f.scenariosPerExam

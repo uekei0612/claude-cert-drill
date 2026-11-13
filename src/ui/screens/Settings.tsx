@@ -69,6 +69,9 @@ export function Settings() {
         ← {last ? "ホーム" : "資格一覧"}
       </a>
       <h1>設定と記録</h1>
+      <a class="btn block" href={href({ name: "help" })}>
+        使い方と用語
+      </a>
 
       <section class="card">
         <h2>試験日</h2>

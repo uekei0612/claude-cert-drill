@@ -5,6 +5,7 @@ import type { Exam } from "../../exams/types";
 import { domainOfTask, findTask } from "../../exams/types";
 import { itemKey } from "../../store/schema";
 import { useData } from "../../store/store";
+import { HelpTip } from "../HelpTip";
 import { href } from "../route";
 
 export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; now: number }) {
@@ -78,7 +79,7 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
 
       <section class="stack">
         <h2>
-          問題{" "}
+          問題 <HelpTip id="learning" exam={exam} />{" "}
           <span class="muted small">
             覚えた {t.known} / {t.total}
           </span>

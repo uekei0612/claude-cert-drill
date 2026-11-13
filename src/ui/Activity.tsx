@@ -2,6 +2,7 @@
    列が週（左が古い）、行が曜日（日〜土）。色の濃さは答えた数（1 色の濃淡。0 は地の色）。
    セルに触れると日付・答えた数・正解の数が出る。読み上げには全体の要約を渡す */
 import { dayKey, streak } from "../engine/plan";
+import { HelpTip } from "./HelpTip";
 
 const WEEKS = 12;
 const LEVELS = [1, 5, 10, 20]; // この数以上で 1〜4 段目
@@ -27,7 +28,9 @@ export function Activity({ days, now }: { days: ReadonlyMap<string, readonly [nu
   return (
     <section class="card tight activity" aria-labelledby="act-h">
       <div class="row between">
-        <h2 id="act-h">続けた日数 {run} 日</h2>
+        <h2 id="act-h">
+          続けた日数 {run} 日 <HelpTip id="streak" />
+        </h2>
         <span class="muted small">今日 {days.get(todayKey)?.[0] ?? 0} 問</span>
       </div>
       <div class="cal" role="img" aria-label={`直近 ${WEEKS} 週で ${activeDays} 日・合計 ${total} 問に答えました`}>

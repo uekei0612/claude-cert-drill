@@ -5,6 +5,8 @@ import { useEffect, useState } from "preact/hooks";
 export type Route =
   | { readonly name: "picker" }
   | { readonly name: "settings" }
+  /** 使い方と用語（#50） */
+  | { readonly name: "help" }
   | { readonly name: "home"; readonly examId: string }
   /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"、後で振り返る印を付けた問題 "saved"、
       問題を名指し "q:s1-01,s2-03"） */
@@ -37,6 +39,7 @@ export function parseRoute(hash: string): Route {
   const [examId, screen, arg] = parts;
   if (!examId) return { name: "picker" };
   if (examId === "settings") return { name: "settings" };
+  if (examId === "help") return { name: "help" };
   switch (screen) {
     case undefined:
       return { name: "home", examId };
@@ -75,6 +78,8 @@ export function href(r: Route): string {
       return "#/";
     case "settings":
       return "#/settings";
+    case "help":
+      return "#/help";
     case "home":
       return `#/${r.examId}`;
     case "practice":
