@@ -104,6 +104,13 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!/続けた日数 1 日[\s\S]*今日 3 問/.test(homeAfter)) throw new Error("今日の回答が続けた日数に出ない");
   if (!(await page.$(".cal .cell.today.l1"))) throw new Error("今日の回答がカレンダーに出ない");
   await shot("05-home-after");
+  // ホームで問題数を変えて練習を始められる。設定にも残る（#48）
+  await page.$$eval(".size-row .seg button", bs => bs.find(b => b.textContent.trim() === "5 問").click());
+  await clickText("練習する");
+  if (!/^1 \/ 5/.test(await page.$eval(".head-label", e => e.textContent)))
+    throw new Error("ホームで変えた問題数で練習にならない");
+  await goto("#/ccar-f");
+  await page.$$eval(".size-row .seg button", bs => bs.find(b => b.textContent.trim() === "10 問").click());
   // ホームのカード：本体は詳細へ、右端の「練習 ▶」は練習へ。押す前に行き先が分かる（#32・#33）
   if (!/目安 \+\d+\.\d/.test(homeAfter)) throw new Error("伸ばすと効く細目の数字の意味が出ない");
   await page.$$eval("section[aria-labelledby=dom-h] .card.split .card-main", as => as[1].click());
