@@ -53,6 +53,23 @@ describe("parseData", () => {
     expect(Object.keys(d.activeMock!.orders)).toEqual(["s1-01"]);
     expect(d.activeMock?.cursor).toBe(1);
   });
+  test("途中の模擬試験：使った時間を持たない記録（#42 より前）は、時間を使っていない扱い", () => {
+    const base = {
+      examId: "ccar-f",
+      questionIds: ["s1-01"],
+      scenarioIds: ["s1"],
+      startedAt: NOW,
+      limitMs: 1000,
+      answers: {},
+      flags: [],
+      orders: {},
+      cursor: 0,
+    };
+    expect(parseData({ activeMock: base }).activeMock?.usedMs).toBe(0);
+    expect(parseData({ activeMock: { ...base, usedMs: 300 } }).activeMock?.usedMs).toBe(300);
+    expect(parseData({ activeMock: { ...base, usedMs: -5 } }).activeMock?.usedMs).toBe(0);
+    expect(parseData({ activeMock: { ...base, usedMs: 9999 } }).activeMock?.usedMs).toBe(1000);
+  });
 });
 
 describe("store", () => {
@@ -86,6 +103,7 @@ describe("模擬試験の記録", () => {
       scenarioIds: p.scenarioIds,
       startedAt: NOW,
       limitMs: p.limitMs,
+      usedMs: 0,
       answers,
       flags: [],
       orders: {},
@@ -109,6 +127,7 @@ describe("模擬試験の記録", () => {
       scenarioIds: [],
       startedAt: 0,
       limitMs: 0,
+      usedMs: 0,
       answers: {},
       flags: [],
       orders: {},

@@ -1,7 +1,8 @@
 /* 模擬試験。答えは見せずに進み、最後にまとめて採点する。途中の状態は記録に保存し、閉じても続きから。
+   時間はこの画面を開いている間だけ進む（閉じる・中断する・アプリを裏に回すと止まる）。
    時間切れになったらその時点で採点する（本番と同じく未回答は誤答） */
-import { useEffect, useState } from "preact/hooks";
-import { planMock, scoreMock } from "../../engine/mock";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { addUsed, mockLeft, planMock, scoreMock } from "../../engine/mock";
 import { optionOrder } from "../../engine/practice";
 import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
@@ -11,7 +12,8 @@ import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { go, href } from "../route";
 
-const fmt = (ms: number) => {
+/** 残り時間の表示（「1:02:03」「12:34」） */
+export const fmt = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
@@ -39,6 +41,7 @@ function begin(exam: Exam): void {
       scenarioIds: p.scenarioIds,
       startedAt: Date.now(),
       limitMs: p.limitMs,
+      usedMs: 0,
       answers: {},
       flags: [],
       orders,
@@ -52,14 +55,44 @@ export function Mock({ exam }: { exam: Exam }) {
   const m = data.activeMock;
   const [list, setList] = useState(false);
   const [tick, setTick] = useState(Date.now());
+  /** 今回この画面を開いた時刻。隠れている間は無し（時間を進めない） */
+  const since = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!m || m.examId !== exam.id) return;
-    const id = setInterval(() => setTick(Date.now()), 1000);
-    return () => clearInterval(id);
+    const key = m.startedAt;
+    // 開いていた分を記録に足す。別の模擬試験に替わっていたら足さない
+    const commit = () => {
+      const s = since.current;
+      if (s === undefined) return;
+      const now = Date.now();
+      since.current = now;
+      update(d => (d.activeMock?.startedAt === key ? patchMock(d, x => addUsed(x, s, now)) : d));
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        commit();
+        since.current = undefined;
+      } else if (since.current === undefined) {
+        since.current = Date.now();
+      }
+      setTick(Date.now());
+    };
+    since.current = document.visibilityState === "hidden" ? undefined : Date.now();
+    document.addEventListener("visibilitychange", onVisibility);
+    const tickId = setInterval(() => setTick(Date.now()), 1000);
+    // アプリが裏で落とされても、使った時間を大きく取りこぼさないように
+    const saveId = setInterval(commit, 15_000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearInterval(tickId);
+      clearInterval(saveId);
+      commit();
+      since.current = undefined;
+    };
   }, [m?.startedAt]);
 
-  const left = m ? m.startedAt + m.limitMs - tick : 0;
+  const left = m ? mockLeft(m, since.current, tick) : 0;
   useEffect(() => {
     if (m && m.examId === exam.id && left <= 0) submit(exam);
   }, [left <= 0]);
@@ -87,7 +120,11 @@ export function Mock({ exam }: { exam: Exam }) {
 
   const header = (
     <header class="mock-head">
-      <a class="btn ghost" href={href({ name: "home", examId: exam.id })} title="途中の状態は残ります">
+      <a
+        class="btn ghost"
+        href={href({ name: "home", examId: exam.id })}
+        title="途中の状態は残ります。時間も止まります"
+      >
         中断
       </a>
       <span class={`timer ${left < 5 * 60 * 1000 ? "ngc" : ""}`} aria-label="残り時間">
@@ -203,7 +240,10 @@ function Intro({ exam, other }: { exam: Exam; other?: string }) {
         </p>
         <p class="muted small">
           制限時間は 1 問 {per} 分。本番は {f.questions ?? "?"} 問・{f.minutes ?? "?"}{" "}
-          分ですが、このアプリでは手元の問題で組むので、 問題数は少なめです。途中で閉じても続きからできます。
+          分ですが、このアプリでは手元の問題で組むので、問題数は少なめです。
+        </p>
+        <p class="muted small">
+          途中で閉じても続きからできます。時間はこの画面を開いている間だけ進み、中断したりアプリを閉じたりすると止まります。
         </p>
         {other && <p class="ngc small">別の資格（{other}）の模擬試験が途中です。始めるとそちらは消えます。</p>}
         <button
