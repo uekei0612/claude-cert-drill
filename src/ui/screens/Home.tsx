@@ -7,6 +7,7 @@ import { itemKey } from "../../store/schema";
 import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
 import { href } from "../route";
+import { fmt } from "./Mock";
 
 export function Home({ exam, now }: { exam: Exam; now: number }) {
   const data = useData();
@@ -50,7 +51,8 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         <a class="card notice" href={href({ name: "mock", examId: exam.id })}>
           <strong>模擬試験の途中です</strong>
           <span class="small">
-            {Object.keys(active.answers).length} / {active.questionIds.length} 問に回答済み。続きから再開する
+            {Object.keys(active.answers).length} / {active.questionIds.length} 問に回答済み・残り{" "}
+            {fmt(active.limitMs - active.usedMs)}（時間は止まっています）。続きから再開する
           </span>
         </a>
       )}

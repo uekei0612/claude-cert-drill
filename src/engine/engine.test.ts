@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { fixture } from "./fixture";
-import { planMock, scoreMock } from "./mock";
+import { addUsed, mockLeft, planMock, scoreMock } from "./mock";
 import { filterQuestions, optionOrder, planPractice } from "./practice";
 import { readiness, tally, weakestTasks } from "./progress";
 import { seeded } from "./rng";
@@ -106,6 +106,24 @@ describe("mock", () => {
     expect(p.questionIds).toHaveLength(4);
     for (const sid of p.scenarioIds) expect(p.questionIds.filter(id => id.startsWith(`${sid}-`))).toHaveLength(2);
     expect(p.limitMs).toBe(4 * 120 * 1000);
+  });
+  test("残り時間：画面を開いている間だけ減り、閉じている間は止まる", () => {
+    const MIN = 60_000;
+    const T0 = 1_000_000;
+    let m = { limitMs: 30 * MIN, usedMs: 0 };
+    expect(mockLeft(m, T0, T0 + 5 * MIN)).toBe(25 * MIN);
+    // 5 分解いて閉じる
+    m = addUsed(m, T0, T0 + 5 * MIN);
+    // 一晩たってから開いても、閉じたときと同じ残り時間
+    const reopen = T0 + 12 * 60 * MIN;
+    expect(mockLeft(m, undefined, reopen)).toBe(25 * MIN);
+    expect(mockLeft(m, reopen, reopen)).toBe(25 * MIN);
+    expect(mockLeft(m, reopen, reopen + 3 * MIN)).toBe(22 * MIN);
+  });
+  test("残り時間：時計が戻っても増えない", () => {
+    const m = { limitMs: 1000, usedMs: 200 };
+    expect(mockLeft(m, 5000, 4000)).toBe(800);
+    expect(addUsed(m, 5000, 4000).usedMs).toBe(200);
   });
   test("採点：未回答は誤答、出た分野で配点を割り直す", () => {
     const ids = ["s1-01", "s1-02", "s1-04"]; // d1 2 問、d2 1 問
