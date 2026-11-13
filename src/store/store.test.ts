@@ -115,7 +115,9 @@ describe("store", () => {
     const d = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
     expect(importJson(exportJson(d))).toEqual(d);
     expect(() => importJson('{"items":{}}')).toThrow();
-    expect(() => importJson("not json")).toThrow();
+    // 読めないときは、ブラウザの英語のエラーではなく日本語で理由と次にすることを出す（#49）
+    expect(() => importJson("not json")).toThrow(/記録の形式ではありません/);
+    expect(() => importJson('{"items":{}}')).toThrow(/このアプリ（claude-cert-drill）で書き出した記録ではありません/);
   });
 });
 

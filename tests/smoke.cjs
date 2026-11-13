@@ -58,6 +58,14 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f");
   if (!(await text()).includes("合格の目安")) throw new Error("ホームが出ない");
   await shot("02-home");
+  // 出せる問題が無いときも、理由と行き先を出す（#49）
+  await goto("#/ccar-f/practice?only=saved");
+  if (!/印を付けた問題がありません[\s\S]*全部の問題から練習する/.test(await text()))
+    throw new Error("振り返りが空のとき行き先が出ない");
+  await goto("#/ccar-f/practice?only=9.9");
+  if (!/当てはまる問題がありません[\s\S]*分野と細目を選び直す/.test(await text()))
+    throw new Error("絞り込みが空のとき行き先が出ない");
+  await goto("#/ccar-f");
 
   // 練習：3 問答える（1 問目は誤答を選ぶ＝解説が出るのを確かめる）
   await goto("#/ccar-f/practice");
@@ -383,6 +391,16 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f");
   if ((await text()).includes("試験まであと")) throw new Error("試験日を消しても逆算が残る");
   await goto("#/settings");
+  // 読めない記録を読み込むと、日本語で理由が出る（英語のエラーをそのまま出さない。#49）
+  await page.type("textarea", "{not json");
+  await clickText("貼り付けて読み込む");
+  const importMsg = await text();
+  if (!importMsg.includes("記録の形式ではありません") || /Unexpected|JSON/.test(importMsg))
+    throw new Error("読み込めないときの理由が日本語で出ない");
+  await page.$eval("textarea", el => {
+    el.value = "";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
   // 記録のコピーは、問題のコピーと同じ仕組みで写せる（#46）
   await clickText("コピーする");
   if (!(await text()).includes("記録をコピーしました")) throw new Error("設定の記録のコピーができない");
@@ -458,6 +476,19 @@ const OUT = process.argv[3] || "/tmp/shots";
     await new Promise(r => setTimeout(r, 150));
   }
   if (!(await text()).includes("おつかれさまでした")) throw new Error("キーだけで練習が終わらない");
+
+  // コピーに失敗したら、選べる欄に出して手で写せるようにする（#49）
+  await goto("#/ccar-f/practice");
+  await click(".option");
+  await page.evaluate(() => {
+    document.execCommand = () => false;
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: () => Promise.reject(new Error("x")) } });
+  });
+  await click(".qcard .copy");
+  await new Promise(r => setTimeout(r, 200));
+  const manualText = await page.$eval(".manual-copy textarea", t => t.value).catch(() => "");
+  if (!manualText.includes("■ 問題")) throw new Error("コピーに失敗しても、手で写す欄が出ない");
+  await page.reload({ waitUntil: "networkidle0" });
 
   // ダーク
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "dark" }]);
