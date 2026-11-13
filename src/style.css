@@ -639,8 +639,8 @@ textarea {
   flex: none;
   white-space: nowrap;
 }
-.row.between.drill-head > .head-label:last-child {
-  flex: 0 1 auto;
+.row.between.drill-head > .head-label {
+  flex: 1 1 auto;
   min-width: 0;
   white-space: normal;
   text-align: right;
@@ -716,6 +716,50 @@ select {
 .seg button.on {
   background: var(--accent);
   color: var(--on-accent);
+}
+/* 問題文の言語：今の言語を出す小さなボタンと、押すと開く選択肢（#31） */
+.lang-menu {
+  position: relative;
+  flex: none;
+}
+.lang-cur {
+  font-weight: 700;
+}
+.lang-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 13rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+  overflow: hidden;
+}
+.lang-pop button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: var(--tap);
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.lang-pop button + button {
+  border-top: 1px solid var(--line);
+}
+.lang-pop button.on {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 /* 併記の訳は英語の下に小さく */
 .ja-sub {

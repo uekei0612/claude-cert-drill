@@ -35,7 +35,9 @@ export function Saved({ exam }: { exam: Exam }) {
             </a>
           )}
           <section class="stack">
-            <LangSwitch exam={exam} />
+            <div class="row end">
+              <LangSwitch exam={exam} />
+            </div>
             {ids.map(id => {
               const q = byId.get(id)!;
               return (
