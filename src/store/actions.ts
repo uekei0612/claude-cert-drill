@@ -1,11 +1,18 @@
 /* 記録を変える操作。画面からはここを呼ぶ */
-import { review } from "../engine/schedule";
+import { type ItemStat, review } from "../engine/schedule";
 import type { MockScore } from "../engine/mock";
 import { type ActiveMock, type Data, MAX_MOCKS, type Settings, emptyData, itemKey } from "./schema";
 
 export const answer = (d: Data, examId: string, questionId: string, ok: boolean, now: number): Data => {
   const k = itemKey(examId, questionId);
   return { ...d, items: { ...d.items, [k]: review(d.items[k], ok, now) } };
+};
+
+/** 練習の答えを取り消す：答える前の記録（prev）に戻す。答える前に記録が無かったなら消す（#44） */
+export const restoreItem = (d: Data, examId: string, questionId: string, prev: ItemStat | undefined): Data => {
+  const k = itemKey(examId, questionId);
+  const { [k]: _drop, ...rest } = d.items;
+  return { ...d, items: prev ? { ...rest, [k]: prev } : rest };
 };
 
 /** 後で振り返る印を付ける・外す */
