@@ -2,7 +2,17 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { fixture } from "../engine/fixture";
 import { planMock, scoreMock } from "../engine/mock";
 import { seeded } from "../engine/rng";
-import { abandonMock, answer, finishMock, resetExam, restoreItem, savedIds, startMock, toggleSaved } from "./actions";
+import {
+  abandonMock,
+  answer,
+  finishMock,
+  markGuess,
+  resetExam,
+  restoreItem,
+  savedIds,
+  startMock,
+  toggleSaved,
+} from "./actions";
 import { emptyData, parseData } from "./schema";
 import { STORAGE_KEY, exportJson, getData, importJson, reloadForTest, setData } from "./store";
 
@@ -104,6 +114,15 @@ describe("練習の答えの取り消し", () => {
     const after = answer(d, "ccar-f", "s1-01", false, NOW + 2 * 864e5);
     expect(after.items[k]).not.toEqual(prev);
     expect(restoreItem(after, "ccar-f", "s1-01", prev)).toEqual(before);
+  });
+  test("正解に勘だったを付けると勘の記録に、外すとふつうの正解に戻る（#27）", () => {
+    const k = "ccar-f:s1-01";
+    const d0 = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    const prev = d0.items[k];
+    const ok = answer(d0, "ccar-f", "s1-01", true, NOW + 864e5);
+    const guessed = markGuess(ok, "ccar-f", "s1-01", prev, true, NOW + 864e5);
+    expect(guessed.items[k]?.interval).toBe(0);
+    expect(markGuess(guessed, "ccar-f", "s1-01", prev, false, NOW + 864e5)).toEqual(ok);
   });
   test("初めて答えた問題を取り消すと、記録が無い状態に戻る", () => {
     const d = answer(emptyData(), "ccar-f", "s1-01", false, NOW);

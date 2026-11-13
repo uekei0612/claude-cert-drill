@@ -51,6 +51,14 @@ export function review(prev: ItemStat | undefined, ok: boolean, now: number): It
   };
 }
 
+/** 勘で当たった正解（#27）。当たりの回数には数えるが、間隔は 0 に戻して覚えた・覚えかけに入れず、
+    1 日後にもう一度出す（誤答の 10 分より長く、正解の 1 日と同じ）。ease は変えない（分かっていなかっただけで、
+    間違えたわけではない） */
+export function reviewGuess(prev: ItemStat | undefined, now: number): ItemStat {
+  const s = prev ?? { ease: START_EASE, interval: 0, due: now, tries: 0, correct: 0, last: now };
+  return { ease: s.ease, interval: 0, due: now + DAY, tries: s.tries + 1, correct: s.correct + 1, last: now };
+}
+
 /** 覚えた扱いにする間隔（日）。1 回の正解（間隔 1 日）ではまだ数えず、
     日をあけて 2 回続けて正解する（間隔が 3 日になる）と数える（#28） */
 export const KNOWN_INTERVAL = 3;

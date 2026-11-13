@@ -1,13 +1,14 @@
 /* 練習。1 問ずつ答えてすぐ解説を見る。答えはその場で記録する（途中でやめても残る）。
    間違えた問題は、その回の最後にもう一度出す（1 回だけ）。
-   押し間違えたときのために、次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44） */
+   間違えたときは、押し間違いなら次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44）。
+   正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27） */
 import { useMemo, useState } from "preact/hooks";
 import { idsOnly, optionOrder, parseIdsOnly, planPractice } from "../../engine/practice";
 import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
 import type { ItemStat } from "../../engine/schedule";
-import { answer, restoreItem, savedIds } from "../../store/actions";
+import { answer, markGuess, restoreItem, savedIds } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { getData, update, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
@@ -18,6 +19,8 @@ import { href } from "../route";
 interface Done {
   readonly id: string;
   readonly ok: boolean;
+  /** 勘で当たった */
+  readonly guess?: boolean;
 }
 
 /** 取り消すときに戻す先：答える前の記録と、この答えでやり直しに足したかどうか */
@@ -29,7 +32,7 @@ interface Undo {
 function onlyLabel(exam: Exam, only?: string): string | undefined {
   if (!only) return undefined;
   if (only === "saved") return "振り返り";
-  if (parseIdsOnly(only)) return "間違えた問題";
+  if (parseIdsOnly(only)) return "解き直し";
   if (/^d\d+$/.test(only)) return exam.domains.find(d => d.id === only)?.ja;
   if (/^s\d+$/.test(only)) return exam.scenarios.find(s => s.id === only)?.ja;
   const t = findTask(exam, only);
@@ -60,6 +63,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   const [done, setDone] = useState<Done[]>([]);
   const [requeued, setRequeued] = useState<ReadonlySet<string>>(new Set());
   const [undo, setUndo] = useState<Undo | undefined>();
+  const [guess, setGuess] = useState(false);
   const orders = useMemo(() => {
     const rng = seeded(seed + round + 7);
     return new Map(initial.map(id => [id, optionOrder(rng)]));
@@ -92,8 +96,10 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
 
   if (pos >= queue.length) {
     const firstTry = done.filter((d, i) => done.findIndex(x => x.id === d.id) === i);
-    const ok = firstTry.filter(d => d.ok).length;
-    const missed = firstTry.filter(d => !d.ok).map(d => byId.get(d.id)!);
+    const ok = firstTry.filter(d => d.ok && !d.guess).length;
+    const guessed = firstTry.filter(d => d.guess).length;
+    const missed = firstTry.filter(d => !d.ok || d.guess).map(d => byId.get(d.id)!);
+    const missedLabel = guessed ? "間違えた・勘の" : "間違えた";
     return (
       <main class="page">
         <h1>おつかれさまでした</h1>
@@ -101,11 +107,14 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
           <p class="big">
             {ok} / {firstTry.length} 問
           </p>
-          <p class="muted small">1 回目の答えで数えています（やり直した問題は数えない）。</p>
+          <p class="muted small">
+            {guessed > 0 && `ほかに勘で当たった問題が ${guessed} 問。`}1
+            回目の答えで数えています（やり直した問題は数えない）。
+          </p>
         </section>
         {missed.length > 0 && (
           <section class="stack">
-            <h2>間違えた問題で覚えること</h2>
+            <h2>{missedLabel}問題で覚えること</h2>
             {missed.map(q => (
               <div key={q.id} class="card tight">
                 <span class="muted small">
@@ -126,7 +135,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
             class="btn primary block"
             href={href({ name: "practice", examId: exam.id, only: idsOnly(missed.map(q => q.id)) })}
           >
-            間違えた {missed.length} 問をもう一度
+            {missedLabel} {missed.length} 問をもう一度
           </a>
         )}
         <button class={`btn block ${missed.length ? "" : "primary"}`} onClick={restart}>
@@ -152,11 +161,21 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     setChosen(orig);
     setDone([...done, { id, ok }]);
     setUndo({ prev: getData().items[itemKey(exam.id, id)], requeued: requeue });
+    setGuess(false);
     update(d => answer(d, exam.id, id, ok, Date.now()));
     if (requeue) {
       setQueue([...queue, id]);
       setRequeued(new Set([...requeued, id]));
     }
+  };
+
+  /** 正解に「勘だった」を付ける・外す */
+  const toggleGuess = () => {
+    if (!undo) return;
+    const on = !guess;
+    update(d => markGuess(d, exam.id, id, undo.prev, on, Date.now()));
+    setDone([...done.slice(0, -1), { id, ok: true, guess: on }]);
+    setGuess(on);
   };
 
   /** 答えを取り消して、選び直せるようにする */
@@ -210,13 +229,23 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         <div class="sticky-next">
           <div class="verdict">
             <strong class={chosen === q.answer ? "okc" : "ngc"}>{chosen === q.answer ? "正解" : "不正解"}</strong>
-            {undo && (
+            {undo && chosen !== q.answer && (
               <button
                 class="btn ghost small undo"
                 onClick={cancel}
                 title="押し間違えたときに。記録も答える前に戻します"
               >
                 ↶ 取り消す
+              </button>
+            )}
+            {undo && chosen === q.answer && (
+              <button
+                class={`btn ghost small guess ${guess ? "on" : ""}`}
+                aria-pressed={guess}
+                onClick={toggleGuess}
+                title="勘で当たった正解は覚えたに数えず、明日もう一度出します"
+              >
+                {guess ? "☑ 勘だった" : "☐ 勘だった"}
               </button>
             )}
           </div>

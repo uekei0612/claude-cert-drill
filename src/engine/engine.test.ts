@@ -4,7 +4,7 @@ import { addUsed, mockLeft, planMock, scoreMock } from "./mock";
 import { filterQuestions, idsOnly, optionOrder, parseIdsOnly, planPractice } from "./practice";
 import { questionsOfDomain, questionsOfTask, readiness, tally, weakestTasks } from "./progress";
 import { seeded } from "./rng";
-import { DAY, type ItemStat, RETRY_MS, isKnown, isLearning, review } from "./schedule";
+import { DAY, type ItemStat, RETRY_MS, isKnown, isLearning, review, reviewGuess } from "./schedule";
 
 const NOW = Date.UTC(2026, 10, 4);
 
@@ -22,6 +22,21 @@ describe("review", () => {
     expect(s.interval).toBe(0);
     expect(s.due).toBe(NOW + 1000 + RETRY_MS);
     expect(isKnown(s, NOW + 1000)).toBe(false);
+  });
+  test("勘の正解は覚えた・覚えかけに入れず、1 日後に出す。ease は変えない（#27）", () => {
+    const known = review(review(undefined, true, NOW), true, NOW + DAY);
+    const g = reviewGuess(known, NOW + 4 * DAY);
+    expect(g.interval).toBe(0);
+    expect(g.due).toBe(NOW + 5 * DAY);
+    expect(g.ease).toBe(known.ease);
+    expect(g.correct).toBe(known.correct + 1);
+    expect(isKnown(g, NOW + 4 * DAY)).toBe(false);
+    expect(isLearning(g, NOW + 4 * DAY)).toBe(false);
+    // 初めての問題でも同じ
+    const first = reviewGuess(undefined, NOW);
+    expect(first).toMatchObject({ interval: 0, due: NOW + DAY, tries: 1, correct: 1 });
+    // 勘のあと、期限に正解すれば覚えかけから始め直す
+    expect(review(first, true, NOW + DAY).interval).toBe(1);
   });
   test("期限前の正解では延ばさない", () => {
     const a = review(undefined, true, NOW);
