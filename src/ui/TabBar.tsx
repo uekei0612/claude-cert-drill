@@ -18,6 +18,7 @@ export function TabBar({ examId, current }: { examId: string; current: Route["na
         const active =
           current === t.name ||
           (t.name === "domains" && current === "task") ||
+          (t.name === "learn" && current === "search") ||
           (t.name === "mock" && current === "mock-result");
         return (
           <a key={t.name} href={href(r)} class={active ? "active" : ""} aria-current={active ? "page" : undefined}>

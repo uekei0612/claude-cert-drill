@@ -543,6 +543,19 @@ a.tap {
   width: 10px;
   height: 10px;
 }
+/* 検索（#41） */
+.search-box {
+  width: 100%;
+  color: var(--text);
+}
+mark {
+  background: var(--accent-soft);
+  color: var(--text);
+  border-radius: 2px;
+}
+.lesson-sec {
+  scroll-margin-top: 12px;
+}
 /* キー操作の案内（#40）。マウスのある画面（PC）だけに出す */
 .kbd-hint {
   display: none;
@@ -727,6 +740,7 @@ ul.small,
 }
 select,
 input[type="date"],
+input[type="search"],
 textarea {
   /* iPhone は入力欄の文字が 16px 未満だと、タップしたとき画面を勝手に拡大する */
   font-size: 1rem;

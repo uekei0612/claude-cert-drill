@@ -12,6 +12,7 @@ import { Domains } from "./ui/screens/Domains";
 import { Settings } from "./ui/screens/Settings";
 import { TaskDetail } from "./ui/screens/TaskDetail";
 import { Learn } from "./ui/screens/Learn";
+import { Search } from "./ui/screens/Search";
 import { Practice } from "./ui/screens/Practice";
 import { Saved } from "./ui/screens/Saved";
 import { TabBar } from "./ui/TabBar";
@@ -72,7 +73,8 @@ export function App() {
   else if (route.name === "task")
     screen = <TaskDetail key={route.taskId} exam={exam} taskId={route.taskId} now={now} />;
   else if (route.name === "learn")
-    screen = <Learn key={route.taskId ?? ""} exam={exam} taskId={route.taskId} now={now} />;
+    screen = <Learn key={route.taskId ?? ""} exam={exam} taskId={route.taskId} section={route.section} now={now} />;
+  else if (route.name === "search") screen = <Search exam={exam} q={route.q ?? ""} />;
   else if (route.name === "mock-result") screen = <MockResult key={route.at} exam={exam} at={route.at} />;
   else screen = <Home exam={exam} now={now} />;
 

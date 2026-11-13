@@ -235,6 +235,24 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f/learn/3.6");
   await shot("21-learn-cli");
 
+  // 検索：目次から入り、語を入れると章の節と細目の要点が並ぶ。節を押すとその節の位置へ（#41）
+  await goto("#/ccar-f/learn");
+  await clickText("教科書と要点を検索");
+  await page.type(".search-box", "PostToolUse");
+  await new Promise(r => setTimeout(r, 300));
+  const found = await text();
+  if (!/教科書 \d+ 件/.test(found) || !/細目の要点 \d+ 件/.test(found)) throw new Error("検索で章の節と要点が並ばない");
+  if (!(await page.evaluate(() => location.hash)).includes("q=PostToolUse"))
+    throw new Error("検索の語が URL に残らない");
+  await shot("28-search");
+  const target = await page.$eval("main section .card", a => a.getAttribute("href"));
+  await page.$eval("main section .card", a => a.click());
+  await new Promise(r => setTimeout(r, 500));
+  const sec = /sec=(\d+)/.exec(target)[1];
+  const top = await page.$eval(`#sec-${sec}`, e => Math.round(e.getBoundingClientRect().top));
+  if (Number(sec) > 0 && (top < 0 || top > 120))
+    throw new Error(`検索から移った章で、その節の位置に移らない：${top}px`);
+
   // 画面を移ったら先頭から（ホームを下まで送ってから別のタブへ。前の位置が残らない）
   await goto("#/ccar-f");
   await page.evaluate(() => scrollTo(0, 1e6));
