@@ -70,7 +70,8 @@ export function App() {
   else if (route.name === "saved") screen = <Saved exam={exam} />;
   else if (route.name === "task")
     screen = <TaskDetail key={route.taskId} exam={exam} taskId={route.taskId} now={now} />;
-  else if (route.name === "learn") screen = <Learn key={route.taskId ?? ""} exam={exam} taskId={route.taskId} />;
+  else if (route.name === "learn")
+    screen = <Learn key={route.taskId ?? ""} exam={exam} taskId={route.taskId} now={now} />;
   else if (route.name === "mock-result") screen = <MockResult key={route.at} exam={exam} at={route.at} />;
   else screen = <Home exam={exam} now={now} />;
 

@@ -63,6 +63,8 @@ export interface Data {
   readonly activeMock?: ActiveMock;
   /** 後で振り返る印。"<資格ID>:<問題ID>" → 印を付けた時刻 */
   readonly saved?: Readonly<Record<string, number>>;
+  /** 教科書の読んだ章。"<資格ID>:<章ID>"（章 ID は細目 "1.1" か "intro"）→ 読んだ時刻（#29） */
+  readonly read?: Readonly<Record<string, number>>;
 }
 
 export const DEFAULT_SETTINGS: Settings = { practiceSize: 10, lang: "en", theme: "system" };
@@ -77,6 +79,8 @@ type Obj = Record<string, unknown>;
 const isObj = (x: unknown): x is Obj => typeof x === "object" && x !== null && !Array.isArray(x);
 const num = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
 const KEY_RE = /^[a-z0-9-]+:[a-z0-9-]+$/;
+/** 章の記録のキー（章 ID に "." を含む） */
+const READ_KEY_RE = /^[a-z0-9-]+:[a-z0-9.-]+$/;
 
 function item(x: unknown): ItemStat | undefined {
   if (!isObj(x)) return undefined;
@@ -182,8 +186,11 @@ export function parseData(raw: unknown): Data {
           .slice(0, MAX_MOCKS);
   const saved: Record<string, number> = {};
   if (isObj(raw.saved)) for (const [k, v] of Object.entries(raw.saved)) if (num(v) && KEY_RE.test(k)) saved[k] = v;
+  const read: Record<string, number> = {};
+  if (isObj(raw.read)) for (const [k, v] of Object.entries(raw.read)) if (num(v) && READ_KEY_RE.test(k)) read[k] = v;
   const am = activeMock(raw.activeMock);
   const data: Data = { version: VERSION, settings: settings(raw.settings), items, mocks };
   const withSaved = Object.keys(saved).length ? { ...data, saved } : data;
-  return am ? { ...withSaved, activeMock: am } : withSaved;
+  const withRead = Object.keys(read).length ? { ...withSaved, read } : withSaved;
+  return am ? { ...withRead, activeMock: am } : withRead;
 }

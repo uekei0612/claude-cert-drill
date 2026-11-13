@@ -159,6 +159,12 @@ export type LessonBlock =
 /** 教科書の「はじめに」の ID（URL の #/<資格>/learn/intro） */
 export const PRIMER_ID = "intro";
 
+/** 教科書の章を読む順（はじめに → 分野 → 細目。章のある細目だけ） */
+export const lessonOrder = (exam: Exam): string[] => [
+  ...(exam.primer ? [PRIMER_ID] : []),
+  ...exam.domains.flatMap(d => d.tasks.map(t => t.id)).filter(id => exam.lessons?.[id]),
+];
+
 /** 細目の ID から分野を引く */
 export function domainOfTask(exam: Exam, taskId: string): Domain | undefined {
   return exam.domains.find(d => d.tasks.some(t => t.id === taskId));

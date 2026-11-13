@@ -1,12 +1,13 @@
 /* 資格のホーム。いちばん上に合格の目安、次に「今日の練習」、伸ばすと効く細目、分野ごとの習熟 */
 import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../engine/progress";
 import type { Exam } from "../../exams/types";
-import { findTask } from "../../exams/types";
-import { savedIds } from "../../store/actions";
+import { findTask, lessonOrder } from "../../exams/types";
+import { readChapters, savedIds } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
 import { href } from "../route";
+import { chapterTag, chapterTitle, nextChapter } from "./Learn";
 import { fmt } from "./Mock";
 
 export function Home({ exam, now }: { exam: Exam; now: number }) {
@@ -14,6 +15,10 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const statOf = (id: string) => data.items[itemKey(exam.id, id)];
   const ready = readiness(exam, statOf, now);
   const all = tally(exam.questions, statOf, now);
+  const read = readChapters(data, exam.id);
+  const chapters = lessonOrder(exam);
+  const readCount = chapters.filter(id => read.has(id)).length;
+  const nextRead = nextChapter(exam, read);
   const due = dueCount(exam, statOf, now);
   const weak = weakestTasks(exam, statOf, now, 3);
   const active = data.activeMock?.examId === exam.id ? data.activeMock : undefined;
@@ -70,6 +75,20 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         </div>
         {!saved && <span class="muted small">答えのあとの「☆ 後で振り返る」で印を付けた問題が集まります</span>}
       </a>
+
+      {nextRead && (
+        <a class="card tight" href={href({ name: "learn", examId: exam.id, taskId: nextRead })}>
+          <div class="row between">
+            <span>教科書の続き</span>
+            <span class="muted small">
+              読んだ {readCount} / {chapters.length} 章
+            </span>
+          </div>
+          <span>
+            <span class="tag">{chapterTag(nextRead)}</span> {chapterTitle(exam, nextRead)}
+          </span>
+        </a>
+      )}
 
       {weak.length > 0 && (
         <section class="stack" aria-labelledby="weak-h">
