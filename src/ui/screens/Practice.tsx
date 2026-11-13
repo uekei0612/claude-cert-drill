@@ -210,8 +210,8 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
           {pos + 1} / {queue.length}
           {isRetry && "（やり直し）"}
         </span>
+        <LangSwitch exam={exam} />
       </header>
-      <LangSwitch exam={exam} />
       <div class="progress" aria-hidden="true">
         <div style={{ width: `${(pos / queue.length) * 100}%` }} />
       </div>

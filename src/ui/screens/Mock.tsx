@@ -175,7 +175,6 @@ export function Mock({ exam }: { exam: Exam }) {
     <main class="page drill">
       <h1 class="sr-only">模擬試験</h1>
       {header}
-      <LangSwitch exam={exam} />
       <div class="progress" aria-hidden="true">
         <div style={{ width: `${(answered / ids.length) * 100}%` }} />
       </div>
@@ -183,17 +182,20 @@ export function Mock({ exam }: { exam: Exam }) {
         <span class="muted small">
           {cursor + 1} / {ids.length} 問
         </span>
-        <button
-          class={`btn ghost small ${flagged ? "flag-on" : ""}`}
-          aria-pressed={flagged}
-          onClick={() =>
-            update(d =>
-              patchMock(d, x => ({ ...x, flags: flagged ? x.flags.filter(f => f !== id) : [...x.flags, id] })),
-            )
-          }
-        >
-          {flagged ? "⚑ 旗を外す" : "⚐ 旗を立てる"}
-        </button>
+        <div class="row">
+          <LangSwitch exam={exam} />
+          <button
+            class={`btn ghost small ${flagged ? "flag-on" : ""}`}
+            aria-pressed={flagged}
+            onClick={() =>
+              update(d =>
+                patchMock(d, x => ({ ...x, flags: flagged ? x.flags.filter(f => f !== id) : [...x.flags, id] })),
+              )
+            }
+          >
+            {flagged ? "⚑ 旗を外す" : "⚐ 旗を立てる"}
+          </button>
+        </div>
       </div>
       <QuestionCard
         key={id}

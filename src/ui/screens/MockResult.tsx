@@ -86,8 +86,10 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
 
       {ids.length > 0 && (
         <section class="stack">
-          <h2>見直し</h2>
-          <LangSwitch exam={exam} />
+          <div class="row between">
+            <h2>見直し</h2>
+            <LangSwitch exam={exam} />
+          </div>
           <label class="check">
             <input type="checkbox" checked={onlyWrong} onChange={e => setOnlyWrong(e.currentTarget.checked)} />
             間違えた問題だけ

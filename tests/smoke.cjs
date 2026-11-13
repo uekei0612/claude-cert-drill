@@ -43,6 +43,13 @@ const OUT = process.argv[3] || "/tmp/shots";
     await new Promise(r => setTimeout(r, 300));
   };
 
+  // 問題文の言語は、小さなボタンを押して開いた選択肢から選ぶ（#31）
+  const setLang = async label => {
+    await click(".lang-toggle");
+    await clickText(label);
+    if (await page.$(".lang-pop")) throw new Error("言語を選んでも選択肢が閉じない");
+  };
+
   await page.goto(BASE, { waitUntil: "networkidle0" });
   await page.evaluate(() => localStorage.clear());
   await page.goto(BASE + "#/", { waitUntil: "networkidle0" });
@@ -55,6 +62,9 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 練習：3 問答える（1 問目は誤答を選ぶ＝解説が出るのを確かめる）
   await goto("#/ccar-f/practice");
   await shot("03-practice-question");
+  // 言語の切り替えは上の帯に収め、問題は画面の上から始まる（#31）
+  const cardTop = await page.$eval(".qcard", e => Math.round(e.getBoundingClientRect().top));
+  if (cardTop > 140) throw new Error(`練習の問題が下がっている：${cardTop}px`);
   // Claude に聞く用のコピーは、答える前には出さない（答えが分かってしまう。#24）
   if (await page.$(".qcard .copy")) throw new Error("答える前にコピーのボタンが出ている");
   for (let i = 0; i < 3; i++) {
@@ -262,11 +272,13 @@ const OUT = process.argv[3] || "/tmp/shots";
   await new Promise(r => setTimeout(r, 500));
   if (!(await text()).includes("模擬試験の結果")) throw new Error("結果が出ない");
   // 見直しの言語切り替えが、狭い幅でも縦に折れない
-  const seg = await page.$$eval(".seg button", bs =>
-    bs.map(b => b.getBoundingClientRect()).map(r => [r.width, r.height]),
+  await click(".lang-toggle");
+  const seg = await page.$$eval(".lang-toggle, .lang-pop button", bs =>
+    bs.map(b => b.getBoundingClientRect()).map(r => [Math.round(r.width), Math.round(r.height), Math.round(r.right)]),
   );
-  if (!seg.length || seg.some(([w, h]) => w < 44 || h < 44 || h > 60))
+  if (seg.length !== 5 || seg.some(([w, h, right]) => w < 44 || h < 44 || h > 80 || right > 390))
     throw new Error(`見直しの言語切り替えが崩れている：${JSON.stringify(seg)}`);
+  await click(".lang-toggle");
   await shot("11-mock-result");
   await click(".review-row");
   if (!(await page.$(".qcard .learn-link"))) throw new Error("模擬試験の見直しに教科書へのリンクが無い");
@@ -292,20 +304,20 @@ const OUT = process.argv[3] || "/tmp/shots";
 
   // 問題文の言語：日本語・併記に切り替え、設定が残ることを確かめる
   await goto("#/ccar-f/practice");
-  await clickText("日本語");
+  await setLang("日本語");
   if (!/[ぁ-ん]/.test(await page.$eval(".stem", e => e.textContent))) throw new Error("日本語に切り替わらない");
   await shot("15-practice-ja");
-  await clickText("併記");
+  await setLang("併記");
   if (!(await page.$(".stem .ja-sub"))) throw new Error("併記にならない");
   await click(".option");
   await shot("16-practice-both");
   await page.reload({ waitUntil: "networkidle0" });
   if (!(await page.$(".stem .ja-sub"))) throw new Error("言語の設定が残らない");
-  await clickText("英語");
+  await setLang("英語");
 
   // 訳はタップ：最初は英語だけ。「訳を見る」で訳が出て、次の問題ではまた閉じる。答えたら訳が出る
   await goto("#/ccar-f/practice");
-  await clickText("訳はタップ");
+  await setLang("訳はタップ");
   if (await page.$(".stem .ja-sub")) throw new Error("訳はタップなのに最初から訳が出ている");
   await clickText("訳を見る");
   if (!(await page.$(".stem .ja-sub"))) throw new Error("訳を見るで訳が出ない");
@@ -330,7 +342,7 @@ const OUT = process.argv[3] || "/tmp/shots";
   const lifted = moved.dy < 0 && Math.abs(moved.gap - 8) <= 2 && moved.top >= 8;
   if (Math.abs(moved.dy) > 2 && !lifted) throw new Error(`答えたら押した選択肢がずれた：${JSON.stringify(moved)}`);
   if (!(await page.$(".stem .ja-sub"))) throw new Error("答えたあとに訳が出ない");
-  await clickText("英語");
+  await setLang("英語");
 
   // ダーク
   await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "dark" }]);
