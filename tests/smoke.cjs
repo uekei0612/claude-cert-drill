@@ -61,6 +61,15 @@ const OUT = process.argv[3] || "/tmp/shots";
     await click(".option");
     if (!(await page.$(".why"))) throw new Error("解説が出ない");
     if (!(await page.$(".qcard .copy"))) throw new Error("答えたあとにコピーのボタンが出ない");
+    // 一番下までスクロールしても、帯は画面の下端に付いたまま（下の余白の分だけ持ち上がらない。#25）
+    if (i === 0) {
+      const gap = await page.evaluate(async () => {
+        scrollTo(0, document.documentElement.scrollHeight);
+        await new Promise(r => setTimeout(r, 100));
+        return innerHeight - document.querySelector(".sticky-next").getBoundingClientRect().bottom;
+      });
+      if (Math.abs(gap) > 1) throw new Error(`一番下で帯が ${gap}px 持ち上がる`);
+    }
     if (i === 0) await shot("04-practice-revealed");
     // 1・2 問目に「後で振り返る」の印を付ける（#23）
     if (i < 2) {
