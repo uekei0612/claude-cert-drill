@@ -2,18 +2,19 @@
    間違えた問題は、その回の最後にもう一度出す（1 回だけ）。
    間違えたときは、押し間違いなら次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44）。
    正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27） */
-import { useMemo, useState } from "preact/hooks";
+import { useMemo, useRef, useState } from "preact/hooks";
 import { idsOnly, optionOrder, parseIdsOnly, planPractice } from "../../engine/practice";
 import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
 import type { ItemStat } from "../../engine/schedule";
-import { answer, markGuess, restoreItem, savedIds } from "../../store/actions";
+import { answer, markGuess, savedIds, toggleSaved, undoAnswer } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { getData, update, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
+import { optionIndex, useKeys } from "../keys";
 import { href } from "../route";
 
 interface Done {
@@ -27,6 +28,8 @@ interface Done {
 interface Undo {
   readonly prev: ItemStat | undefined;
   readonly requeued: boolean;
+  /** 答えた時刻（その日の回答から外すため） */
+  readonly at: number;
 }
 
 function onlyLabel(exam: Exam, only?: string): string | undefined {
@@ -51,8 +54,40 @@ function plan(exam: Exam, only: string | undefined, now: number, seed: number): 
   });
 }
 
+/** 出せる問題が無いとき：理由と、次に行ける先を出す（行き止まりにしない。#49） */
+function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
+  const all = href({ name: "practice", examId: exam.id });
+  const reason =
+    only === "saved"
+      ? "後で振り返る印を付けた問題がありません。練習で答えたあとに「☆ 後で振り返る」を押すと、ここで練習できます。"
+      : parseIdsOnly(only)
+        ? "解き直す問題が見つかりません（問題が入れ替わった可能性があります）。"
+        : only
+          ? `「${onlyLabel(exam, only) ?? only}」に当てはまる問題がありません。`
+          : "この資格には、まだ問題がありません。";
+  return (
+    <section class="card stack">
+      <p>{reason}</p>
+      {exam.questions.length > 0 && (
+        <a class="btn primary block" href={all}>
+          全部の問題から練習する
+        </a>
+      )}
+      {only && only !== "saved" && !parseIdsOnly(only) && (
+        <a class="btn block" href={href({ name: "domains", examId: exam.id })}>
+          分野と細目を選び直す
+        </a>
+      )}
+    </section>
+  );
+}
+
 export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: number }) {
   const lang = useData().settings.lang;
+  // キー操作（#40）。今の問題に合わせた処理を、描くたびに下で差し替える（結果の画面などでは無し）
+  const onKey = useRef<((key: string) => boolean) | undefined>(undefined);
+  onKey.current = undefined;
+  useKeys(key => onKey.current?.(key));
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
   const [round, setRound] = useState(0);
   const initial = useMemo(() => plan(exam, only, now, seed + round), [exam, only, seed, round]);
@@ -88,9 +123,9 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     return (
       <main class="page">
         <a class="btn ghost" href={back}>
-          ← 戻る
+          ← {only === "saved" ? "振り返り" : "ホーム"}
         </a>
-        <p>{only === "saved" ? "印を付けた問題がありません。" : "出せる問題がありません。"}</p>
+        <EmptyPractice exam={exam} only={only} />
       </main>
     );
 
@@ -152,7 +187,10 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   const q = byId.get(id)!;
   const prev = pos > 0 ? byId.get(queue[pos - 1]!) : undefined;
   const revealed = chosen !== undefined;
-  const isRetry = queue.indexOf(id) !== pos;
+  // 元の問題数（間違えて回の最後に足した「やり直し」は数えない。#43）
+  const base = queue.length - requeued.size;
+  const isRetry = pos >= base;
+  const retries = queue.length - base;
 
   const choose = (orig: number) => {
     if (revealed) return;
@@ -160,9 +198,10 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     const requeue = !ok && !requeued.has(id);
     setChosen(orig);
     setDone([...done, { id, ok }]);
-    setUndo({ prev: getData().items[itemKey(exam.id, id)], requeued: requeue });
+    const at = Date.now();
+    setUndo({ prev: getData().items[itemKey(exam.id, id)], requeued: requeue, at });
     setGuess(false);
-    update(d => answer(d, exam.id, id, ok, Date.now()));
+    update(d => answer(d, exam.id, id, ok, at));
     if (requeue) {
       setQueue([...queue, id]);
       setRequeued(new Set([...requeued, id]));
@@ -181,7 +220,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   /** 答えを取り消して、選び直せるようにする */
   const cancel = () => {
     if (!undo) return;
-    update(d => restoreItem(d, exam.id, id, undo.prev));
+    update(d => undoAnswer(d, exam.id, id, undo.prev, undo.at, chosen === q.answer));
     setDone(done.slice(0, -1));
     if (undo.requeued) {
       setQueue(queue.slice(0, -1));
@@ -198,6 +237,24 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     scrollTo(0, 0);
   };
 
+  const order = orders.get(id) ?? [0, 1, 2, 3];
+  onKey.current = key => {
+    const i = optionIndex(key);
+    if (!revealed && i >= 0 && i < order.length) {
+      choose(order[i]!);
+      return true;
+    }
+    if (revealed && key === "Enter") {
+      next();
+      return true;
+    }
+    if (revealed && (key === "s" || key === "S")) {
+      update(d => toggleSaved(d, exam.id, id, Date.now()));
+      return true;
+    }
+    return false;
+  };
+
   return (
     <main class="page drill">
       <h1 class="sr-only">練習</h1>
@@ -207,24 +264,26 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         </a>
         <span class="muted small head-label">
           {label && `${label}・`}
-          {pos + 1} / {queue.length}
-          {isRetry && "（やり直し）"}
+          {isRetry ? `やり直し ${pos - base + 1} / ${retries}` : `${pos + 1} / ${base}`}
+          {!isRetry && retries > 0 && `（やり直し +${retries}）`}
         </span>
+        <LangSwitch exam={exam} />
       </header>
-      <LangSwitch exam={exam} />
       <div class="progress" aria-hidden="true">
-        <div style={{ width: `${(pos / queue.length) * 100}%` }} />
+        <div style={{ width: `${isRetry ? 100 : (pos / base) * 100}%` }} />
       </div>
       <QuestionCard
         exam={exam}
         q={q}
-        order={orders.get(id) ?? [0, 1, 2, 3]}
+        order={order}
         chosen={chosen}
         reveal={revealed}
         onChoose={choose}
+        hintCopy
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={lang}
       />
+      <p class="kbd-hint muted small">キー：1〜4（A〜D）で選ぶ・Enter で次へ・S で振り返りに入れる</p>
       {revealed && (
         <div class="sticky-next">
           <div class="verdict">

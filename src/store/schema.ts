@@ -1,5 +1,6 @@
 /* 記録の形。localStorage のキーは 1 つ。読み込むときに版を見て移行し、値は 1 つずつ検証する
    （壊れた値は捨てて既定値に戻す。1 つの壊れた値で記録全体を失わないため） */
+import { parseDate } from "../engine/plan";
 import type { ItemStat } from "../engine/schedule";
 
 export const VERSION = 1;
@@ -19,6 +20,10 @@ export interface Settings {
   readonly theme: Theme;
   /** 前回開いた資格（起動時にそこへ） */
   readonly lastExam?: string;
+  /** 資格 ID → 試験日（"YYYY-MM-DD"）。ホームに 1 日の目安を逆算して出す（#37） */
+  readonly examDates?: Readonly<Record<string, string>>;
+  /** ホームの「はじめての方へ」を閉じた（#50） */
+  readonly introDone?: boolean;
 }
 
 export interface MockResult {
@@ -32,6 +37,8 @@ export interface MockResult {
   /** 見直し用：出した問題（出した順）と、選んだ元の選択肢の添字 */
   readonly questionIds?: readonly string[];
   readonly answers?: Readonly<Record<string, number>>;
+  /** 見直し用：解いたときの選択肢の並び（問題 ID → 元の添字の並び）。見直しでも同じ記号で出す（#46） */
+  readonly orders?: Readonly<Record<string, readonly number[]>>;
 }
 
 /** 解いている途中の模擬試験（閉じても続きから） */
@@ -63,11 +70,29 @@ export interface Data {
   readonly activeMock?: ActiveMock;
   /** 後で振り返る印。"<資格ID>:<問題ID>" → 印を付けた時刻 */
   readonly saved?: Readonly<Record<string, number>>;
+  /** 日ごとの回答。"<資格ID>:<YYYY-MM-DD>" → [答えた数, 正解した数]。古いものから捨てて MAX_DAYS 日分まで（#38） */
+  readonly days?: Readonly<Record<string, readonly [number, number]>>;
+  /** 教科書の読んだ章。"<資格ID>:<章ID>"（章 ID は細目 "1.1" か "intro"）→ 読んだ時刻（#29） */
+  readonly read?: Readonly<Record<string, number>>;
 }
 
 export const DEFAULT_SETTINGS: Settings = { practiceSize: 10, lang: "en", theme: "system" };
 export const PRACTICE_SIZES = [5, 10, 20] as const;
 export const MAX_MOCKS = 20;
+/** 日ごとの回答を残す日数（資格をまたいだキーの数。約 1 年強） */
+export const MAX_DAYS = 400;
+
+/** 日ごとの回答のキー */
+export const DAY_KEY_RE = /^[a-z0-9-]+:\d{4}-\d{2}-\d{2}$/;
+
+/** 日ごとの回答を、日付の新しいほうから MAX_DAYS 件に切る */
+export function capDays(days: Record<string, readonly [number, number]>): Record<string, readonly [number, number]> {
+  const keys = Object.keys(days);
+  if (keys.length <= MAX_DAYS) return days;
+  const date = (k: string) => k.slice(k.indexOf(":") + 1);
+  const keep = keys.sort((a, b) => date(b).localeCompare(date(a))).slice(0, MAX_DAYS);
+  return Object.fromEntries(keep.map(k => [k, days[k]!]));
+}
 
 export const emptyData = (): Data => ({ version: VERSION, settings: DEFAULT_SETTINGS, items: {}, mocks: {} });
 
@@ -77,6 +102,8 @@ type Obj = Record<string, unknown>;
 const isObj = (x: unknown): x is Obj => typeof x === "object" && x !== null && !Array.isArray(x);
 const num = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
 const KEY_RE = /^[a-z0-9-]+:[a-z0-9-]+$/;
+/** 章の記録のキー（章 ID に "." を含む） */
+const READ_KEY_RE = /^[a-z0-9-]+:[a-z0-9.-]+$/;
 
 function item(x: unknown): ItemStat | undefined {
   if (!isObj(x)) return undefined;
@@ -104,7 +131,13 @@ function settings(x: unknown): Settings {
     : DEFAULT_SETTINGS.lang;
   const theme = (THEMES as readonly unknown[]).includes(x.theme) ? (x.theme as Theme) : DEFAULT_SETTINGS.theme;
   const base: Settings = { practiceSize: size, lang, theme };
-  return lastExam ? { ...base, lastExam } : base;
+  const examDates: Record<string, string> = {};
+  if (isObj(x.examDates))
+    for (const [k, v] of Object.entries(x.examDates))
+      if (/^[a-z0-9-]+$/.test(k) && typeof v === "string" && parseDate(v) !== undefined) examDates[k] = v;
+  const withDates0 = Object.keys(examDates).length ? { ...base, examDates } : base;
+  const withDates = x.introDone === true ? { ...withDates0, introDone: true } : withDates0;
+  return lastExam ? { ...withDates, lastExam } : withDates;
 }
 
 const strArr = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => typeof s === "string");
@@ -133,7 +166,16 @@ function mockResult(x: unknown): MockResult | undefined {
     byDomain: bd,
   };
   if (!strArr(x.questionIds) || !isObj(x.answers)) return base;
-  return { ...base, questionIds: x.questionIds, answers: answersOf(x.answers) };
+  const withAnswers = { ...base, questionIds: x.questionIds, answers: answersOf(x.answers) };
+  return isObj(x.orders) ? { ...withAnswers, orders: ordersOf(x.orders) } : withAnswers;
+}
+
+/** 選択肢の並び（0〜3 の並べ替えだけを残す） */
+function ordersOf(x: Obj): Record<string, number[]> {
+  const ord: Record<string, number[]> = {};
+  for (const [k, v] of Object.entries(x))
+    if (Array.isArray(v) && v.length === 4 && [...v].sort().join() === "0,1,2,3") ord[k] = v as number[];
+  return ord;
 }
 
 function activeMock(x: unknown): ActiveMock | undefined {
@@ -142,9 +184,7 @@ function activeMock(x: unknown): ActiveMock | undefined {
   if (typeof examId !== "string" || !strArr(questionIds) || !strArr(scenarioIds) || !strArr(flags)) return undefined;
   if (![startedAt, limitMs].every(num) || !isObj(answers) || !isObj(orders)) return undefined;
   const ans = answersOf(answers);
-  const ord: Record<string, number[]> = {};
-  for (const [k, v] of Object.entries(orders))
-    if (Array.isArray(v) && v.length === 4 && [...v].sort().join() === "0,1,2,3") ord[k] = v as number[];
+  const ord = ordersOf(orders);
   return {
     examId,
     questionIds,
@@ -182,8 +222,24 @@ export function parseData(raw: unknown): Data {
           .slice(0, MAX_MOCKS);
   const saved: Record<string, number> = {};
   if (isObj(raw.saved)) for (const [k, v] of Object.entries(raw.saved)) if (num(v) && KEY_RE.test(k)) saved[k] = v;
+  const days: Record<string, readonly [number, number]> = {};
+  if (isObj(raw.days))
+    for (const [k, v] of Object.entries(raw.days))
+      if (
+        DAY_KEY_RE.test(k) &&
+        Array.isArray(v) &&
+        v.length === 2 &&
+        v.every(n => num(n) && Number.isInteger(n) && n >= 0) &&
+        (v[1] as number) <= (v[0] as number)
+      )
+        days[k] = [v[0] as number, v[1] as number];
+  const read: Record<string, number> = {};
+  if (isObj(raw.read)) for (const [k, v] of Object.entries(raw.read)) if (num(v) && READ_KEY_RE.test(k)) read[k] = v;
   const am = activeMock(raw.activeMock);
   const data: Data = { version: VERSION, settings: settings(raw.settings), items, mocks };
   const withSaved = Object.keys(saved).length ? { ...data, saved } : data;
-  return am ? { ...withSaved, activeMock: am } : withSaved;
+  const withRead = Object.keys(read).length ? { ...withSaved, read } : withSaved;
+  const capped = capDays(days);
+  const withDays = Object.keys(capped).length ? { ...withRead, days: capped } : withRead;
+  return am ? { ...withDays, activeMock: am } : withDays;
 }

@@ -5,7 +5,7 @@ import type { Exam } from "../../exams/types";
 import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
 import { LangSwitch } from "../LangSwitch";
-import { QuestionCard } from "../QuestionCard";
+import { QuestionCard, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
 import { href } from "../route";
 
@@ -34,12 +34,10 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
 
   return (
     <main class="page with-tabs">
-      <header class="row between">
-        <h1>模擬試験の結果</h1>
-        <a class="btn ghost small" href={back}>
-          模擬試験へ
-        </a>
-      </header>
+      <a class="btn ghost" href={back}>
+        ← 模擬試験
+      </a>
+      <h1>模擬試験の結果</h1>
       <section class="card">
         <div class="row between">
           <span>配点で重み付けした正答率</span>
@@ -86,8 +84,10 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
 
       {ids.length > 0 && (
         <section class="stack">
-          <h2>見直し</h2>
-          <LangSwitch exam={exam} />
+          <div class="row between">
+            <h2>見直し</h2>
+            <LangSwitch exam={exam} />
+          </div>
           <label class="check">
             <input type="checkbox" checked={onlyWrong} onChange={e => setOnlyWrong(e.currentTarget.checked)} />
             間違えた問題だけ
@@ -107,7 +107,9 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                   <span class={ok ? "okc" : "ngc"}>{ok ? "○" : chosen === undefined ? "－" : "×"}</span>
                   <span>
                     {i + 1}. <span class="tag">{q.tasks[0]}</span>
-                    <span class="muted small">{q.point}</span>
+                    <span class="small row-stem" lang={data.settings.lang === "ja" ? "ja" : "en"}>
+                      {stemOf(exam, q, data.settings.lang)}
+                    </span>
                   </span>
                 </button>
                 {open === id && (
@@ -115,7 +117,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                     <QuestionCard
                       exam={exam}
                       q={q}
-                      order={[0, 1, 2, 3]}
+                      order={r.orders?.[id] ?? [0, 1, 2, 3]}
                       chosen={chosen}
                       reveal={true}
                       scenarioOpen={false}

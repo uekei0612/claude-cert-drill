@@ -5,6 +5,8 @@ import { useEffect, useState } from "preact/hooks";
 export type Route =
   | { readonly name: "picker" }
   | { readonly name: "settings" }
+  /** 使い方と用語（#50） */
+  | { readonly name: "help" }
   | { readonly name: "home"; readonly examId: string }
   /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"、後で振り返る印を付けた問題 "saved"、
       問題を名指し "q:s1-01,s2-03"） */
@@ -12,12 +14,15 @@ export type Route =
   | { readonly name: "mock"; readonly examId: string }
   /** 終えた模擬試験の見直し。at は finishedAt */
   | { readonly name: "mock-result"; readonly examId: string; readonly at: number }
-  | { readonly name: "domains"; readonly examId: string }
+  /** 分野と細目の一覧。domainId があればその分野の位置から見せる */
+  | { readonly name: "domains"; readonly examId: string; readonly domainId?: string }
   /** 後で振り返る印を付けた問題の一覧 */
   | { readonly name: "saved"; readonly examId: string }
   | { readonly name: "task"; readonly examId: string; readonly taskId: string }
-  /** 教科書。taskId が無ければ目次 */
-  | { readonly name: "learn"; readonly examId: string; readonly taskId?: string };
+  /** 教科書。taskId が無ければ目次。section があればその節の位置から見せる */
+  | { readonly name: "learn"; readonly examId: string; readonly taskId?: string; readonly section?: number }
+  /** 教科書と要点の検索（#41）。q は入れた語 */
+  | { readonly name: "search"; readonly examId: string; readonly q?: string };
 
 export function parseRoute(hash: string): Route {
   const [path = "", query = ""] = hash.replace(/^#\/?/, "").split("?");
@@ -34,6 +39,7 @@ export function parseRoute(hash: string): Route {
   const [examId, screen, arg] = parts;
   if (!examId) return { name: "picker" };
   if (examId === "settings") return { name: "settings" };
+  if (examId === "help") return { name: "help" };
   switch (screen) {
     case undefined:
       return { name: "home", examId };
@@ -45,13 +51,22 @@ export function parseRoute(hash: string): Route {
       if (arg && /^\d+$/.test(arg)) return { name: "mock-result", examId, at: Number(arg) };
       return { name: "mock", examId };
     case "domains":
-      return { name: "domains", examId };
+      return arg ? { name: "domains", examId, domainId: arg } : { name: "domains", examId };
     case "saved":
       return { name: "saved", examId };
     case "task":
       return arg ? { name: "task", examId, taskId: arg } : { name: "domains", examId };
-    case "learn":
-      return arg ? { name: "learn", examId, taskId: arg } : { name: "learn", examId };
+    case "learn": {
+      if (!arg) return { name: "learn", examId };
+      const sec = q.get("sec");
+      return sec && /^\d+$/.test(sec)
+        ? { name: "learn", examId, taskId: arg, section: Number(sec) }
+        : { name: "learn", examId, taskId: arg };
+    }
+    case "search": {
+      const text = q.get("q");
+      return text ? { name: "search", examId, q: text } : { name: "search", examId };
+    }
     default:
       return { name: "home", examId };
   }
@@ -63,6 +78,8 @@ export function href(r: Route): string {
       return "#/";
     case "settings":
       return "#/settings";
+    case "help":
+      return "#/help";
     case "home":
       return `#/${r.examId}`;
     case "practice":
@@ -72,13 +89,15 @@ export function href(r: Route): string {
     case "mock-result":
       return `#/${r.examId}/mock/${r.at}`;
     case "domains":
-      return `#/${r.examId}/domains`;
+      return `#/${r.examId}/domains${r.domainId ? `/${encodeURIComponent(r.domainId)}` : ""}`;
     case "saved":
       return `#/${r.examId}/saved`;
     case "task":
       return `#/${r.examId}/task/${encodeURIComponent(r.taskId)}`;
     case "learn":
-      return `#/${r.examId}/learn${r.taskId ? `/${encodeURIComponent(r.taskId)}` : ""}`;
+      return `#/${r.examId}/learn${r.taskId ? `/${encodeURIComponent(r.taskId)}` : ""}${r.taskId && r.section !== undefined ? `?sec=${r.section}` : ""}`;
+    case "search":
+      return `#/${r.examId}/search${r.q ? `?${new URLSearchParams({ q: r.q })}` : ""}`;
   }
 }
 

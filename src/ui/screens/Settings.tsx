@@ -2,9 +2,10 @@
 import { useState } from "preact/hooks";
 import { APP_ENV, APP_VERSION } from "../../env";
 import { exams, findExam } from "../../exams";
-import { resetAll, resetExam, setSettings } from "../../store/actions";
+import { resetAll, resetExam, setExamDate, setSettings } from "../../store/actions";
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
-import { exportJson, importJson, setData, update, useData } from "../../store/store";
+import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../store/store";
+import { ManualCopy, copyToClipboard } from "../CopyButton";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";
 
@@ -19,8 +20,12 @@ export function Settings() {
   const data = useData();
   const [msg, setMsg] = useState<string | undefined>();
   const [paste, setPaste] = useState("");
+  // 自動で写せなかった記録（手で写すための欄に出す。#49）
+  const [manual, setManual] = useState<string | undefined>();
   const last = data.settings.lastExam && findExam(data.settings.lastExam);
   const answered = Object.keys(data.items).length;
+  // 控えは記録とは別のキーにある。記録が変わるたびに描き直されるので、そのつど読む
+  const backup = getBackup();
 
   const download = () => {
     const blob = new Blob([exportJson()], { type: "application/json" });
@@ -30,37 +35,67 @@ export function Settings() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   };
+  // 問題や教科書のコピーと同じ仕組みで写す（http の dev でも写せる。#46）
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(exportJson());
-      setMsg("記録をコピーしました。移したい側の「貼り付けて読み込む」に貼ってください。");
-    } catch {
-      setMsg("コピーできませんでした。ファイルに書き出してください。");
-    }
+    const text = exportJson();
+    const ok = await copyToClipboard(text);
+    setManual(ok ? undefined : text);
+    setMsg(
+      ok
+        ? "記録をコピーしました。移したい側の「貼り付けて読み込む」に貼ってください。"
+        : "コピーできませんでした。下の欄から手で写すか、ファイルに書き出してください。",
+    );
   };
   const load = (text: string) => {
     try {
       const d = importJson(text);
       if (
         !confirm(
-          `今の記録（${answered} 問分）を、読み込む記録（${Object.keys(d.items).length} 問分）で置き換えますか？`,
+          `今の記録（${answered} 問分）を、読み込む記録（${Object.keys(d.items).length} 問分）で置き換えますか？（置き換えたあと、直前の状態には戻せます）`,
         )
       )
         return;
-      setData(d);
+      replaceData(d, "読み込み");
       setPaste("");
       setMsg("読み込みました。");
     } catch (e) {
-      setMsg(`読み込めませんでした：${e instanceof Error ? e.message : String(e)}`);
+      setMsg(`読み込めませんでした。${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
   return (
     <main class={`page ${last ? "with-tabs" : ""}`}>
       <a class="btn ghost" href={last ? href({ name: "home", examId: last.id }) : href({ name: "picker" })}>
-        ← 戻る
+        ← {last ? "ホーム" : "資格一覧"}
       </a>
       <h1>設定と記録</h1>
+      <a class="btn block" href={href({ name: "help" })}>
+        使い方と用語
+      </a>
+
+      <section class="card">
+        <h2>試験日</h2>
+        {exams.map(e => (
+          <label key={e.id} class="row between">
+            <span>{e.code}</span>
+            <span class="row">
+              <input
+                type="date"
+                value={data.settings.examDates?.[e.id] ?? ""}
+                onChange={ev => update(d => setExamDate(d, e.id, ev.currentTarget.value))}
+              />
+              {data.settings.examDates?.[e.id] && (
+                <button type="button" class="btn ghost small" onClick={() => update(d => setExamDate(d, e.id, ""))}>
+                  消す
+                </button>
+              )}
+            </span>
+          </label>
+        ))}
+        <p class="muted small">
+          決めると、ホームに試験までの日数と、今日やる量の目安（残りを日数で割ったもの）が出ます。
+        </p>
+      </section>
 
       <section class="card">
         <h2>練習</h2>
@@ -152,6 +187,7 @@ export function Settings() {
             {msg}
           </p>
         )}
+        {manual !== undefined && <ManualCopy text={manual} />}
       </section>
 
       <section class="card">
@@ -161,8 +197,10 @@ export function Settings() {
             key={e.id}
             class="btn"
             onClick={() => {
-              if (confirm(`${e.code} の記録（回答と模擬試験の結果）を消しますか？元に戻せません。`))
-                update(d => resetExam(d, e.id));
+              if (
+                confirm(`${e.code} の記録（回答と模擬試験の結果）を消しますか？（消したあと、直前の状態には戻せます）`)
+              )
+                replaceData(resetExam(data, e.id), `${e.code} の記録の消去`);
             }}
           >
             {e.code} の記録を消す
@@ -171,12 +209,34 @@ export function Settings() {
         <button
           class="btn danger"
           onClick={() => {
-            if (confirm("すべての記録と設定を消しますか？元に戻せません。")) setData(resetAll());
+            if (confirm("すべての記録と設定を消しますか？（消したあと、直前の状態には戻せます）"))
+              replaceData(resetAll(), "すべての消去");
           }}
         >
           すべて消す
         </button>
       </section>
+
+      {backup && (
+        <section class="card" aria-labelledby="backup-h">
+          <h2 id="backup-h">直前の状態に戻す</h2>
+          <p class="small">
+            {new Date(backup.at).toLocaleString("ja-JP", { dateStyle: "short", timeStyle: "short" })}
+            の「{backup.reason}」の前の記録（{Object.keys(backup.data.items).length} 問分）に戻せます。
+          </p>
+          <button
+            class="btn"
+            onClick={() => {
+              if (confirm("直前の状態に戻しますか？（今の記録は控えに残るので、もう一度戻せます）")) {
+                restoreBackup();
+                setMsg("直前の状態に戻しました。");
+              }
+            }}
+          >
+            直前の状態に戻す
+          </button>
+        </section>
+      )}
 
       <p class="muted small">
         claude-cert-drill {APP_VERSION}（{APP_ENV}）・非公式の教材で、Anthropic とは関係がありません。

@@ -1,11 +1,29 @@
 /* 教科書。目次（はじめに → 分野 → 細目）と章。章は前後の章へ順に読み進められる。
-   章と節は、Claude に解説を頼めるようにまとめてコピーできる */
+   章と節は、Claude に解説を頼めるようにまとめてコピーできる。
+   章の終わり（まとめの後）まで読み進めると「読んだ」を自動で付ける。手で外せる（#29） */
 import type { ComponentChildren } from "preact";
+import { useEffect, useRef } from "preact/hooks";
+import { questionsOfTask, ratio, tally } from "../../engine/progress";
 import type { Exam, Lesson, LessonBlock } from "../../exams/types";
-import { PRIMER_ID, domainOfTask, findTask } from "../../exams/types";
+import { PRIMER_ID, domainOfTask, findTask, lessonOrder } from "../../exams/types";
+import { readChapters, setRead } from "../../store/actions";
+import { itemKey } from "../../store/schema";
+import { update, useData } from "../../store/store";
 import { CopyButton } from "../CopyButton";
+import { Meter } from "../Meter";
 import { lessonText, sectionText } from "../copyText";
 import { href } from "../route";
+
+/** 章の名前（「はじめに」の章は教科書の題、ほかは細目の名前） */
+export const chapterTitle = (exam: Exam, id: string): string =>
+  id === PRIMER_ID ? (exam.primer?.title ?? id) : (findTask(exam, id)?.ja ?? id);
+
+/** 章の番号の札（「はじめに」は 0） */
+export const chapterTag = (id: string): string => (id === PRIMER_ID ? "0" : id);
+
+/** 次に読む章（読んでいない最初の章）。全部読んだら無し */
+export const nextChapter = (exam: Exam, read: ReadonlySet<string>): string | undefined =>
+  lessonOrder(exam).find(id => !read.has(id));
 
 /** 文の中の `…` をコードとして出す */
 export function inline(text: string): ComponentChildren[] {
@@ -98,8 +116,8 @@ function Body({ exam, chapter, lesson }: { exam: Exam; chapter: string; lesson: 
     <>
       <p class="card lead">{inline(lesson.lead)}</p>
 
-      {lesson.sections.map(s => (
-        <section key={s.h} class="stack">
+      {lesson.sections.map((s, i) => (
+        <section key={s.h} id={`sec-${i}`} class="stack lesson-sec">
           <div class="row between sec-head">
             <h2>{s.h}</h2>
             <CopyButton label="コピー" done="コピー済み" text={() => sectionText(exam, chapter, s)} />
@@ -139,18 +157,63 @@ function Body({ exam, chapter, lesson }: { exam: Exam; chapter: string; lesson: 
   );
 }
 
-export function Learn({ exam, taskId }: { exam: Exam; taskId?: string }) {
+/** 章の終わりまで読み進めたら（印の要素が画面に入ったら）1 回だけ onSeen を呼ぶ */
+function useSeenAtEnd(onSeen: () => void, enabled: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+  const fired = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!enabled || !el || fired.current || typeof IntersectionObserver !== "function") return;
+    const io = new IntersectionObserver(es => {
+      if (es.some(e => e.isIntersecting) && !fired.current) {
+        fired.current = true;
+        onSeen();
+        io.disconnect();
+      }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [enabled]);
+  return { ref, stop: () => (fired.current = true) };
+}
+
+/** 目次の章の札の右側：読んだ印 */
+const ReadMark = ({ on }: { on: boolean }) =>
+  on ? (
+    <span class="okc small read-mark" aria-label="読んだ">
+      ✓ 読んだ
+    </span>
+  ) : null;
+
+export function Learn({ exam, taskId, section, now }: { exam: Exam; taskId?: string; section?: number; now: number }) {
+  // 検索から来たら、その節の位置から見せる（画面を移ったときの先頭へのスクロールの後に。#41）
+  useEffect(() => {
+    if (section === undefined) return;
+    const id = requestAnimationFrame(() => document.getElementById(`sec-${section}`)?.scrollIntoView());
+    return () => cancelAnimationFrame(id);
+  }, [section]);
+  const data = useData();
   const lessons = exam.lessons ?? {};
   const primer = exam.primer;
-  const order = [
-    ...(primer ? [PRIMER_ID] : []),
-    ...exam.domains.flatMap(d => d.tasks.map(t => t.id)).filter(id => lessons[id]),
-  ];
+  const order = lessonOrder(exam);
+  const read = readChapters(data, exam.id);
   const chapter = (id: string) => href({ name: "learn", examId: exam.id, taskId: id });
-  const titleOf = (id: string) => (id === PRIMER_ID ? (primer?.title ?? id) : (findTask(exam, id)?.ja ?? id));
-  const tagOf = (id: string) => (id === PRIMER_ID ? "0" : id);
+  const titleOf = (id: string) => chapterTitle(exam, id);
+  const tagOf = chapterTag;
+  const isPrimer = taskId === PRIMER_ID;
+  const lesson = !taskId ? undefined : isPrimer ? primer : lessons[taskId];
+  const seen = useSeenAtEnd(
+    () => {
+      if (taskId && !readChapters(data, exam.id).has(taskId))
+        update(d => setRead(d, exam.id, taskId, true, Date.now()));
+    },
+    !!lesson && !!taskId && !read.has(taskId),
+  );
 
   if (!taskId) {
+    const statOf = (id: string) => data.items[itemKey(exam.id, id)];
+    const next = nextChapter(exam, read);
+    const readCount = order.filter(id => read.has(id)).length;
     return (
       <main class="page with-tabs">
         <h1>教科書</h1>
@@ -158,12 +221,30 @@ export function Learn({ exam, taskId }: { exam: Exam; taskId?: string }) {
           出題範囲を細目ごとに 1
           章ずつ解説します。初めてなら「はじめに」から順に読み、各章を読んだらその細目を練習してください。仕様は公式ドキュメントで確かめた内容です（各章の終わりにリンク）。
         </p>
+        <a class="btn block search-entry" href={href({ name: "search", examId: exam.id })}>
+          教科書と要点を検索
+        </a>
         {order.length === 0 && <p>この資格の教科書はまだありません。</p>}
+        {order.length > 0 && (
+          <div class="row between">
+            <span class="muted small">
+              読んだ {readCount} / {order.length} 章
+            </span>
+            {next && readCount > 0 && (
+              <a class="btn small" href={chapter(next)}>
+                続きを読む（{tagOf(next)}）→
+              </a>
+            )}
+          </div>
+        )}
         {primer && (
           <a class="card tight" href={chapter(PRIMER_ID)}>
-            <span>
-              <span class="tag">0</span> {primer.title}
-            </span>
+            <div class="row between">
+              <span>
+                <span class="tag">0</span> {primer.title}
+              </span>
+              <ReadMark on={read.has(PRIMER_ID)} />
+            </div>
             <span class="muted small">{inline(primer.lead)}</span>
           </a>
         )}
@@ -175,14 +256,28 @@ export function Learn({ exam, taskId }: { exam: Exam; taskId?: string }) {
               <h2>
                 <span class="tag">{d.id.toUpperCase()}</span> {d.ja}
               </h2>
-              {ts.map(t => (
-                <a key={t.id} class="card tight" href={chapter(t.id)}>
-                  <span>
-                    <span class="tag">{t.id}</span> {t.ja}
-                  </span>
-                  <span class="muted small">{inline(lessons[t.id]!.lead)}</span>
-                </a>
-              ))}
+              {ts.map(t => {
+                const tl = tally(questionsOfTask(exam, t.id), statOf, now);
+                return (
+                  <a key={t.id} class="card tight" href={chapter(t.id)}>
+                    <div class="row between">
+                      <span>
+                        <span class="tag">{t.id}</span> {t.ja}
+                      </span>
+                      <ReadMark on={read.has(t.id)} />
+                    </div>
+                    <span class="muted small">{inline(lessons[t.id]!.lead)}</span>
+                    {tl.total > 0 && (
+                      <div class="row toc-meter">
+                        <Meter value={ratio(tl)} label={`${t.ja}の習熟`} />
+                        <span class="muted small">
+                          覚えた {tl.known}/{tl.total}
+                        </span>
+                      </div>
+                    )}
+                  </a>
+                );
+              })}
             </section>
           );
         })}
@@ -191,8 +286,6 @@ export function Learn({ exam, taskId }: { exam: Exam; taskId?: string }) {
   }
 
   const toc = href({ name: "learn", examId: exam.id });
-  const isPrimer = taskId === PRIMER_ID;
-  const lesson = isPrimer ? primer : lessons[taskId];
   const task = findTask(exam, taskId);
   const domain = domainOfTask(exam, taskId);
   if (!lesson || (!isPrimer && (!task || !domain)))
@@ -234,6 +327,22 @@ export function Learn({ exam, taskId }: { exam: Exam; taskId?: string }) {
       </header>
 
       <Body exam={exam} chapter={chapterName} lesson={lesson} />
+
+      <div ref={seen.ref} class="row between read-row">
+        <span class={read.has(taskId) ? "okc small" : "muted small"}>
+          {read.has(taskId) ? "✓ この章は読んだ" : "最後まで読むと「読んだ」になります"}
+        </span>
+        <button
+          class="btn ghost small"
+          aria-pressed={read.has(taskId)}
+          onClick={() => {
+            seen.stop();
+            update(d => setRead(d, exam.id, taskId, !read.has(taskId), Date.now()));
+          }}
+        >
+          {read.has(taskId) ? "読んだを外す" : "読んだにする"}
+        </button>
+      </div>
 
       {!isPrimer && (
         <div class="stack">

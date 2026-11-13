@@ -4,8 +4,9 @@ import type { Exam } from "../../exams/types";
 import { savedIds } from "../../store/actions";
 import { getData, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
-import { QuestionCard } from "../QuestionCard";
+import { QuestionCard, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
+import { HelpTip } from "../HelpTip";
 import { href } from "../route";
 
 export function Saved({ exam }: { exam: Exam }) {
@@ -18,12 +19,9 @@ export function Saved({ exam }: { exam: Exam }) {
 
   return (
     <main class="page with-tabs">
-      <header class="row between">
-        <h1>振り返り</h1>
-        <a class="btn ghost small" href={href({ name: "home", examId: exam.id })}>
-          ホーム
-        </a>
-      </header>
+      <h1>
+        振り返り <HelpTip id="saved" exam={exam} />
+      </h1>
       {!ids.length ? (
         <section class="card">
           <p>まだ印を付けた問題はありません。</p>
@@ -33,14 +31,19 @@ export function Saved({ exam }: { exam: Exam }) {
         </section>
       ) : (
         <>
-          <p class="muted small">印を付けた問題 {count} 問（新しく付けた順）。開くと答えと解説が読めます。</p>
+          <p class="muted small">
+            印を付けた問題 {count}{" "}
+            問（新しく付けた順）。開くと答えと解説が読めます。選択肢は元の並び（A〜D）で出すので、練習のときと記号が違うことがあります。
+          </p>
           {count > 0 && (
             <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: "saved" })}>
               この {count} 問を練習する
             </a>
           )}
           <section class="stack">
-            <LangSwitch exam={exam} />
+            <div class="row end">
+              <LangSwitch exam={exam} />
+            </div>
             {ids.map(id => {
               const q = byId.get(id)!;
               return (
@@ -53,7 +56,9 @@ export function Saved({ exam }: { exam: Exam }) {
                     <span aria-hidden="true">{open === id ? "▾" : "▸"}</span>
                     <span>
                       <span class="tag">{q.tasks[0]}</span>
-                      <span class="muted small">{q.point}</span>
+                      <span class="small row-stem" lang={data.settings.lang === "ja" ? "ja" : "en"}>
+                        {stemOf(exam, q, data.settings.lang)}
+                      </span>
                     </span>
                   </button>
                   {open === id && (

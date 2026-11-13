@@ -4,6 +4,7 @@ import { type Route, href, parseRoute } from "./route";
 const routes: Route[] = [
   { name: "picker" },
   { name: "settings" },
+  { name: "help" },
   { name: "home", examId: "ccar-f" },
   { name: "practice", examId: "ccar-f" },
   { name: "practice", examId: "ccar-f", only: "1.1" },
@@ -14,9 +15,13 @@ const routes: Route[] = [
   { name: "mock", examId: "ccar-f" },
   { name: "mock-result", examId: "ccar-f", at: 1793718460101 },
   { name: "domains", examId: "ccar-f" },
+  { name: "domains", examId: "ccar-f", domainId: "d2" },
   { name: "task", examId: "ccar-f", taskId: "5.6" },
   { name: "learn", examId: "ccar-f" },
   { name: "learn", examId: "ccar-f", taskId: "2.3" },
+  { name: "learn", examId: "ccar-f", taskId: "2.3", section: 2 },
+  { name: "search", examId: "ccar-f" },
+  { name: "search", examId: "ccar-f", q: "tool_choice PostToolUse" },
 ];
 
 test.each(routes.map(r => [href(r), r] as const))("%s を往復できる", (h, r) => {
