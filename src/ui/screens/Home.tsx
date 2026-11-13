@@ -98,17 +98,29 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
       {weak.length > 0 && (
         <section class="stack" aria-labelledby="weak-h">
           <h2 id="weak-h">伸ばすと効く細目</h2>
+          <p class="muted small">右の数字は、その細目の問題を全部覚えたときに合格の目安が上がる幅です。</p>
           {weak.map(w => {
             const t = findTask(exam, w.taskId);
             return (
-              <a key={w.taskId} class="card tight" href={href({ name: "task", examId: exam.id, taskId: w.taskId })}>
-                <div class="row between">
-                  <span>
-                    <span class="tag">{w.taskId}</span> {t?.ja}
-                  </span>
-                  <span class="muted small">+{(w.gain * 100).toFixed(1)}pt</span>
-                </div>
-              </a>
+              <div key={w.taskId} class="card tight split">
+                <a class="card-main" href={href({ name: "task", examId: exam.id, taskId: w.taskId })}>
+                  <div class="row between">
+                    <span>
+                      <span class="tag">{w.taskId}</span> {t?.ja}
+                    </span>
+                    <span
+                      class="muted small"
+                      aria-label={`全部覚えると目安が ${(w.gain * 100).toFixed(1)} ポイント上がる`}
+                    >
+                      目安 +{(w.gain * 100).toFixed(1)}
+                    </span>
+                  </div>
+                  <span class="muted small">要点と問題 ›</span>
+                </a>
+                <a class="btn small go" href={href({ name: "practice", examId: exam.id, only: w.taskId })}>
+                  練習 ▶
+                </a>
+              </div>
             );
           })}
         </section>
@@ -124,18 +136,23 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         {exam.domains.map(d => {
           const t = tally(questionsOfDomain(exam, d.id), statOf, now);
           return (
-            <a key={d.id} class="card tight" href={href({ name: "practice", examId: exam.id, only: d.id })}>
-              <div class="row between">
-                <span>
-                  <span class="tag">{d.id.toUpperCase()}</span> {d.ja}
+            <div key={d.id} class="card tight split">
+              <a class="card-main" href={href({ name: "domains", examId: exam.id, domainId: d.id })}>
+                <div class="row between">
+                  <span>
+                    <span class="tag">{d.id.toUpperCase()}</span> {d.ja}
+                  </span>
+                  <span class="muted small">配点 {pct(d.weight)}</span>
+                </div>
+                <Meter value={ratio(t)} label={`${d.ja}の習熟`} />
+                <span class="muted small">
+                  覚えた {t.known} / {t.total} 問{t.due ? `・復習待ち ${t.due}` : ""}・細目 ›
                 </span>
-                <span class="muted small">配点 {pct(d.weight)}</span>
-              </div>
-              <Meter value={ratio(t)} label={`${d.ja}の習熟`} />
-              <span class="muted small">
-                覚えた {t.known} / {t.total} 問{t.due ? `・復習待ち ${t.due}` : ""}
-              </span>
-            </a>
+              </a>
+              <a class="btn small go" href={href({ name: "practice", examId: exam.id, only: d.id })}>
+                練習 ▶
+              </a>
+            </div>
           );
         })}
       </section>

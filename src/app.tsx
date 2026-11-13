@@ -66,7 +66,8 @@ export function App() {
   else if (route.name === "picker" || !exam) screen = <ExamPicker />;
   else if (route.name === "practice") screen = <Practice key={href(route)} exam={exam} only={route.only} now={now} />;
   else if (route.name === "mock") screen = <Mock exam={exam} />;
-  else if (route.name === "domains") screen = <Domains exam={exam} now={now} />;
+  else if (route.name === "domains")
+    screen = <Domains key={route.domainId ?? ""} exam={exam} domainId={route.domainId} now={now} />;
   else if (route.name === "saved") screen = <Saved exam={exam} />;
   else if (route.name === "task")
     screen = <TaskDetail key={route.taskId} exam={exam} taskId={route.taskId} now={now} />;

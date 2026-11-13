@@ -278,6 +278,31 @@ a.card {
   padding: 12px 14px;
   gap: 6px;
 }
+/* 押す先が 2 つあるカード：本体は詳細へ、右端のボタンは練習へ（#33） */
+.card.split {
+  flex-direction: row;
+  align-items: center;
+  padding: 0 12px 0 0;
+  gap: 8px;
+}
+.card.split > .card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0 12px 14px;
+  color: inherit;
+  text-decoration: none;
+}
+.card.split > .go {
+  flex: none;
+  white-space: nowrap;
+}
+/* 分野へ飛んだとき、見出しが上端に隠れないように */
+.domain-sec {
+  scroll-margin-top: 12px;
+}
 .card.notice {
   border-color: var(--accent);
   background: var(--accent-soft);

@@ -95,6 +95,20 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (homeAfter.includes("未解答 60 問")) throw new Error("練習の答えが記録されていない");
   if (!/振り返り\s*2 問/.test(homeAfter)) throw new Error("ホームに振り返りの問題数が出ない");
   await shot("05-home-after");
+  // ホームのカード：本体は詳細へ、右端の「練習 ▶」は練習へ。押す前に行き先が分かる（#32・#33）
+  if (!/目安 \+\d+\.\d/.test(homeAfter)) throw new Error("伸ばすと効く細目の数字の意味が出ない");
+  await page.$$eval("section[aria-labelledby=dom-h] .card.split .card-main", as => as[1].click());
+  await new Promise(r => setTimeout(r, 400));
+  if (!(await page.evaluate(() => location.hash)).endsWith("/domains/d2"))
+    throw new Error("分野カードで分野の画面に移れない");
+  const d2top = await page.$eval("#domain-d2", e => Math.round(e.getBoundingClientRect().top));
+  if (d2top < 0 || d2top > 120) throw new Error(`分野の画面で、押した分野の位置に移らない：${d2top}px`);
+  await goto("#/ccar-f");
+  await page.$$eval("section[aria-labelledby=dom-h] .card.split .go", as => as[0].click());
+  await new Promise(r => setTimeout(r, 300));
+  if (!/D1|エージェント設計/.test(await page.$eval(".head-label", e => e.textContent)))
+    throw new Error("分野カードの練習で、その分野の練習にならない");
+  await goto("#/ccar-f");
 
   // 振り返り：印を付けた 2 問が並び、開くと解説が出る。その 2 問だけで練習できる
   await clickText("★ 振り返り");
