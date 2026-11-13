@@ -5,6 +5,7 @@ import { exams, findExam } from "../../exams";
 import { resetAll, resetExam, setExamDate, setSettings } from "../../store/actions";
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
 import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../store/store";
+import { copyToClipboard } from "../CopyButton";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";
 
@@ -32,14 +33,13 @@ export function Settings() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   };
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(exportJson());
-      setMsg("記録をコピーしました。移したい側の「貼り付けて読み込む」に貼ってください。");
-    } catch {
-      setMsg("コピーできませんでした。ファイルに書き出してください。");
-    }
-  };
+  // 問題や教科書のコピーと同じ仕組みで写す（http の dev でも写せる。#46）
+  const copy = async () =>
+    setMsg(
+      (await copyToClipboard(exportJson()))
+        ? "記録をコピーしました。移したい側の「貼り付けて読み込む」に貼ってください。"
+        : "コピーできませんでした。ファイルに書き出してください。",
+    );
   const load = (text: string) => {
     try {
       const d = importJson(text);
@@ -60,7 +60,7 @@ export function Settings() {
   return (
     <main class={`page ${last ? "with-tabs" : ""}`}>
       <a class="btn ghost" href={last ? href({ name: "home", examId: last.id }) : href({ name: "picker" })}>
-        ← 戻る
+        ← {last ? "ホーム" : "資格一覧"}
       </a>
       <h1>設定と記録</h1>
 

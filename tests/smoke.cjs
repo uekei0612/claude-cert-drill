@@ -366,6 +366,9 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f");
   if ((await text()).includes("試験まであと")) throw new Error("試験日を消しても逆算が残る");
   await goto("#/settings");
+  // 記録のコピーは、問題のコピーと同じ仕組みで写せる（#46）
+  await clickText("コピーする");
+  if (!(await text()).includes("記録をコピーしました")) throw new Error("設定の記録のコピーができない");
   // 記録を消しても、直前の状態に戻せる（#45）
   const countItems = () =>
     page.evaluate(() => {

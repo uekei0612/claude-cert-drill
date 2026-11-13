@@ -95,7 +95,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     return (
       <main class="page">
         <a class="btn ghost" href={back}>
-          ← 戻る
+          ← {only === "saved" ? "振り返り" : "ホーム"}
         </a>
         <p>{only === "saved" ? "印を付けた問題がありません。" : "出せる問題がありません。"}</p>
       </main>

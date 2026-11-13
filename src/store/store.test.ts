@@ -322,3 +322,26 @@ describe("直前の状態に戻す（#45）", () => {
     expect(getData()).toEqual(mine);
   });
 });
+
+describe("模擬試験の見直しの選択肢の並び（#46）", () => {
+  test("解いたときの並びを結果に残し、記録から読み戻せる（壊れた並びは捨てる）", () => {
+    const start = startMock(emptyData(), {
+      examId: "ccar-f",
+      questionIds: ["s1-01", "s1-02"],
+      scenarioIds: ["s1"],
+      startedAt: NOW,
+      limitMs: 1000,
+      usedMs: 0,
+      answers: { "s1-01": 2 },
+      flags: [],
+      orders: { "s1-01": [3, 1, 0, 2], "s1-02": [1, 0, 3, 2] },
+      cursor: 0,
+    });
+    const done = finishMock(start, scoreMock(fixture, ["s1-01", "s1-02"], { "s1-01": 2 }), NOW);
+    const r = done.mocks["ccar-f"]![0]!;
+    expect(r.orders).toEqual({ "s1-01": [3, 1, 0, 2], "s1-02": [1, 0, 3, 2] });
+    const raw = JSON.parse(JSON.stringify(done));
+    raw.mocks["ccar-f"][0].orders["s1-02"] = [0, 0, 1, 2];
+    expect(parseData(raw).mocks["ccar-f"]![0]!.orders).toEqual({ "s1-01": [3, 1, 0, 2] });
+  });
+});

@@ -28,7 +28,10 @@ export function Saved({ exam }: { exam: Exam }) {
         </section>
       ) : (
         <>
-          <p class="muted small">印を付けた問題 {count} 問（新しく付けた順）。開くと答えと解説が読めます。</p>
+          <p class="muted small">
+            印を付けた問題 {count}{" "}
+            問（新しく付けた順）。開くと答えと解説が読めます。選択肢は元の並び（A〜D）で出すので、練習のときと記号が違うことがあります。
+          </p>
           {count > 0 && (
             <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: "saved" })}>
               この {count} 問を練習する
