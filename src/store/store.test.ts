@@ -11,6 +11,7 @@ import {
   resetExam,
   restoreItem,
   savedIds,
+  setExamDate,
   setRead,
   startMock,
   toggleSaved,
@@ -215,5 +216,20 @@ describe("教科書の読んだ章（#29）", () => {
     expect([...readChapters(resetExam(d, "ccar-f"), "ccar-f")]).toEqual([]);
     expect([...readChapters(resetExam(d, "ccar-f"), "ccar-p")]).toEqual(["intro"]);
     expect(parseData(emptyData()).read).toBeUndefined();
+  });
+});
+
+describe("試験日（#37）", () => {
+  test("資格ごとに決め・消せる。記録に残り、壊れた値は捨てる", () => {
+    let d = setExamDate(emptyData(), "ccar-f", "2026-12-01");
+    d = setExamDate(d, "ccar-p", "2027-01-15");
+    expect(d.settings.examDates).toEqual({ "ccar-f": "2026-12-01", "ccar-p": "2027-01-15" });
+    const back = parseData({
+      ...JSON.parse(JSON.stringify(d)),
+      settings: { ...d.settings, examDates: { ...d.settings.examDates, bad: "2026-02-30", "x y": "2026-12-01" } },
+    });
+    expect(back.settings.examDates).toEqual(d.settings.examDates);
+    expect(setExamDate(d, "ccar-f", "").settings.examDates).toEqual({ "ccar-p": "2027-01-15" });
+    expect(parseData(emptyData()).settings.examDates).toBeUndefined();
   });
 });

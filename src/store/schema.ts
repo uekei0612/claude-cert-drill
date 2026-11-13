@@ -1,5 +1,6 @@
 /* 記録の形。localStorage のキーは 1 つ。読み込むときに版を見て移行し、値は 1 つずつ検証する
    （壊れた値は捨てて既定値に戻す。1 つの壊れた値で記録全体を失わないため） */
+import { parseDate } from "../engine/plan";
 import type { ItemStat } from "../engine/schedule";
 
 export const VERSION = 1;
@@ -19,6 +20,8 @@ export interface Settings {
   readonly theme: Theme;
   /** 前回開いた資格（起動時にそこへ） */
   readonly lastExam?: string;
+  /** 資格 ID → 試験日（"YYYY-MM-DD"）。ホームに 1 日の目安を逆算して出す（#37） */
+  readonly examDates?: Readonly<Record<string, string>>;
 }
 
 export interface MockResult {
@@ -108,7 +111,12 @@ function settings(x: unknown): Settings {
     : DEFAULT_SETTINGS.lang;
   const theme = (THEMES as readonly unknown[]).includes(x.theme) ? (x.theme as Theme) : DEFAULT_SETTINGS.theme;
   const base: Settings = { practiceSize: size, lang, theme };
-  return lastExam ? { ...base, lastExam } : base;
+  const examDates: Record<string, string> = {};
+  if (isObj(x.examDates))
+    for (const [k, v] of Object.entries(x.examDates))
+      if (/^[a-z0-9-]+$/.test(k) && typeof v === "string" && parseDate(v) !== undefined) examDates[k] = v;
+  const withDates = Object.keys(examDates).length ? { ...base, examDates } : base;
+  return lastExam ? { ...withDates, lastExam } : withDates;
 }
 
 const strArr = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => typeof s === "string");

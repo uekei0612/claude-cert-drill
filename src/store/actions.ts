@@ -56,6 +56,12 @@ export const savedIds = (d: Data, examId: string): string[] =>
 
 export const setSettings = (d: Data, s: Partial<Settings>): Data => ({ ...d, settings: { ...d.settings, ...s } });
 
+/** 資格の試験日を決める・消す（date が空なら消す） */
+export function setExamDate(d: Data, examId: string, date: string): Data {
+  const { [examId]: _drop, ...rest } = d.settings.examDates ?? {};
+  return setSettings(d, { examDates: date ? { ...rest, [examId]: date } : rest });
+}
+
 export const startMock = (d: Data, m: ActiveMock): Data => ({ ...d, activeMock: m });
 
 export const patchMock = (d: Data, f: (m: ActiveMock) => ActiveMock): Data =>
