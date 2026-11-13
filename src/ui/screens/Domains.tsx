@@ -1,4 +1,5 @@
 /* 分野 → 細目の一覧（習熟度）と、この試験について（出どころ・範囲外） */
+import { useEffect } from "preact/hooks";
 import { questionsOfTask, ratio, tally } from "../../engine/progress";
 import type { Exam } from "../../exams/types";
 import { itemKey } from "../../store/schema";
@@ -6,15 +7,21 @@ import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
 import { href } from "../route";
 
-export function Domains({ exam, now }: { exam: Exam; now: number }) {
+export function Domains({ exam, domainId, now }: { exam: Exam; domainId?: string; now: number }) {
   const data = useData();
+  // ホームの分野カードから来たら、その分野の位置から見せる（画面を移ったときの先頭へのスクロールの後に）
+  useEffect(() => {
+    if (!domainId) return;
+    const id = requestAnimationFrame(() => document.getElementById(`domain-${domainId}`)?.scrollIntoView());
+    return () => cancelAnimationFrame(id);
+  }, [domainId]);
   const statOf = (id: string) => data.items[itemKey(exam.id, id)];
   return (
     <main class="page with-tabs">
       <h1>分野と細目</h1>
       <p class="muted small">細目を押すと、要点とその細目だけの練習へ。</p>
       {exam.domains.map(d => (
-        <section key={d.id} class="stack">
+        <section key={d.id} id={`domain-${d.id}`} class="stack domain-sec">
           <div class="row between">
             <h2>
               <span class="tag">{d.id.toUpperCase()}</span> {d.ja}

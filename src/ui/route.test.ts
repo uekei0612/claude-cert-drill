@@ -14,6 +14,7 @@ const routes: Route[] = [
   { name: "mock", examId: "ccar-f" },
   { name: "mock-result", examId: "ccar-f", at: 1793718460101 },
   { name: "domains", examId: "ccar-f" },
+  { name: "domains", examId: "ccar-f", domainId: "d2" },
   { name: "task", examId: "ccar-f", taskId: "5.6" },
   { name: "learn", examId: "ccar-f" },
   { name: "learn", examId: "ccar-f", taskId: "2.3" },
