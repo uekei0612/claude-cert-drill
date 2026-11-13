@@ -498,6 +498,46 @@ a.tap {
   flex-shrink: 0;
 }
 
+/* 模擬試験の結果の推移（#34）。線は 2px、点は 8px、目安は細い破線 */
+.trend {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.trend svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.trend-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.trend-target {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+.trend-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.trend-pt .dot {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.trend-pt .hit {
+  fill: transparent;
+}
+.mock-size strong {
+  font-size: 1.2rem;
+}
 /* 模擬試験 */
 .mock-head {
   position: sticky;
