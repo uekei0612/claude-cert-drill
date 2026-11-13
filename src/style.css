@@ -671,6 +671,7 @@ ul.small,
   flex-wrap: wrap;
 }
 select,
+input[type="date"],
 textarea {
   /* iPhone は入力欄の文字が 16px 未満だと、タップしたとき画面を勝手に拡大する */
   font-size: 1rem;

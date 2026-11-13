@@ -1,4 +1,5 @@
 /* 資格のホーム。いちばん上に合格の目安、次に「今日の練習」、伸ばすと効く細目、分野ごとの習熟 */
+import { dailyPlan, parseDate } from "../../engine/plan";
 import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../engine/progress";
 import type { Exam } from "../../exams/types";
 import { findTask, lessonOrder } from "../../exams/types";
@@ -19,6 +20,11 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const chapters = lessonOrder(exam);
   const readCount = chapters.filter(id => read.has(id)).length;
   const nextRead = nextChapter(exam, read);
+  const examDate = data.settings.examDates?.[exam.id];
+  const examAt = examDate ? parseDate(examDate) : undefined;
+  const unseen = all.total - all.seen;
+  const unread = chapters.length - readCount;
+  const plan = examAt !== undefined ? dailyPlan(examAt, now, unseen, unread) : undefined;
   const due = dueCount(exam, statOf, now);
   const weak = weakestTasks(exam, statOf, now, 3);
   const active = data.activeMock?.examId === exam.id ? data.activeMock : undefined;
@@ -58,6 +64,25 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
           {all.seen < all.total && ` 未解答 ${all.total - all.seen} 問。`}
         </p>
       </section>
+
+      {plan && (
+        <section class="card tight plan" aria-labelledby="plan-h">
+          <div class="row between">
+            <h2 id="plan-h">{plan.daysLeft ? `試験まであと ${plan.daysLeft} 日` : "今日が試験日です"}</h2>
+            <span class="muted small">{examDate}</span>
+          </div>
+          <p class="small">
+            {plan.daysLeft
+              ? `今日の目安：復習 ${due} 問＋新しい問題 ${plan.newToday} 問${plan.chaptersToday ? `・教科書\u00a0${plan.chaptersToday}\u00a0章` : ""}`
+              : `新しいことは増やさず、復習 ${due} 問と振り返りだけにしましょう。`}
+          </p>
+          {plan.daysLeft > 0 && (
+            <p class="muted small">
+              残り：未解答 {unseen} 問・未読 {unread} 章（試験の前日までの {plan.daysLeft} 日で割った数）
+            </p>
+          )}
+        </section>
+      )}
 
       {active && (
         <a class="card notice" href={href({ name: "mock", examId: exam.id })}>

@@ -2,7 +2,7 @@
 import { useState } from "preact/hooks";
 import { APP_ENV, APP_VERSION } from "../../env";
 import { exams, findExam } from "../../exams";
-import { resetAll, resetExam, setSettings } from "../../store/actions";
+import { resetAll, resetExam, setExamDate, setSettings } from "../../store/actions";
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
 import { exportJson, importJson, setData, update, useData } from "../../store/store";
 import { href } from "../route";
@@ -61,6 +61,30 @@ export function Settings() {
         ← 戻る
       </a>
       <h1>設定と記録</h1>
+
+      <section class="card">
+        <h2>試験日</h2>
+        {exams.map(e => (
+          <label key={e.id} class="row between">
+            <span>{e.code}</span>
+            <span class="row">
+              <input
+                type="date"
+                value={data.settings.examDates?.[e.id] ?? ""}
+                onChange={ev => update(d => setExamDate(d, e.id, ev.currentTarget.value))}
+              />
+              {data.settings.examDates?.[e.id] && (
+                <button type="button" class="btn ghost small" onClick={() => update(d => setExamDate(d, e.id, ""))}>
+                  消す
+                </button>
+              )}
+            </span>
+          </label>
+        ))}
+        <p class="muted small">
+          決めると、ホームに試験までの日数と、今日やる量の目安（残りを日数で割ったもの）が出ます。
+        </p>
+      </section>
 
       <section class="card">
         <h2>練習</h2>

@@ -323,7 +323,24 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f");
   await clickText("設定");
   if (!(await text()).includes("設定と記録")) throw new Error("ホームから設定に移れない");
+  // 試験日を入れると、ホームに日数と今日の目安が出る。消すと出ない（#37）
+  if ((await text()).includes("試験まであと")) throw new Error("試験日を入れていないのに逆算が出る");
+  await page.$eval('input[type="date"]', el => {
+    const d = new Date(Date.now() + 10 * 864e5);
+    el.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await new Promise(r => setTimeout(r, 200));
   await shot("13-settings");
+  await goto("#/ccar-f");
+  if (!/試験まであと 10 日[\s\S]*今日の目安：復習 \d+ 問＋新しい問題 \d+ 問/.test(await text()))
+    throw new Error("試験日を入れてもホームに逆算が出ない");
+  await shot("27-home-plan");
+  await goto("#/settings");
+  await clickText("消す");
+  await goto("#/ccar-f");
+  if ((await text()).includes("試験まであと")) throw new Error("試験日を消しても逆算が残る");
+  await goto("#/settings");
 
   // 問題文の言語：日本語・併記に切り替え、設定が残ることを確かめる
   await goto("#/ccar-f/practice");
