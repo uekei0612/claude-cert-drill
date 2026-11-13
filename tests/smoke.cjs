@@ -276,7 +276,18 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!/解き直し・1 \/ (5[89]|60)\b/.test(await text()))
     throw new Error("模擬試験の結果から間違えた問題の練習にならない");
 
-  await goto("#/settings");
+  // 下のタブは ホーム / 教科書 / 分野 / 模擬試験 / 振り返り。設定と資格一覧はホームの右上から（#30）
+  await goto("#/ccar-f");
+  const tabs = await page.$$eval(".tabbar a", as => as.map(a => a.textContent.trim()).join("/"));
+  if (tabs !== "ホーム/教科書/分野/模擬試験/振り返り") throw new Error(`タブの並びが違う：${tabs}`);
+  await clickText("振り返り");
+  if (!(await page.evaluate(() => location.hash)).endsWith("/saved")) throw new Error("振り返りのタブで移れない");
+  await goto("#/ccar-f");
+  await clickText("資格一覧");
+  if ((await page.evaluate(() => location.hash)) !== "#/") throw new Error("ホームから資格一覧に移れない");
+  await goto("#/ccar-f");
+  await clickText("設定");
+  if (!(await text()).includes("設定と記録")) throw new Error("ホームから設定に移れない");
   await shot("13-settings");
 
   // 問題文の言語：日本語・併記に切り替え、設定が残ることを確かめる
