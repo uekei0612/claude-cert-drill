@@ -118,6 +118,11 @@ p {
 .page.with-tabs {
   padding-bottom: calc(88px + env(safe-area-inset-bottom));
 }
+/* 下に固定する帯（.sticky-next）で終わるページは、下の余白を帯に任せる。
+   余白が残っていると、一番下までスクロールしたときに帯が余白の分だけ持ち上がる（#25） */
+.page:has(> .sticky-next:last-child) {
+  padding-bottom: 0;
+}
 .row {
   display: flex;
   align-items: center;
