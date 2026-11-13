@@ -26,6 +26,8 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
   const qs = questionsOfTask(exam, taskId);
   const related = exam.questions.filter(q => q.tasks[0] !== taskId && q.tasks.includes(taskId));
   const t = tally(qs, statOf, now);
+  const seenQs = [...qs, ...related].filter(q => statOf(q.id));
+  const unseen = qs.length + related.length - seenQs.length;
 
   return (
     <main class="page with-tabs">
@@ -81,7 +83,8 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
             覚えた {t.known} / {t.total}
           </span>
         </h2>
-        {[...qs, ...related].map(q => {
+        {/* 解いた問題だけを要点つきで並べ、未解答は 1 行にまとめる（答えを見せないため要点は出さない。#35） */}
+        {seenQs.map(q => {
           const s = statOf(q.id);
           const known = isKnown(s, now);
           const learning = isLearning(s, now);
@@ -92,15 +95,15 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
                   {exam.scenarios.find(x => x.id === q.scenario)?.ja ?? ""}
                   {q.tasks[0] !== taskId && "（関連）"}
                 </span>
-                <span class={known ? "okc small" : learning ? "small" : s ? "ngc small" : "muted small"}>
-                  {known ? "覚えた" : learning ? "あと 1 回" : s ? "まだ" : "未解答"}
+                <span class={known ? "okc small" : learning ? "small" : "ngc small"}>
+                  {known ? "覚えた" : learning ? "あと 1 回" : "まだ"}
                 </span>
               </div>
-              {/* 答えを見せないよう、正解したことのあるものだけ要点を出す */}
-              <p class="small">{known || learning ? q.point : "（解くと要点が出ます）"}</p>
+              <p class="small">{q.point}</p>
             </div>
           );
         })}
+        {unseen > 0 && <p class="card tight muted small unseen">未解答 {unseen} 問。解くと、ここに要点が出ます。</p>}
       </section>
     </main>
   );

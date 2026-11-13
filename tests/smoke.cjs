@@ -164,6 +164,9 @@ const OUT = process.argv[3] || "/tmp/shots";
   await shot("06-domains");
   await goto("#/ccar-f/task/1.1");
   if (!(await text()).includes("stop_reason")) throw new Error("要点が出ない");
+  // 未解答の問題は 1 行にまとめる（#35）
+  if ((await page.$$(".unseen")).length !== 1 || !/未解答 \d+ 問/.test(await text()))
+    throw new Error("細目の未解答が 1 行にまとまらない");
   await shot("07-task");
 
   // 教科書：目次 → 細目の画面から章へ → 次の章。どの章も横にはみ出さない（コードは枠の中で横に送る）
