@@ -159,7 +159,10 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   const q = byId.get(id)!;
   const prev = pos > 0 ? byId.get(queue[pos - 1]!) : undefined;
   const revealed = chosen !== undefined;
-  const isRetry = queue.indexOf(id) !== pos;
+  // 元の問題数（間違えて回の最後に足した「やり直し」は数えない。#43）
+  const base = queue.length - requeued.size;
+  const isRetry = pos >= base;
+  const retries = queue.length - base;
 
   const choose = (orig: number) => {
     if (revealed) return;
@@ -233,13 +236,13 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         </a>
         <span class="muted small head-label">
           {label && `${label}・`}
-          {pos + 1} / {queue.length}
-          {isRetry && "（やり直し）"}
+          {isRetry ? `やり直し ${pos - base + 1} / ${retries}` : `${pos + 1} / ${base}`}
+          {!isRetry && retries > 0 && `（やり直し +${retries}）`}
         </span>
         <LangSwitch exam={exam} />
       </header>
       <div class="progress" aria-hidden="true">
-        <div style={{ width: `${(pos / queue.length) * 100}%` }} />
+        <div style={{ width: `${isRetry ? 100 : (pos / base) * 100}%` }} />
       </div>
       <QuestionCard
         exam={exam}
