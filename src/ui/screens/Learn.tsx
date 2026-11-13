@@ -116,8 +116,8 @@ function Body({ exam, chapter, lesson }: { exam: Exam; chapter: string; lesson: 
     <>
       <p class="card lead">{inline(lesson.lead)}</p>
 
-      {lesson.sections.map(s => (
-        <section key={s.h} class="stack">
+      {lesson.sections.map((s, i) => (
+        <section key={s.h} id={`sec-${i}`} class="stack lesson-sec">
           <div class="row between sec-head">
             <h2>{s.h}</h2>
             <CopyButton label="コピー" done="コピー済み" text={() => sectionText(exam, chapter, s)} />
@@ -185,7 +185,13 @@ const ReadMark = ({ on }: { on: boolean }) =>
     </span>
   ) : null;
 
-export function Learn({ exam, taskId, now }: { exam: Exam; taskId?: string; now: number }) {
+export function Learn({ exam, taskId, section, now }: { exam: Exam; taskId?: string; section?: number; now: number }) {
+  // 検索から来たら、その節の位置から見せる（画面を移ったときの先頭へのスクロールの後に。#41）
+  useEffect(() => {
+    if (section === undefined) return;
+    const id = requestAnimationFrame(() => document.getElementById(`sec-${section}`)?.scrollIntoView());
+    return () => cancelAnimationFrame(id);
+  }, [section]);
   const data = useData();
   const lessons = exam.lessons ?? {};
   const primer = exam.primer;
@@ -215,6 +221,9 @@ export function Learn({ exam, taskId, now }: { exam: Exam; taskId?: string; now:
           出題範囲を細目ごとに 1
           章ずつ解説します。初めてなら「はじめに」から順に読み、各章を読んだらその細目を練習してください。仕様は公式ドキュメントで確かめた内容です（各章の終わりにリンク）。
         </p>
+        <a class="btn block search-entry" href={href({ name: "search", examId: exam.id })}>
+          教科書と要点を検索
+        </a>
         {order.length === 0 && <p>この資格の教科書はまだありません。</p>}
         {order.length > 0 && (
           <div class="row between">
