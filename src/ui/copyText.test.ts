@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { exams } from "../exams";
 import { PRIMER_ID } from "../exams/types";
-import { lessonText, questionText, sectionText } from "./copyText";
+import { hintText, lessonText, questionText, sectionText } from "./copyText";
 
 const exam = exams.find(e => e.id === "ccar-f")!;
 const q = exam.questions.find(x => x.id === "s1-01")!;
@@ -44,6 +44,25 @@ describe("questionText", () => {
       const t = questionText({ exam, q: x, order: [0, 1, 2, 3], chosen: 1 });
       expect(t).not.toContain("：?");
       expect(t).toContain(x.point);
+    }
+  });
+});
+
+describe("hintText（答える前のヒント用。#36）", () => {
+  const order = [3, 1, 0, 2];
+  const text = hintText({ exam, q, order });
+  test("問題・シナリオ・選択肢は入れ、並びは画面に合わせる", () => {
+    expect(text).toContain(q.stem);
+    expect(text).toContain(exam.scenarios[0]!.context);
+    expect(text).toContain(`A. ${q.options[3]!.text}`);
+    expect(text).toContain("答えはまだ言わないでください");
+  });
+  test("正解・解説・覚えることは入れない（全問で）", () => {
+    for (const x of exam.questions) {
+      const t = hintText({ exam, q: x, order: [0, 1, 2, 3] });
+      expect(t).not.toMatch(/■ (正解|私の答え|アプリの解説|覚えること)/);
+      expect(t).not.toContain(x.point);
+      for (const o of x.options) expect(t).not.toContain(o.why);
     }
   });
 });

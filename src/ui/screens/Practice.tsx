@@ -222,6 +222,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         chosen={chosen}
         reveal={revealed}
         onChoose={choose}
+        hintCopy
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={lang}
       />

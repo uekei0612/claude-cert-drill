@@ -65,12 +65,14 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 言語の切り替えは上の帯に収め、問題は画面の上から始まる（#31）
   const cardTop = await page.$eval(".qcard", e => Math.round(e.getBoundingClientRect().top));
   if (cardTop > 140) throw new Error(`練習の問題が下がっている：${cardTop}px`);
-  // Claude に聞く用のコピーは、答える前には出さない（答えが分かってしまう。#24）
-  if (await page.$(".qcard .copy")) throw new Error("答える前にコピーのボタンが出ている");
+  // 答える前は、答えを含めないヒント用のコピーだけを出す（答え入りは答えたあと。#24・#36）
+  if ((await page.$$(".qcard .copy")).length !== 1 || !(await page.$(".qcard .copy.hint")))
+    throw new Error("答える前のコピーのボタンが、ヒント用だけになっていない");
   for (let i = 0; i < 3; i++) {
     await click(".option");
     if (!(await page.$(".why"))) throw new Error("解説が出ない");
-    if (!(await page.$(".qcard .copy"))) throw new Error("答えたあとにコピーのボタンが出ない");
+    if (!(await page.$(".qcard .copy:not(.hint)")) || (await page.$(".qcard .copy.hint")))
+      throw new Error("答えたあとにコピーのボタンが、答え入りのものに替わらない");
     // 一番下までスクロールしても、帯は画面の下端に付いたまま（下の余白の分だけ持ち上がらない。#25）
     if (i === 0) {
       const gap = await page.evaluate(async () => {
@@ -277,6 +279,8 @@ const OUT = process.argv[3] || "/tmp/shots";
         .activeMock.questionIds.length,
   );
   if (total !== 60) throw new Error(`模擬試験が 60 問でない：${total}`);
+  // 模擬試験の最中は、コピーのボタンを出さない（本番に近い状態を保つ。#36）
+  if (await page.$(".qcard .copy")) throw new Error("模擬試験の最中にコピーのボタンが出ている");
   await click(".option");
   await shot("09-mock-question");
   await clickText("⚐ 旗を立てる");

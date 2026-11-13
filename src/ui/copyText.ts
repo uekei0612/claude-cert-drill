@@ -20,17 +20,14 @@ export interface QuestionCopy {
   readonly chosen?: number;
 }
 
-/** 答えを見たあとの問題 1 問 */
-export function questionText({ exam, q, order, chosen }: QuestionCopy): string {
+/** 問題の前半（頼む文・分野・シナリオ・問題・選択肢）。答えと解説は含めない */
+function questionHead({ exam, q, order }: QuestionCopy, ask: string): string[] {
   const ja = exam.translations?.ja;
   const tq = ja?.questions[q.id];
   const scenario = exam.scenarios.find(s => s.id === q.scenario);
   const domain = domainOf(exam, q);
   const task = findTask(exam, q.tasks[0]);
-  const letter = (orig: number) => LETTERS[order.indexOf(orig)] ?? "?";
-  const out: string[] = [
-    `${examName(exam)}の試験勉強をしています。次の練習問題（非公式の自作問題）について教えてください。`,
-  ];
+  const out: string[] = [`${examName(exam)}の試験勉強をしています。次の練習問題（非公式の自作問題）${ask}`];
   if (domain && task) out.push(`分野：${domain.id.toUpperCase()} ${domain.ja} ／ 細目：${task.id} ${task.ja}`);
   if (scenario)
     out.push(
@@ -40,6 +37,24 @@ export function questionText({ exam, q, order, chosen }: QuestionCopy): string {
   out.push(
     `■ 選択肢\n${order.map((orig, i) => `${LETTERS[i]}. ${withJa(q.options[orig]!.text, tq?.options[orig], "   ")}`).join("\n")}`,
   );
+  return out;
+}
+
+/** 答える前の問題 1 問。正解・解説・覚えることは入れず、答えを言わずにヒントだけを頼む（#36） */
+export function hintText(c: Omit<QuestionCopy, "chosen">): string {
+  return [
+    ...questionHead(
+      c,
+      "を解いています。答えはまだ言わないでください。どこに注目すればよいか、考え方のヒントだけをください。",
+    ),
+  ].join("\n\n");
+}
+
+/** 答えを見たあとの問題 1 問 */
+export function questionText(c: QuestionCopy): string {
+  const { q, order, chosen } = c;
+  const letter = (orig: number) => LETTERS[order.indexOf(orig)] ?? "?";
+  const out = questionHead(c, "について教えてください。");
   const answer = `■ 正解：${letter(q.answer)}`;
   out.push(
     chosen === undefined
