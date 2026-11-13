@@ -571,12 +571,26 @@ a.tap {
 .facts dd {
   margin: 0;
 }
-ul.small,
+/* 教科書の目次：章ごとの読んだ印と、その細目の習熟のバー（#29） */
+.read-mark {
+  white-space: nowrap;
+}
+.toc-meter .meter {
+  flex: 1;
+}
+.toc-meter > span {
+  white-space: nowrap;
+}
+.read-row {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
 /* 覚えることの下の「教科書で読む」。行いっぱいに伸ばさず、文字の幅だけ押せるようにする */
 .learn-link {
   align-self: flex-start;
   padding: 0;
 }
+ul.small,
 .points {
   margin: 0;
   padding-left: 1.2em;

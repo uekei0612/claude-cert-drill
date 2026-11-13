@@ -7,9 +7,11 @@ import {
   answer,
   finishMock,
   markGuess,
+  readChapters,
   resetExam,
   restoreItem,
   savedIds,
+  setRead,
   startMock,
   toggleSaved,
 } from "./actions";
@@ -192,5 +194,26 @@ describe("後で振り返る印", () => {
     expect(savedIds(resetExam(d, "ccar-f"), "ccar-f")).toEqual([]);
     expect(savedIds(resetExam(d, "ccar-f"), "ccar-p")).toEqual(["s1-02"]);
     expect(parseData(emptyData()).saved).toBeUndefined();
+  });
+});
+
+describe("教科書の読んだ章（#29）", () => {
+  test("付ける・外す。資格ごとに分かれる", () => {
+    let d = setRead(emptyData(), "ccar-f", "1.1", true, 5);
+    d = setRead(d, "ccar-f", "intro", true, 6);
+    d = setRead(d, "ccar-p", "1.1", true, 7);
+    expect([...readChapters(d, "ccar-f")].sort()).toEqual(["1.1", "intro"]);
+    d = setRead(d, "ccar-f", "1.1", false, 8);
+    expect([...readChapters(d, "ccar-f")]).toEqual(["intro"]);
+    expect([...readChapters(d, "ccar-p")]).toEqual(["1.1"]);
+  });
+  test("記録に残り（書き出し・読み込みにも入る）、壊れた値は捨てる。資格の記録を消すと一緒に消える", () => {
+    const d = setRead(setRead(emptyData(), "ccar-f", "2.3", true, 5), "ccar-p", "intro", true, 6);
+    const back = parseData({ ...JSON.parse(JSON.stringify(d)), read: { ...d.read, "bad key": 1, "ccar-f:3.1": "x" } });
+    expect(back.read).toEqual(d.read);
+    expect(importJson(exportJson(d)).read).toEqual(d.read);
+    expect([...readChapters(resetExam(d, "ccar-f"), "ccar-f")]).toEqual([]);
+    expect([...readChapters(resetExam(d, "ccar-f"), "ccar-p")]).toEqual(["intro"]);
+    expect(parseData(emptyData()).read).toBeUndefined();
   });
 });

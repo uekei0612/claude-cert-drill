@@ -32,6 +32,21 @@ export function toggleSaved(d: Data, examId: string, questionId: string, now: nu
   return { ...d, saved: had === undefined ? { ...rest, [k]: now } : rest };
 }
 
+/** 教科書の章に「読んだ」を付ける・外す（#29） */
+export function setRead(d: Data, examId: string, chapterId: string, on: boolean, now: number): Data {
+  const k = `${examId}:${chapterId}`;
+  const { [k]: _had, ...rest } = d.read ?? {};
+  return { ...d, read: on ? { ...rest, [k]: now } : rest };
+}
+
+/** 読んだ章の ID */
+export const readChapters = (d: Data, examId: string): Set<string> =>
+  new Set(
+    Object.keys(d.read ?? {})
+      .filter(k => k.startsWith(`${examId}:`))
+      .map(k => k.slice(examId.length + 1)),
+  );
+
 /** 印を付けた問題の ID（新しく付けた順） */
 export const savedIds = (d: Data, examId: string): string[] =>
   Object.entries(d.saved ?? {})
@@ -79,8 +94,10 @@ export function finishMock(d: Data, score: MockScore, now: number): Data {
 export function resetExam(d: Data, examId: string): Data {
   const items = Object.fromEntries(Object.entries(d.items).filter(([k]) => !k.startsWith(`${examId}:`)));
   const { [examId]: _drop, ...mocks } = d.mocks;
-  const saved = Object.fromEntries(Object.entries(d.saved ?? {}).filter(([k]) => !k.startsWith(`${examId}:`)));
-  const cleared = { ...d, items, mocks, saved };
+  const mine = ([k]: [string, unknown]) => !k.startsWith(`${examId}:`);
+  const saved = Object.fromEntries(Object.entries(d.saved ?? {}).filter(mine));
+  const read = Object.fromEntries(Object.entries(d.read ?? {}).filter(mine));
+  const cleared = { ...d, items, mocks, saved, read };
   return d.activeMock?.examId === examId ? abandonMock(cleared) : cleared;
 }
 

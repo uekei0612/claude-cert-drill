@@ -145,6 +145,24 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 教科書：目次 → 細目の画面から章へ → 次の章。どの章も横にはみ出さない（コードは枠の中で横に送る）
   await goto("#/ccar-f/learn");
   if (!(await text()).includes("エージェントループの設計と実装")) throw new Error("教科書の目次が出ない");
+  // 章の終わりまで読むと「読んだ」になり、目次とホームに出る。手で外せる（#29）
+  await goto("#/ccar-f/learn/intro");
+  if ((await text()).includes("この章は読んだ")) throw new Error("開いただけで読んだになる");
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await new Promise(r => setTimeout(r, 400));
+  if (!(await text()).includes("この章は読んだ")) throw new Error("最後まで読んでも読んだにならない");
+  await goto("#/ccar-f/learn");
+  if ((await page.$$(".read-mark")).length !== 1) throw new Error("目次に読んだ印が出ない");
+  if (!/読んだ 1 \/ \d+ 章/.test(await text())) throw new Error("目次に読んだ章の数が出ない");
+  await goto("#/ccar-f");
+  if (!/教科書の続き[\s\S]*1\.1/.test(await text())) throw new Error("ホームに次に読む章が出ない");
+  await goto("#/ccar-f/learn/intro");
+  await clickText("読んだを外す");
+  if ((await text()).includes("この章は読んだ")) throw new Error("読んだを外せない");
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await new Promise(r => setTimeout(r, 400));
+  if ((await text()).includes("この章は読んだ")) throw new Error("外した読んだが、すぐまた付く");
   // 章と各節に、Claude に貼るためのコピーのボタンがある（#24）
   await goto("#/ccar-f/learn/1.1");
   if (!(await text()).includes("この章をコピー")) throw new Error("章のコピーのボタンが無い");
