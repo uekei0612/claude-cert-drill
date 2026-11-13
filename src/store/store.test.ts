@@ -2,7 +2,17 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { fixture } from "../engine/fixture";
 import { planMock, scoreMock } from "../engine/mock";
 import { seeded } from "../engine/rng";
-import { abandonMock, answer, finishMock, resetExam, savedIds, startMock, toggleSaved } from "./actions";
+import {
+  abandonMock,
+  answer,
+  finishMock,
+  markGuess,
+  resetExam,
+  restoreItem,
+  savedIds,
+  startMock,
+  toggleSaved,
+} from "./actions";
 import { emptyData, parseData } from "./schema";
 import { STORAGE_KEY, exportJson, getData, importJson, reloadForTest, setData } from "./store";
 
@@ -53,6 +63,23 @@ describe("parseData", () => {
     expect(Object.keys(d.activeMock!.orders)).toEqual(["s1-01"]);
     expect(d.activeMock?.cursor).toBe(1);
   });
+  test("途中の模擬試験：使った時間を持たない記録（#42 より前）は、時間を使っていない扱い", () => {
+    const base = {
+      examId: "ccar-f",
+      questionIds: ["s1-01"],
+      scenarioIds: ["s1"],
+      startedAt: NOW,
+      limitMs: 1000,
+      answers: {},
+      flags: [],
+      orders: {},
+      cursor: 0,
+    };
+    expect(parseData({ activeMock: base }).activeMock?.usedMs).toBe(0);
+    expect(parseData({ activeMock: { ...base, usedMs: 300 } }).activeMock?.usedMs).toBe(300);
+    expect(parseData({ activeMock: { ...base, usedMs: -5 } }).activeMock?.usedMs).toBe(0);
+    expect(parseData({ activeMock: { ...base, usedMs: 9999 } }).activeMock?.usedMs).toBe(1000);
+  });
 });
 
 describe("store", () => {
@@ -76,6 +103,34 @@ describe("store", () => {
   });
 });
 
+describe("練習の答えの取り消し", () => {
+  test("答えたあとに取り消すと、記録（間隔・ease・回数）が答える前と同じに戻る", () => {
+    const k = "ccar-f:s1-01";
+    // 2 回正解して間隔が伸びている問題を、押し間違えて誤答にした
+    let d = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    d = answer(d, "ccar-f", "s1-01", true, NOW + 864e5);
+    const before = d;
+    const prev = d.items[k];
+    const after = answer(d, "ccar-f", "s1-01", false, NOW + 2 * 864e5);
+    expect(after.items[k]).not.toEqual(prev);
+    expect(restoreItem(after, "ccar-f", "s1-01", prev)).toEqual(before);
+  });
+  test("正解に勘だったを付けると勘の記録に、外すとふつうの正解に戻る（#27）", () => {
+    const k = "ccar-f:s1-01";
+    const d0 = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    const prev = d0.items[k];
+    const ok = answer(d0, "ccar-f", "s1-01", true, NOW + 864e5);
+    const guessed = markGuess(ok, "ccar-f", "s1-01", prev, true, NOW + 864e5);
+    expect(guessed.items[k]?.interval).toBe(0);
+    expect(markGuess(guessed, "ccar-f", "s1-01", prev, false, NOW + 864e5)).toEqual(ok);
+  });
+  test("初めて答えた問題を取り消すと、記録が無い状態に戻る", () => {
+    const d = answer(emptyData(), "ccar-f", "s1-01", false, NOW);
+    const back = restoreItem(d, "ccar-f", "s1-01", undefined);
+    expect(back).toEqual(emptyData());
+  });
+});
+
 describe("模擬試験の記録", () => {
   test("終えると結果が残り、出した問題に正誤が付き、途中の記録は消える", () => {
     const p = planMock(fixture, seeded(1));
@@ -86,6 +141,7 @@ describe("模擬試験の記録", () => {
       scenarioIds: p.scenarioIds,
       startedAt: NOW,
       limitMs: p.limitMs,
+      usedMs: 0,
       answers,
       flags: [],
       orders: {},
@@ -109,6 +165,7 @@ describe("模擬試験の記録", () => {
       scenarioIds: [],
       startedAt: 0,
       limitMs: 0,
+      usedMs: 0,
       answers: {},
       flags: [],
       orders: {},

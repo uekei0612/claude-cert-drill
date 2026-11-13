@@ -7,6 +7,7 @@ import { itemKey } from "../../store/schema";
 import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
 import { href } from "../route";
+import { fmt } from "./Mock";
 
 export function Home({ exam, now }: { exam: Exam; now: number }) {
   const data = useData();
@@ -41,7 +42,9 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         </div>
         <Meter value={ready} mark={target} label="合格の目安" />
         <p class="muted small">
-          配点で重み付けした「覚えた問題」の割合。線は目安の {pct(target)}（独自の基準）。未解答は覚えていない扱い。
+          配点で重み付けした「覚えた問題」の割合。覚えた＝日をあけて 2
+          回続けて正解し、復習の期限を大きく過ぎていない問題。線は目安の {pct(target)}
+          （独自の基準）。未解答は覚えていない扱い。
           {all.seen < all.total && ` 未解答 ${all.total - all.seen} 問。`}
         </p>
       </section>
@@ -50,7 +53,8 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         <a class="card notice" href={href({ name: "mock", examId: exam.id })}>
           <strong>模擬試験の途中です</strong>
           <span class="small">
-            {Object.keys(active.answers).length} / {active.questionIds.length} 問に回答済み。続きから再開する
+            {Object.keys(active.answers).length} / {active.questionIds.length} 問に回答済み・残り{" "}
+            {fmt(active.limitMs - active.usedMs)}（時間は止まっています）。続きから再開する
           </span>
         </a>
       )}

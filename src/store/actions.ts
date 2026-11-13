@@ -1,5 +1,5 @@
 /* 記録を変える操作。画面からはここを呼ぶ */
-import { review } from "../engine/schedule";
+import { type ItemStat, review, reviewGuess } from "../engine/schedule";
 import type { MockScore } from "../engine/mock";
 import { type ActiveMock, type Data, MAX_MOCKS, type Settings, emptyData, itemKey } from "./schema";
 
@@ -7,6 +7,23 @@ export const answer = (d: Data, examId: string, questionId: string, ok: boolean,
   const k = itemKey(examId, questionId);
   return { ...d, items: { ...d.items, [k]: review(d.items[k], ok, now) } };
 };
+
+/** 練習の答えを取り消す：答える前の記録（prev）に戻す。答える前に記録が無かったなら消す（#44） */
+export const restoreItem = (d: Data, examId: string, questionId: string, prev: ItemStat | undefined): Data => {
+  const k = itemKey(examId, questionId);
+  const { [k]: _drop, ...rest } = d.items;
+  return { ...d, items: prev ? { ...rest, [k]: prev } : rest };
+};
+
+/** 正解のあとの「勘だった」を付ける・外す。答える前の記録（prev）から付け直す（#27） */
+export const markGuess = (
+  d: Data,
+  examId: string,
+  questionId: string,
+  prev: ItemStat | undefined,
+  guess: boolean,
+  now: number,
+): Data => restoreItem(d, examId, questionId, guess ? reviewGuess(prev, now) : review(prev, true, now));
 
 /** 後で振り返る印を付ける・外す */
 export function toggleSaved(d: Data, examId: string, questionId: string, now: number): Data {

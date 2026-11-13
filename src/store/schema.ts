@@ -39,8 +39,11 @@ export interface ActiveMock {
   readonly examId: string;
   readonly questionIds: readonly string[];
   readonly scenarioIds: readonly string[];
+  /** 始めた時刻。この模擬試験を見分ける印に使う（残り時間の計算には使わない） */
   readonly startedAt: number;
   readonly limitMs: number;
+  /** これまでに使った時間（ms）。時間は画面を開いている間だけ進む */
+  readonly usedMs: number;
   /** 問題 ID → 選んだ元の選択肢の添字 */
   readonly answers: Readonly<Record<string, number>>;
   readonly flags: readonly string[];
@@ -148,6 +151,9 @@ function activeMock(x: unknown): ActiveMock | undefined {
     scenarioIds,
     startedAt: startedAt as number,
     limitMs: limitMs as number,
+    // 使った時間を持たない記録（#42 より前）は、時間を使っていない扱い。
+    // 前の数え方（開始時刻からの差）に合わせると、閉じていた分で時間切れになるため
+    usedMs: num(x.usedMs) && x.usedMs >= 0 ? Math.min(x.usedMs, limitMs as number) : 0,
     answers: ans,
     flags,
     orders: ord,

@@ -64,6 +64,7 @@ export function Saved({ exam }: { exam: Exam }) {
                       reveal={true}
                       scenarioOpen={false}
                       lang={data.settings.lang}
+                      learnLink
                     />
                   )}
                   <div class="row end">

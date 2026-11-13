@@ -71,6 +71,8 @@ const OUT = process.argv[3] || "/tmp/shots";
       if (Math.abs(gap) > 1) throw new Error(`一番下で帯が ${gap}px 持ち上がる`);
     }
     if (i === 0) await shot("04-practice-revealed");
+    // 練習の途中では章へのリンクを出さない（移ると練習の残りが消える。#26）
+    if (await page.$(".qcard .learn-link")) throw new Error("練習の途中に教科書へのリンクが出ている");
     // 1・2 問目に「後で振り返る」の印を付ける（#23）
     if (i < 2) {
       await click(".sticky-next .save");
@@ -90,8 +92,41 @@ const OUT = process.argv[3] || "/tmp/shots";
   await click(".review-row");
   if (!(await page.$(".why"))) throw new Error("振り返りで開いても解説が出ない");
   await shot("24-saved");
+  // 答えのあとから、その細目の教科書の章へ行ける（#26）
+  await click(".qcard .learn-link");
+  if (!/#\/ccar-f\/learn\/\d\.\d$/.test(await page.evaluate(() => location.hash)))
+    throw new Error("振り返りから教科書の章に移れない");
+  await goto("#/ccar-f/saved");
   await clickText("この 2 問を練習する");
   if (!/振り返り・1 \/ 2/.test(await text())) throw new Error("振り返りの 2 問だけで練習にならない");
+  // 2 問とも、誤答か勘の正解にする。誤答なら一度取り消して（#44）選び直し、正解なら「勘だった」を付ける（#27）
+  for (let n = 0; n < 2; n++) {
+    await click(".option");
+    if (await page.$(".option.ng")) {
+      if (await page.$(".sticky-next .guess")) throw new Error("誤答なのに勘だったが出ている");
+      await click(".sticky-next .undo");
+      if (await page.$(".why")) throw new Error("取り消しても答えが残っている");
+      await click(".option");
+    }
+    if (!(await page.$(".option.ng"))) {
+      if (await page.$(".sticky-next .undo")) throw new Error("正解なのに取り消すが出ている");
+      await click(".sticky-next .guess");
+      if (!(await page.$(".sticky-next .guess.on"))) throw new Error("勘だったが付かない");
+    }
+    await click(".sticky-next .btn.primary");
+  }
+  // やり直しの問題（誤答だけ出る）は何か答えて、結果の画面へ
+  while (!(await text()).includes("おつかれさまでした")) {
+    await click(".option");
+    await click(".sticky-next .btn.primary");
+  }
+  // 結果の画面：勘の正解は正解に数えない。間違えた・勘の問題ごとに、教科書の章へのリンクがある（#26）
+  if (!/^0 \/ 2 問/m.test(await text())) throw new Error("勘の正解を正解に数えている");
+  if ((await page.$$(".learn-link")).length !== 2) throw new Error("練習の結果に教科書へのリンクが無い");
+  await shot("26-practice-result");
+  // 間違えた問題だけを解き直せる（#39）
+  await clickText("間違えた");
+  if (!/解き直し・1 \/ 2/.test(await text())) throw new Error("練習の結果から間違えた問題だけの練習にならない");
   await goto("#/ccar-f/saved");
   // 印を外しても、その場では一覧から消さない（付け直せる）。次に開くと消えている
   await click(".card .save.on");
@@ -216,7 +251,12 @@ const OUT = process.argv[3] || "/tmp/shots";
     throw new Error(`見直しの言語切り替えが崩れている：${JSON.stringify(seg)}`);
   await shot("11-mock-result");
   await click(".review-row");
+  if (!(await page.$(".qcard .learn-link"))) throw new Error("模擬試験の見直しに教科書へのリンクが無い");
   await shot("12-mock-review");
+  // 間違えた（未回答を含む）問題だけを練習できる（#39）。60 問中、正解は多くても 2 問
+  await clickText("間違えた（未回答を含む）");
+  if (!/解き直し・1 \/ (5[89]|60)\b/.test(await text()))
+    throw new Error("模擬試験の結果から間違えた問題の練習にならない");
 
   await goto("#/settings");
   await shot("13-settings");

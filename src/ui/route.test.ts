@@ -9,6 +9,7 @@ const routes: Route[] = [
   { name: "practice", examId: "ccar-f", only: "1.1" },
   { name: "practice", examId: "ccar-f", only: "d2" },
   { name: "practice", examId: "ccar-f", only: "saved" },
+  { name: "practice", examId: "ccar-f", only: "q:s1-01,s4-12" },
   { name: "saved", examId: "ccar-f" },
   { name: "mock", examId: "ccar-f" },
   { name: "mock-result", examId: "ccar-f", at: 1793718460101 },

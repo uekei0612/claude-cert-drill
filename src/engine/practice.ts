@@ -16,6 +16,13 @@ export interface PracticeOptions {
   readonly ids?: readonly string[];
 }
 
+/** 問題を名指しする絞り込み（"q:s1-01,s2-03"）。間違えた問題だけを解き直すときに使う（#39） */
+export const idsOnly = (ids: readonly string[]): string => `q:${ids.join(",")}`;
+
+/** 問題を名指しする絞り込みなら、その問題 ID の並び。ほかの絞り込みなら無し */
+export const parseIdsOnly = (only?: string): string[] | undefined =>
+  only?.startsWith("q:") ? only.slice(2).split(",").filter(Boolean) : undefined;
+
 export function filterQuestions(exam: Exam, only?: string): Question[] {
   if (!only) return [...exam.questions];
   if (/^d\d+$/.test(only)) return questionsOfDomain(exam, only);

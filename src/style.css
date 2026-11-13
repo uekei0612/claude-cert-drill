@@ -448,6 +448,30 @@ a.tap {
   justify-content: space-between;
   gap: 12px;
 }
+/* 練習の帯の左：正解・不正解と、押し間違えたときの取り消し */
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.verdict .undo,
+.verdict .guess {
+  padding-left: 8px;
+  padding-right: 8px;
+  color: var(--muted);
+}
+.verdict .guess.on {
+  color: var(--accent);
+}
+/* 帯のボタンは折り返さない。狭い幅（320）では左の正誤の欄が 2 段になって幅を譲る */
+.sticky-next .btn {
+  white-space: nowrap;
+}
+.sticky-next > .btn {
+  flex-shrink: 0;
+}
 
 /* 模擬試験 */
 .mock-head {
@@ -548,6 +572,11 @@ a.tap {
   margin: 0;
 }
 ul.small,
+/* 覚えることの下の「教科書で読む」。行いっぱいに伸ばさず、文字の幅だけ押せるようにする */
+.learn-link {
+  align-self: flex-start;
+  padding: 0;
+}
 .points {
   margin: 0;
   padding-left: 1.2em;

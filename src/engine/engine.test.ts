@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { fixture } from "./fixture";
-import { planMock, scoreMock } from "./mock";
-import { filterQuestions, optionOrder, planPractice } from "./practice";
-import { readiness, tally, weakestTasks } from "./progress";
+import { addUsed, mockLeft, planMock, scoreMock } from "./mock";
+import { filterQuestions, idsOnly, optionOrder, parseIdsOnly, planPractice } from "./practice";
+import { questionsOfDomain, questionsOfTask, readiness, tally, weakestTasks } from "./progress";
 import { seeded } from "./rng";
-import { DAY, type ItemStat, RETRY_MS, isKnown, review } from "./schedule";
+import { DAY, type ItemStat, RETRY_MS, isKnown, isLearning, review, reviewGuess } from "./schedule";
 
 const NOW = Date.UTC(2026, 10, 4);
 
@@ -21,7 +21,22 @@ describe("review", () => {
     const s = review(review(undefined, true, NOW), false, NOW + 1000);
     expect(s.interval).toBe(0);
     expect(s.due).toBe(NOW + 1000 + RETRY_MS);
-    expect(isKnown(s)).toBe(false);
+    expect(isKnown(s, NOW + 1000)).toBe(false);
+  });
+  test("勘の正解は覚えた・覚えかけに入れず、1 日後に出す。ease は変えない（#27）", () => {
+    const known = review(review(undefined, true, NOW), true, NOW + DAY);
+    const g = reviewGuess(known, NOW + 4 * DAY);
+    expect(g.interval).toBe(0);
+    expect(g.due).toBe(NOW + 5 * DAY);
+    expect(g.ease).toBe(known.ease);
+    expect(g.correct).toBe(known.correct + 1);
+    expect(isKnown(g, NOW + 4 * DAY)).toBe(false);
+    expect(isLearning(g, NOW + 4 * DAY)).toBe(false);
+    // 初めての問題でも同じ
+    const first = reviewGuess(undefined, NOW);
+    expect(first).toMatchObject({ interval: 0, due: NOW + DAY, tries: 1, correct: 1 });
+    // 勘のあと、期限に正解すれば覚えかけから始め直す
+    expect(review(first, true, NOW + DAY).interval).toBe(1);
   });
   test("期限前の正解では延ばさない", () => {
     const a = review(undefined, true, NOW);
@@ -32,18 +47,47 @@ describe("review", () => {
 });
 
 describe("progress", () => {
+  /** 日をあけて 2 回続けて正解した記録（1 日 → 3 日。最後に答えたのは NOW + 1 日） */
+  const twice = () => review(review(undefined, true, NOW), true, NOW + DAY);
   test("未解答は覚えていない扱い、配点で重み付け", () => {
     const stats: Record<string, ItemStat> = {};
     expect(readiness(fixture, id => stats[id], NOW)).toBe(0);
-    // d1（0.6）の 6 問をすべて正解
-    for (const q of fixture.questions.filter(q => q.tasks[0]!.startsWith("1.")))
-      stats[q.id] = review(undefined, true, NOW);
-    expect(readiness(fixture, id => stats[id], NOW)).toBeCloseTo(0.6);
+    // d1（0.6）の 6 問をすべて、日をあけて 2 回続けて正解
+    for (const q of fixture.questions.filter(q => q.tasks[0]!.startsWith("1."))) stats[q.id] = twice();
+    expect(readiness(fixture, id => stats[id], NOW + DAY)).toBeCloseTo(0.6);
   });
-  test("期限切れでも直近が正解なら覚えた数に入り、復習待ちにも入る", () => {
-    const s = review(undefined, true, NOW);
-    const t = tally(fixture.questions.slice(0, 1), () => s, NOW + 2 * DAY);
-    expect(t).toEqual({ total: 1, known: 1, seen: 1, due: 1 });
+  test("1 回の正解ではまだ覚えた扱いにしない（覚えかけ）。日をあけてもう 1 回正解すると覚えた", () => {
+    const once = review(undefined, true, NOW);
+    expect(isKnown(once, NOW)).toBe(false);
+    expect(isLearning(once, NOW)).toBe(true);
+    // 同じ日にもう一度正解しても延びない
+    expect(isKnown(review(once, true, NOW + 1000), NOW + 1000)).toBe(false);
+    const s = twice();
+    expect(s.interval).toBe(3);
+    expect(isKnown(s, NOW + DAY)).toBe(true);
+    expect(isLearning(s, NOW + DAY)).toBe(false);
+  });
+  test("期限を間隔の分以上過ぎると覚えたから外す（期限を少し過ぎただけなら数え、復習待ちにも入る）", () => {
+    const s = twice(); // 期限は NOW + 4 日、間隔 3 日
+    const near = tally(fixture.questions.slice(0, 1), () => s, NOW + 6 * DAY);
+    expect(near).toEqual({ total: 1, known: 1, seen: 1, due: 1 });
+    const far = tally(fixture.questions.slice(0, 1), () => s, NOW + 8 * DAY);
+    expect(far).toEqual({ total: 1, known: 0, seen: 1, due: 1 });
+    expect(isLearning(s, NOW + 8 * DAY)).toBe(true);
+    // 期限が来てから正解すれば、また覚えた
+    const again = review(s, true, NOW + 8 * DAY);
+    expect(isKnown(again, NOW + 8 * DAY)).toBe(true);
+  });
+  test("ホーム・分野・細目の数字は同じ基準（細目の和が分野、分野の配点重み付けが目安）", () => {
+    const stats: Record<string, ItemStat> = { "s1-01": twice(), "s1-02": review(undefined, true, NOW) };
+    const at = NOW + DAY;
+    const statOf = (id: string) => stats[id];
+    for (const d of fixture.domains) {
+      const dt = tally(questionsOfDomain(fixture, d.id), statOf, at);
+      const sum = d.tasks.reduce((a, t) => a + tally(questionsOfTask(fixture, t.id), statOf, at).known, 0);
+      expect(sum).toBe(dt.known);
+    }
+    expect(tally(fixture.questions, statOf, at).known).toBe(1);
   });
   test("弱い細目は配点の大きい分野の未習得から", () => {
     const w = weakestTasks(fixture, () => undefined, NOW, 3);
@@ -91,6 +135,25 @@ describe("planPractice", () => {
   });
 });
 
+describe("問題を名指しする絞り込み", () => {
+  test("組んで読み戻せる。ほかの絞り込みは名指しでない", () => {
+    expect(parseIdsOnly(idsOnly(["s1-01", "s2-03"]))).toEqual(["s1-01", "s2-03"]);
+    expect(parseIdsOnly("1.1")).toBeUndefined();
+    expect(parseIdsOnly("saved")).toBeUndefined();
+    expect(parseIdsOnly(undefined)).toBeUndefined();
+  });
+  test("名指しした問題だけを、期限前でも全部出す", () => {
+    const ids = ["s1-01", "s1-02", "s2-01"];
+    const stat = { ease: 2.3, interval: 3, due: 2e12, tries: 1, correct: 1, last: 0 };
+    const p = planPractice(fixture, id => (id === "s1-01" ? stat : undefined), 1e12, seeded(1), {
+      size: ids.length,
+      maxNew: ids.length,
+      ids,
+    });
+    expect([...p].sort()).toEqual(ids);
+  });
+});
+
 describe("mock", () => {
   test("シナリオを決まった数だけ選び、シナリオごとにまとめて出す", () => {
     const p = planMock(fixture, seeded(3));
@@ -106,6 +169,24 @@ describe("mock", () => {
     expect(p.questionIds).toHaveLength(4);
     for (const sid of p.scenarioIds) expect(p.questionIds.filter(id => id.startsWith(`${sid}-`))).toHaveLength(2);
     expect(p.limitMs).toBe(4 * 120 * 1000);
+  });
+  test("残り時間：画面を開いている間だけ減り、閉じている間は止まる", () => {
+    const MIN = 60_000;
+    const T0 = 1_000_000;
+    let m = { limitMs: 30 * MIN, usedMs: 0 };
+    expect(mockLeft(m, T0, T0 + 5 * MIN)).toBe(25 * MIN);
+    // 5 分解いて閉じる
+    m = addUsed(m, T0, T0 + 5 * MIN);
+    // 一晩たってから開いても、閉じたときと同じ残り時間
+    const reopen = T0 + 12 * 60 * MIN;
+    expect(mockLeft(m, undefined, reopen)).toBe(25 * MIN);
+    expect(mockLeft(m, reopen, reopen)).toBe(25 * MIN);
+    expect(mockLeft(m, reopen, reopen + 3 * MIN)).toBe(22 * MIN);
+  });
+  test("残り時間：時計が戻っても増えない", () => {
+    const m = { limitMs: 1000, usedMs: 200 };
+    expect(mockLeft(m, 5000, 4000)).toBe(800);
+    expect(addUsed(m, 5000, 4000).usedMs).toBe(200);
   });
   test("採点：未回答は誤答、出た分野で配点を割り直す", () => {
     const ids = ["s1-01", "s1-02", "s1-04"]; // d1 2 問、d2 1 問

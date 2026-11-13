@@ -1,5 +1,6 @@
 /* 模擬試験の結果と見直し。分野ごとの正答率、配点で重み付けした正答率と目安線、1 問ずつの見直し */
 import { useState } from "preact/hooks";
+import { idsOnly } from "../../engine/practice";
 import type { Exam } from "../../exams/types";
 import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
@@ -28,7 +29,8 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
   const target = exam.format.target;
   const byId = new Map(exam.questions.map(q => [q.id, q]));
   const ids = (r.questionIds ?? []).filter(id => byId.has(id));
-  const shown = onlyWrong ? ids.filter(id => r.answers?.[id] !== byId.get(id)!.answer) : ids;
+  const wrong = ids.filter(id => r.answers?.[id] !== byId.get(id)!.answer);
+  const shown = onlyWrong ? wrong : ids;
 
   return (
     <main class="page with-tabs">
@@ -55,6 +57,11 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
           目安はこのアプリの独自の基準です。本番の合格基準は{exam.format.passing}で、換算式は公開されていません。
         </p>
       </section>
+      {wrong.length > 0 && (
+        <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: idsOnly(wrong) })}>
+          間違えた（未回答を含む）{wrong.length} 問を練習する
+        </a>
+      )}
 
       <section class="stack">
         <h2>分野ごと</h2>
@@ -113,6 +120,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                       reveal={true}
                       scenarioOpen={false}
                       lang={data.settings.lang}
+                      learnLink
                     />
                     <div class="row end">
                       <SaveButton examId={exam.id} questionId={id} />

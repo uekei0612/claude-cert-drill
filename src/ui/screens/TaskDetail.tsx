@@ -1,6 +1,6 @@
 /* 細目の要点と、その細目の問題の一覧（覚えた／まだ）。ここからその細目だけを練習できる */
 import { questionsOfTask, tally } from "../../engine/progress";
-import { isKnown } from "../../engine/schedule";
+import { isKnown, isLearning } from "../../engine/schedule";
 import type { Exam } from "../../exams/types";
 import { domainOfTask, findTask } from "../../exams/types";
 import { itemKey } from "../../store/schema";
@@ -83,6 +83,8 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
         </h2>
         {[...qs, ...related].map(q => {
           const s = statOf(q.id);
+          const known = isKnown(s, now);
+          const learning = isLearning(s, now);
           return (
             <div key={q.id} class="card tight">
               <div class="row between">
@@ -90,12 +92,12 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
                   {exam.scenarios.find(x => x.id === q.scenario)?.ja ?? ""}
                   {q.tasks[0] !== taskId && "（関連）"}
                 </span>
-                <span class={isKnown(s) ? "okc small" : s ? "ngc small" : "muted small"}>
-                  {isKnown(s) ? "覚えた" : s ? "まだ" : "未解答"}
+                <span class={known ? "okc small" : learning ? "small" : s ? "ngc small" : "muted small"}>
+                  {known ? "覚えた" : learning ? "あと 1 回" : s ? "まだ" : "未解答"}
                 </span>
               </div>
-              {/* 答えを見せないよう、覚えたものだけ要点を出す */}
-              <p class="small">{isKnown(s) ? q.point : "（解くと要点が出ます）"}</p>
+              {/* 答えを見せないよう、正解したことのあるものだけ要点を出す */}
+              <p class="small">{known || learning ? q.point : "（解くと要点が出ます）"}</p>
             </div>
           );
         })}

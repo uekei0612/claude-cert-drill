@@ -47,6 +47,25 @@ export function planMock(exam: Exam, rng: Rng): MockPlan {
   return { questionIds, scenarioIds: [], limitMs: questionIds.length * f.secondsPerQuestion * 1000 };
 }
 
+/* 時間は模擬試験の画面を開いている間だけ進む（閉じたり中断したりすると止まる）。
+   開始時刻からの差で数えると、一晩おいて開いた瞬間に時間切れで採点されてしまうため（#42）。
+   記録には「これまでに使った時間」だけを持ち、今回画面を開いた時刻（since）は画面の側で持つ */
+export interface MockClock {
+  readonly limitMs: number;
+  /** これまでに使った時間（ms）。今回開いている分は含まない */
+  readonly usedMs: number;
+}
+
+/** 残り時間。since は今回画面を開いた時刻（隠れている間は無し） */
+export function mockLeft(m: MockClock, since: number | undefined, now: number): number {
+  return m.limitMs - m.usedMs - (since === undefined ? 0 : Math.max(0, now - since));
+}
+
+/** 今回開いていた時間（since から now まで）を、使った時間に足す */
+export function addUsed<T extends MockClock>(m: T, since: number, now: number): T {
+  return { ...m, usedMs: m.usedMs + Math.max(0, now - since) };
+}
+
 export interface DomainScore {
   readonly domainId: string;
   readonly correct: number;
