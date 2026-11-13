@@ -3,7 +3,7 @@ import { fixture } from "./fixture";
 import { addUsed, mockLeft, planMock, scoreMock } from "./mock";
 import { filterQuestions, idsOnly, optionOrder, parseIdsOnly, planPractice } from "./practice";
 import { questionsOfDomain, questionsOfTask, readiness, tally, weakestTasks } from "./progress";
-import { dailyPlan, daysUntil, parseDate } from "./plan";
+import { dailyPlan, dayKey, daysUntil, parseDate, streak } from "./plan";
 import { seeded } from "./rng";
 import { DAY, type ItemStat, RETRY_MS, isKnown, isLearning, review, reviewGuess } from "./schedule";
 
@@ -223,5 +223,20 @@ describe("試験日からの逆算（#37）", () => {
   test("当日は復習だけ。過ぎたら出さない", () => {
     expect(dailyPlan(parseDate("2026-11-10")!, noon, 50, 5)).toEqual({ daysLeft: 0, newToday: 0, chaptersToday: 0 });
     expect(dailyPlan(parseDate("2026-11-09")!, noon, 50, 5)).toBeUndefined();
+  });
+});
+
+describe("続けた日数（#38）", () => {
+  const at = (d: number, h = 12) => new Date(2026, 10, d, h).getTime();
+  test("今日からさかのぼって続いた日数。今日まだなら昨日から数える", () => {
+    const days = new Set([dayKey(at(8)), dayKey(at(9)), dayKey(at(10))]);
+    expect(streak(days, at(10))).toBe(3);
+    expect(streak(days, at(11))).toBe(3);
+    expect(streak(days, at(12))).toBe(0);
+    expect(streak(new Set([dayKey(at(10)), dayKey(at(8))]), at(10))).toBe(1);
+  });
+  test("日付はローカルの暦（夜中の 0 時をまたぐと翌日）", () => {
+    expect(dayKey(at(10, 23))).toBe("2026-11-10");
+    expect(dayKey(at(11, 0))).toBe("2026-11-11");
   });
 });

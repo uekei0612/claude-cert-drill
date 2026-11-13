@@ -3,9 +3,10 @@ import { dailyPlan, parseDate } from "../../engine/plan";
 import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../engine/progress";
 import type { Exam } from "../../exams/types";
 import { findTask, lessonOrder } from "../../exams/types";
-import { readChapters, savedIds } from "../../store/actions";
+import { daysOf, readChapters, savedIds } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { useData } from "../../store/store";
+import { Activity } from "../Activity";
 import { Meter, pct } from "../Meter";
 import { href } from "../route";
 import { chapterTag, chapterTitle, nextChapter } from "./Learn";
@@ -181,6 +182,8 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
           );
         })}
       </section>
+
+      <Activity days={daysOf(data, exam.id)} now={now} />
 
       {lastMock && (
         <a class="card tight" href={href({ name: "mock-result", examId: exam.id, at: lastMock.finishedAt })}>

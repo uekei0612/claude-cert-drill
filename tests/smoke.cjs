@@ -96,6 +96,9 @@ const OUT = process.argv[3] || "/tmp/shots";
   const homeAfter = await text();
   if (homeAfter.includes("未解答 60 問")) throw new Error("練習の答えが記録されていない");
   if (!/振り返り\s*2 問/.test(homeAfter)) throw new Error("ホームに振り返りの問題数が出ない");
+  // 今日答えた分が、続けた日数とカレンダーに出る（#38）
+  if (!/続けた日数 1 日[\s\S]*今日 3 問/.test(homeAfter)) throw new Error("今日の回答が続けた日数に出ない");
+  if (!(await page.$(".cal .cell.today.l1"))) throw new Error("今日の回答がカレンダーに出ない");
   await shot("05-home-after");
   // ホームのカード：本体は詳細へ、右端の「練習 ▶」は練習へ。押す前に行き先が分かる（#32・#33）
   if (!/目安 \+\d+\.\d/.test(homeAfter)) throw new Error("伸ばすと効く細目の数字の意味が出ない");
