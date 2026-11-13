@@ -51,8 +51,20 @@ export function review(prev: ItemStat | undefined, ok: boolean, now: number): It
   };
 }
 
-/** 直近の回答が正解で、覚えている扱いの問題か（期限切れでも、直近が正解なら数える） */
-export const isKnown = (s: ItemStat | undefined): boolean => !!s && s.interval >= 1;
+/** 覚えた扱いにする間隔（日）。1 回の正解（間隔 1 日）ではまだ数えず、
+    日をあけて 2 回続けて正解する（間隔が 3 日になる）と数える（#28） */
+export const KNOWN_INTERVAL = 3;
+
+/** 期限を間隔の分以上過ぎた問題か（前に答えてから間隔の 2 倍以上たった。忘れているかもしれない） */
+export const isStale = (s: ItemStat, now: number): boolean => now - s.due > s.interval * DAY;
+
+/** 覚えた扱いの問題か：日をあけて 2 回以上続けて正解していて、期限を大きく過ぎていない。
+    合格の目安・分野・細目の「覚えた」はすべてこれで数える */
+export const isKnown = (s: ItemStat | undefined, now: number): boolean =>
+  !!s && s.interval >= KNOWN_INTERVAL && !isStale(s, now);
+
+/** 覚えかけ：直近は正解だが、まだ覚えた扱いでない（もう 1 回、期限が来てから正解すれば覚えた） */
+export const isLearning = (s: ItemStat | undefined, now: number): boolean => !!s && s.interval >= 1 && !isKnown(s, now);
 
 /** 期限が来ている問題か */
 export const isDue = (s: ItemStat | undefined, now: number): boolean => !!s && s.due <= now;
