@@ -42,7 +42,9 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         </div>
         <Meter value={ready} mark={target} label="合格の目安" />
         <p class="muted small">
-          配点で重み付けした「覚えた問題」の割合。線は目安の {pct(target)}（独自の基準）。未解答は覚えていない扱い。
+          配点で重み付けした「覚えた問題」の割合。覚えた＝日をあけて 2
+          回続けて正解し、復習の期限を大きく過ぎていない問題。線は目安の {pct(target)}
+          （独自の基準）。未解答は覚えていない扱い。
           {all.seen < all.total && ` 未解答 ${all.total - all.seen} 問。`}
         </p>
       </section>

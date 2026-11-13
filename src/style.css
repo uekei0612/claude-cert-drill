@@ -456,10 +456,21 @@ a.tap {
   flex-wrap: wrap;
   min-width: 0;
 }
-.verdict .undo {
+.verdict .undo,
+.verdict .guess {
   padding-left: 8px;
   padding-right: 8px;
   color: var(--muted);
+}
+.verdict .guess.on {
+  color: var(--accent);
+}
+/* 帯のボタンは折り返さない。狭い幅（320）では左の正誤の欄が 2 段になって幅を譲る */
+.sticky-next .btn {
+  white-space: nowrap;
+}
+.sticky-next > .btn {
+  flex-shrink: 0;
 }
 
 /* 模擬試験 */

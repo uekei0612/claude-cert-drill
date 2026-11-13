@@ -1,5 +1,6 @@
 /* 習熟の集計。問題は主たる細目（tasks[0]）で数える。
    「合格の目安」は、分野ごとの「覚えた問題の割合」を配点で重み付けしたもの。
+   覚えたの基準は schedule の isKnown（日をあけて 2 回続けて正解し、期限を大きく過ぎていない）。
    まだ解いていない問題は覚えていない扱い（本番の未回答が誤答なのと同じく、安全側に倒す） */
 import type { Exam, Question } from "../exams/types";
 import { domainOf } from "../exams/types";
@@ -9,7 +10,7 @@ export type StatOf = (questionId: string) => ItemStat | undefined;
 
 export interface Tally {
   readonly total: number;
-  /** 直近の回答が正解 */
+  /** 覚えた（isKnown） */
   readonly known: number;
   /** 一度でも解いた */
   readonly seen: number;
@@ -24,7 +25,7 @@ export function tally(qs: readonly Question[], statOf: StatOf, now: number): Tal
   for (const q of qs) {
     const s = statOf(q.id);
     if (s) seen++;
-    if (isKnown(s)) known++;
+    if (isKnown(s, now)) known++;
     if (isDue(s, now)) due++;
   }
   return { total: qs.length, known, seen, due };
