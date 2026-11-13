@@ -4,6 +4,7 @@ import { type Route, href, parseRoute } from "./route";
 const routes: Route[] = [
   { name: "picker" },
   { name: "settings" },
+  { name: "help" },
   { name: "home", examId: "ccar-f" },
   { name: "practice", examId: "ccar-f" },
   { name: "practice", examId: "ccar-f", only: "1.1" },

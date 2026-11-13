@@ -565,6 +565,87 @@ a.tap {
   width: 100%;
   font-size: 1rem;
 }
+/* 用語の「?」と、押すと開く定義（#50）。定義の箱は画面に固定して、はみ出さない位置に置く */
+.help-tip {
+  display: inline;
+}
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: -6px 0 -6px 2px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font:
+    700 0.75rem/1 system-ui,
+    sans-serif;
+  vertical-align: 2px;
+  cursor: pointer;
+  /* 押せる範囲は見た目より広く */
+  position: relative;
+}
+.help-btn::after {
+  content: "";
+  position: absolute;
+  inset: -11px;
+}
+.help-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.help-pop {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: left;
+  white-space: normal;
+}
+/* 進め方と用語の一覧 */
+.help-steps {
+  margin: 0;
+  padding-left: 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.help-steps li > * {
+  display: block;
+}
+.help-steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+.glossary {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.glossary dt {
+  font-weight: 700;
+}
+.glossary dd {
+  margin: 2px 0 0;
+}
+.card.intro {
+  border-color: var(--accent);
+}
 /* 検索（#41） */
 .search-box {
   width: 100%;

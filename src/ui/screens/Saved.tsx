@@ -6,6 +6,7 @@ import { getData, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
+import { HelpTip } from "../HelpTip";
 import { href } from "../route";
 
 export function Saved({ exam }: { exam: Exam }) {
@@ -18,7 +19,9 @@ export function Saved({ exam }: { exam: Exam }) {
 
   return (
     <main class="page with-tabs">
-      <h1>振り返り</h1>
+      <h1>
+        振り返り <HelpTip id="saved" exam={exam} />
+      </h1>
       {!ids.length ? (
         <section class="card">
           <p>まだ印を付けた問題はありません。</p>

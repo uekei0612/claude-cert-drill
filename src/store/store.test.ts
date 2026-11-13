@@ -53,6 +53,10 @@ describe("parseData", () => {
     expect(d.settings).toEqual({ practiceSize: 10, lang: "en", theme: "system", lastExam: "ccar-f" });
     expect(d.mocks["ccar-f"]).toHaveLength(1);
   });
+  test("はじめての方へを閉じたことを残す（true のときだけ）", () => {
+    expect(parseData({ settings: { introDone: true } }).settings.introDone).toBe(true);
+    expect(parseData({ settings: { introDone: "yes" } }).settings.introDone).toBeUndefined();
+  });
   test("見た目：知らない値は端末に合わせるに戻す", () => {
     expect(parseData({ settings: { theme: "dark" } }).settings.theme).toBe("dark");
     expect(parseData({ settings: { theme: "sepia" } }).settings.theme).toBe("system");
