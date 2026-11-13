@@ -2,7 +2,7 @@
    間違えた問題は、その回の最後にもう一度出す（1 回だけ）。
    押し間違えたときのために、次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44） */
 import { useMemo, useState } from "preact/hooks";
-import { optionOrder, planPractice } from "../../engine/practice";
+import { idsOnly, optionOrder, parseIdsOnly, planPractice } from "../../engine/practice";
 import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
@@ -29,16 +29,17 @@ interface Undo {
 function onlyLabel(exam: Exam, only?: string): string | undefined {
   if (!only) return undefined;
   if (only === "saved") return "振り返り";
+  if (parseIdsOnly(only)) return "間違えた問題";
   if (/^d\d+$/.test(only)) return exam.domains.find(d => d.id === only)?.ja;
   if (/^s\d+$/.test(only)) return exam.scenarios.find(s => s.id === only)?.ja;
   const t = findTask(exam, only);
   return t ? `${t.id} ${t.ja}` : undefined;
 }
 
-/** 1 回分を組む。印を付けた問題（only が "saved"）は、回の長さで切らずに全部出す */
+/** 1 回分を組む。印を付けた問題（only が "saved"）と名指しの問題（"q:…"）は、回の長さで切らずに全部出す */
 function plan(exam: Exam, only: string | undefined, now: number, seed: number): string[] {
   const d = getData();
-  const ids = only === "saved" ? savedIds(d, exam.id) : undefined;
+  const ids = only === "saved" ? savedIds(d, exam.id) : parseIdsOnly(only);
   return planPractice(exam, id => d.items[itemKey(exam.id, id)], now, seeded(seed), {
     size: ids ? ids.length : d.settings.practiceSize,
     maxNew: ids ? ids.length : undefined,
@@ -120,7 +121,15 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
             ))}
           </section>
         )}
-        <button class="btn primary block" onClick={restart}>
+        {missed.length > 0 && (
+          <a
+            class="btn primary block"
+            href={href({ name: "practice", examId: exam.id, only: idsOnly(missed.map(q => q.id)) })}
+          >
+            間違えた {missed.length} 問をもう一度
+          </a>
+        )}
+        <button class={`btn block ${missed.length ? "" : "primary"}`} onClick={restart}>
           続けてもう 1 回
         </button>
         <a class="btn block" href={back}>

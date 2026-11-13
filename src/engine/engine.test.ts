@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { fixture } from "./fixture";
 import { addUsed, mockLeft, planMock, scoreMock } from "./mock";
-import { filterQuestions, optionOrder, planPractice } from "./practice";
+import { filterQuestions, idsOnly, optionOrder, parseIdsOnly, planPractice } from "./practice";
 import { readiness, tally, weakestTasks } from "./progress";
 import { seeded } from "./rng";
 import { DAY, type ItemStat, RETRY_MS, isKnown, review } from "./schedule";
@@ -88,6 +88,25 @@ describe("planPractice", () => {
   });
   test("選択肢の順番は 0〜3 の並べ替え", () => {
     expect([...optionOrder(seeded(5))].sort()).toEqual([0, 1, 2, 3]);
+  });
+});
+
+describe("問題を名指しする絞り込み", () => {
+  test("組んで読み戻せる。ほかの絞り込みは名指しでない", () => {
+    expect(parseIdsOnly(idsOnly(["s1-01", "s2-03"]))).toEqual(["s1-01", "s2-03"]);
+    expect(parseIdsOnly("1.1")).toBeUndefined();
+    expect(parseIdsOnly("saved")).toBeUndefined();
+    expect(parseIdsOnly(undefined)).toBeUndefined();
+  });
+  test("名指しした問題だけを、期限前でも全部出す", () => {
+    const ids = ["s1-01", "s1-02", "s2-01"];
+    const stat = { ease: 2.3, interval: 3, due: 2e12, tries: 1, correct: 1, last: 0 };
+    const p = planPractice(fixture, id => (id === "s1-01" ? stat : undefined), 1e12, seeded(1), {
+      size: ids.length,
+      maxNew: ids.length,
+      ids,
+    });
+    expect([...p].sort()).toEqual(ids);
   });
 });
 
