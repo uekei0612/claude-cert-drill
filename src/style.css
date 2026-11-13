@@ -561,6 +561,11 @@ a.tap {
   margin: 0;
 }
 ul.small,
+/* 覚えることの下の「教科書で読む」。行いっぱいに伸ばさず、文字の幅だけ押せるようにする */
+.learn-link {
+  align-self: flex-start;
+  padding: 0;
+}
 .points {
   margin: 0;
   padding-left: 1.2em;

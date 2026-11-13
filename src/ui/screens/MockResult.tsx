@@ -113,6 +113,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                       reveal={true}
                       scenarioOpen={false}
                       lang={data.settings.lang}
+                      learnLink
                     />
                     <div class="row end">
                       <SaveButton examId={exam.id} questionId={id} />
