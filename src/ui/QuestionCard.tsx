@@ -48,6 +48,11 @@ function keepInPlace(el: HTMLElement, top: number): void {
   if (Math.abs(dy) >= 1) scrollBy(0, dy);
 }
 
+/** 一覧の行の見出しに使う問題文（言語の設定が「日本語」なら訳、ほかは英語の原文）。
+    「覚えること」は答えそのものなので、一覧では見せない（#47） */
+export const stemOf = (exam: Exam, q: Question, lang: QuestionLang): string =>
+  (lang === "ja" && exam.translations?.ja?.questions[q.id]?.stem) || q.stem;
+
 /** 英語・日本語・併記のどれかで文を出す */
 function Text({ en, ja, lang }: { en: string; ja?: string; lang: Exclude<QuestionLang, "peek"> }) {
   if (lang === "ja" && ja) return <span lang="ja">{ja}</span>;

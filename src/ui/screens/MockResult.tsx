@@ -5,7 +5,7 @@ import type { Exam } from "../../exams/types";
 import { useData } from "../../store/store";
 import { Meter, pct } from "../Meter";
 import { LangSwitch } from "../LangSwitch";
-import { QuestionCard } from "../QuestionCard";
+import { QuestionCard, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
 import { href } from "../route";
 
@@ -107,7 +107,9 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                   <span class={ok ? "okc" : "ngc"}>{ok ? "○" : chosen === undefined ? "－" : "×"}</span>
                   <span>
                     {i + 1}. <span class="tag">{q.tasks[0]}</span>
-                    <span class="muted small">{q.point}</span>
+                    <span class="small row-stem" lang={data.settings.lang === "ja" ? "ja" : "en"}>
+                      {stemOf(exam, q, data.settings.lang)}
+                    </span>
                   </span>
                 </button>
                 {open === id && (
