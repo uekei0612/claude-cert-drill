@@ -6,7 +6,8 @@ export type Route =
   | { readonly name: "picker" }
   | { readonly name: "settings" }
   | { readonly name: "home"; readonly examId: string }
-  /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"、後で振り返る印を付けた問題 "saved"） */
+  /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"、後で振り返る印を付けた問題 "saved"、
+      問題を名指し "q:s1-01,s2-03"） */
   | { readonly name: "practice"; readonly examId: string; readonly only?: string }
   | { readonly name: "mock"; readonly examId: string }
   /** 終えた模擬試験の見直し。at は finishedAt */

@@ -123,6 +123,9 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 結果の画面：間違えた問題ごとに、教科書の章へのリンクがある（#26）
   if ((await page.$$(".learn-link")).length !== 2) throw new Error("練習の結果に教科書へのリンクが無い");
   await shot("26-practice-result");
+  // 間違えた問題だけを解き直せる（#39）
+  await clickText("間違えた 2 問をもう一度");
+  if (!/間違えた問題・1 \/ 2/.test(await text())) throw new Error("練習の結果から間違えた問題だけの練習にならない");
   await goto("#/ccar-f/saved");
   // 印を外しても、その場では一覧から消さない（付け直せる）。次に開くと消えている
   await click(".card .save.on");
@@ -249,6 +252,10 @@ const OUT = process.argv[3] || "/tmp/shots";
   await click(".review-row");
   if (!(await page.$(".qcard .learn-link"))) throw new Error("模擬試験の見直しに教科書へのリンクが無い");
   await shot("12-mock-review");
+  // 間違えた（未回答を含む）問題だけを練習できる（#39）。60 問中、正解は多くても 2 問
+  await clickText("間違えた（未回答を含む）");
+  if (!/間違えた問題・1 \/ (5[89]|60)\b/.test(await text()))
+    throw new Error("模擬試験の結果から間違えた問題の練習にならない");
 
   await goto("#/settings");
   await shot("13-settings");
