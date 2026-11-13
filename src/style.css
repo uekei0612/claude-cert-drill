@@ -503,6 +503,13 @@ a.tap {
 .save.on {
   color: var(--warn);
 }
+/* Claude に貼るためのコピー。押したあとの数秒だけ結果を出す */
+.copy.ok {
+  color: var(--ok);
+}
+.copy.ng {
+  color: var(--ng);
+}
 .row.end {
   justify-content: flex-end;
 }
@@ -685,6 +692,18 @@ select {
 .lesson h2 {
   margin: 8px 0 0;
   font-size: 1.1rem;
+}
+/* 節の見出しとコピーのボタン。見出しが折り返しても、ボタンは右上に置いたまま */
+.lesson .sec-head {
+  align-items: flex-start;
+  margin-top: 8px;
+}
+.lesson .sec-head h2 {
+  margin: 0;
+  padding-top: 10px;
+}
+.lesson .sec-head .copy {
+  margin-right: -8px;
 }
 .lesson p {
   margin: 0;

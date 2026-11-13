@@ -1,11 +1,14 @@
 /* 1 問の表示。シナリオ（畳める）→ 問題文 → 選択肢。
    reveal のときは、選択肢ごとに正誤と解説を出す（誤答の解説がそのまま弱点の地図になる）。
    lang で問題文の言語を選ぶ（訳が無い問題は英語で出す）。peek は英語だけを出し、「訳を見る」を押すか
-   答えたら併記に変わる（英語を先に読ませるため。訳を開くのはその問題だけで、次の問題ではまた閉じる） */
+   答えたら併記に変わる（英語を先に読ませるため。訳を開くのはその問題だけで、次の問題ではまた閉じる）。
+   答えを見たあとは、問題・選択肢・解説をまとめて Claude に貼れるようにコピーのボタンを出す（答える前は出さない） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { Exam, Question } from "../exams/types";
 import { domainOf, findTask } from "../exams/types";
 import type { QuestionLang } from "../store/schema";
+import { CopyButton } from "./CopyButton";
+import { questionText } from "./copyText";
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -152,6 +155,11 @@ export function QuestionCard({
           <p class="muted small">
             {domain?.id.toUpperCase()} {domain?.ja} ／ {task?.id} {task?.ja}
           </p>
+        </div>
+      )}
+      {reveal && (
+        <div class="row end">
+          <CopyButton label="Claude に聞く用にコピー" text={() => questionText({ exam, q, order, chosen })} />
         </div>
       )}
     </article>

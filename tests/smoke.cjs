@@ -55,9 +55,12 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 練習：3 問答える（1 問目は誤答を選ぶ＝解説が出るのを確かめる）
   await goto("#/ccar-f/practice");
   await shot("03-practice-question");
+  // Claude に聞く用のコピーは、答える前には出さない（答えが分かってしまう。#24）
+  if (await page.$(".qcard .copy")) throw new Error("答える前にコピーのボタンが出ている");
   for (let i = 0; i < 3; i++) {
     await click(".option");
     if (!(await page.$(".why"))) throw new Error("解説が出ない");
+    if (!(await page.$(".qcard .copy"))) throw new Error("答えたあとにコピーのボタンが出ない");
     if (i === 0) await shot("04-practice-revealed");
     // 1・2 問目に「後で振り返る」の印を付ける（#23）
     if (i < 2) {
@@ -98,6 +101,11 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 教科書：目次 → 細目の画面から章へ → 次の章。どの章も横にはみ出さない（コードは枠の中で横に送る）
   await goto("#/ccar-f/learn");
   if (!(await text()).includes("エージェントループの設計と実装")) throw new Error("教科書の目次が出ない");
+  // 章と各節に、Claude に貼るためのコピーのボタンがある（#24）
+  await goto("#/ccar-f/learn/1.1");
+  if (!(await text()).includes("この章をコピー")) throw new Error("章のコピーのボタンが無い");
+  if ((await page.$$(".sec-head .copy")).length < 3) throw new Error("節ごとのコピーのボタンが無い");
+  await goto("#/ccar-f/learn");
   await shot("19-learn-toc");
   // はじめに → 次の章で 1.1 へ。用語の枠・手順・まとめが出る
   await clickText("0 はじめに");
@@ -235,10 +243,14 @@ const OUT = process.argv[3] || "/tmp/shots";
     const before = el.getBoundingClientRect().top;
     el.click();
     await new Promise(r => requestAnimationFrame(r));
-    const after = document.querySelector('.option[data-orig="' + el.dataset.orig + '"]').getBoundingClientRect().top;
-    return Math.round(after - before);
+    const a = document.querySelector('.option[data-orig="' + el.dataset.orig + '"]').getBoundingClientRect();
+    const bar = document.querySelector(".sticky-next").getBoundingClientRect();
+    return { dy: Math.round(a.top - before), gap: Math.round(bar.top - a.bottom), top: Math.round(a.top) };
   });
-  if (Math.abs(moved) > 2) throw new Error(`答えたら押した選択肢が ${moved}px ずれた`);
+  // 動かないのが基本。ただし訳が入って選択肢が伸び、下の「次へ」の帯に隠れるときは、
+  // 帯の 8px 上まで持ち上げるのが仕様（どの問題が出るかで起きたり起きなかったりする）
+  const lifted = moved.dy < 0 && Math.abs(moved.gap - 8) <= 2 && moved.top >= 8;
+  if (Math.abs(moved.dy) > 2 && !lifted) throw new Error(`答えたら押した選択肢がずれた：${JSON.stringify(moved)}`);
   if (!(await page.$(".stem .ja-sub"))) throw new Error("答えたあとに訳が出ない");
   await clickText("英語");
 
