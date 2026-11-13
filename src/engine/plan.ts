@@ -37,3 +37,22 @@ export function dailyPlan(examDate: number, now: number, unseen: number, unread:
   if (daysLeft === 0) return { daysLeft, newToday: 0, chaptersToday: 0 };
   return { daysLeft, newToday: Math.ceil(unseen / daysLeft), chaptersToday: Math.ceil(unread / daysLeft) };
 }
+
+/** その時刻のローカルの日付（"YYYY-MM-DD"）。日ごとの記録のキーに使う（#38） */
+export function dayKey(t: number): string {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** 続けた日数：今日（今日まだ答えていなければ昨日）からさかのぼって、答えた日が続いている日数 */
+export function streak(active: ReadonlySet<string>, now: number): number {
+  const day = new Date(now);
+  let t = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+  if (!active.has(dayKey(t.getTime()))) t = new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1);
+  let n = 0;
+  while (active.has(dayKey(t.getTime()))) {
+    n++;
+    t = new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1);
+  }
+  return n;
+}

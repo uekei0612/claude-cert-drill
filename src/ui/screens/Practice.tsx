@@ -8,7 +8,7 @@ import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
 import type { ItemStat } from "../../engine/schedule";
-import { answer, markGuess, restoreItem, savedIds } from "../../store/actions";
+import { answer, markGuess, savedIds, undoAnswer } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { getData, update, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
@@ -27,6 +27,8 @@ interface Done {
 interface Undo {
   readonly prev: ItemStat | undefined;
   readonly requeued: boolean;
+  /** 答えた時刻（その日の回答から外すため） */
+  readonly at: number;
 }
 
 function onlyLabel(exam: Exam, only?: string): string | undefined {
@@ -160,9 +162,10 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     const requeue = !ok && !requeued.has(id);
     setChosen(orig);
     setDone([...done, { id, ok }]);
-    setUndo({ prev: getData().items[itemKey(exam.id, id)], requeued: requeue });
+    const at = Date.now();
+    setUndo({ prev: getData().items[itemKey(exam.id, id)], requeued: requeue, at });
     setGuess(false);
-    update(d => answer(d, exam.id, id, ok, Date.now()));
+    update(d => answer(d, exam.id, id, ok, at));
     if (requeue) {
       setQueue([...queue, id]);
       setRequeued(new Set([...requeued, id]));
@@ -181,7 +184,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   /** 答えを取り消して、選び直せるようにする */
   const cancel = () => {
     if (!undo) return;
-    update(d => restoreItem(d, exam.id, id, undo.prev));
+    update(d => undoAnswer(d, exam.id, id, undo.prev, undo.at, chosen === q.answer));
     setDone(done.slice(0, -1));
     if (undo.requeued) {
       setQueue(queue.slice(0, -1));

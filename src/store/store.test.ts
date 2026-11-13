@@ -9,12 +9,14 @@ import {
   markGuess,
   readChapters,
   resetExam,
-  restoreItem,
+  daysOf,
+  logDay,
   savedIds,
   setExamDate,
   setRead,
   startMock,
   toggleSaved,
+  undoAnswer,
 } from "./actions";
 import { emptyData, parseData } from "./schema";
 import { STORAGE_KEY, exportJson, getData, importJson, reloadForTest, setData } from "./store";
@@ -116,7 +118,7 @@ describe("練習の答えの取り消し", () => {
     const prev = d.items[k];
     const after = answer(d, "ccar-f", "s1-01", false, NOW + 2 * 864e5);
     expect(after.items[k]).not.toEqual(prev);
-    expect(restoreItem(after, "ccar-f", "s1-01", prev)).toEqual(before);
+    expect(undoAnswer(after, "ccar-f", "s1-01", prev, NOW + 2 * 864e5, false)).toEqual(before);
   });
   test("正解に勘だったを付けると勘の記録に、外すとふつうの正解に戻る（#27）", () => {
     const k = "ccar-f:s1-01";
@@ -129,7 +131,7 @@ describe("練習の答えの取り消し", () => {
   });
   test("初めて答えた問題を取り消すと、記録が無い状態に戻る", () => {
     const d = answer(emptyData(), "ccar-f", "s1-01", false, NOW);
-    const back = restoreItem(d, "ccar-f", "s1-01", undefined);
+    const back = undoAnswer(d, "ccar-f", "s1-01", undefined, NOW, false);
     expect(back).toEqual(emptyData());
   });
 });
@@ -231,5 +233,49 @@ describe("試験日（#37）", () => {
     expect(back.settings.examDates).toEqual(d.settings.examDates);
     expect(setExamDate(d, "ccar-f", "").settings.examDates).toEqual({ "ccar-p": "2027-01-15" });
     expect(parseData(emptyData()).settings.examDates).toBeUndefined();
+  });
+});
+
+describe("日ごとの回答（#38）", () => {
+  test("答えるとその日に足され、取り消すと戻る。勘は正解から外す", () => {
+    let d = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    d = answer(d, "ccar-f", "s1-02", false, NOW + 1000);
+    const day = [...daysOf(d, "ccar-f").values()];
+    expect(day).toEqual([[2, 1]]);
+    const prev = d.items["ccar-f:s1-02"];
+    const more = answer(d, "ccar-f", "s1-02", false, NOW + 2000);
+    expect(undoAnswer(more, "ccar-f", "s1-02", prev, NOW + 2000, false)).toEqual(d);
+    const g = markGuess(d, "ccar-f", "s1-01", undefined, true, NOW + 3000);
+    expect([...daysOf(g, "ccar-f").values()]).toEqual([[2, 0]]);
+  });
+  test("模擬試験を終えると、出した問題の数と正解の数が入る", () => {
+    const p = planMock(fixture, seeded(3));
+    const start = startMock(emptyData(), {
+      examId: "fx",
+      questionIds: p.questionIds,
+      scenarioIds: p.scenarioIds,
+      startedAt: NOW,
+      limitMs: p.limitMs,
+      usedMs: 0,
+      answers: {},
+      flags: [],
+      orders: {},
+      cursor: 0,
+    });
+    const done = finishMock(start, scoreMock(fixture, p.questionIds, {}), NOW);
+    expect([...daysOf(done, "fx").values()]).toEqual([[p.questionIds.length, 0]]);
+  });
+  test("記録に残り、壊れた値は捨て、古い日から捨てて上限に収める。資格の記録を消すと一緒に消える", () => {
+    let d = emptyData();
+    for (let i = 0; i < 410; i++) d = logDay(d, "ccar-f", NOW - i * 864e5, 1, 1);
+    expect(Object.keys(d.days!)).toHaveLength(400);
+    const newest = [...daysOf(d, "ccar-f").keys()].sort().at(-1);
+    const back = parseData({
+      ...JSON.parse(JSON.stringify(d)),
+      days: { ...d.days, "ccar-f:2026-1-1": [1, 1], "ccar-f:2020-01-01": [1, 2], "ccar-f:2020-01-02": [-1, 0] },
+    });
+    expect(back.days).toEqual(d.days);
+    expect([...daysOf(back, "ccar-f").keys()].sort().at(-1)).toBe(newest);
+    expect(resetExam(d, "ccar-f").days).toEqual({});
   });
 });
