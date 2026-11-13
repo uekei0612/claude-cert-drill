@@ -1,11 +1,13 @@
 /* 練習。1 問ずつ答えてすぐ解説を見る。答えはその場で記録する（途中でやめても残る）。
-   間違えた問題は、その回の最後にもう一度出す（1 回だけ） */
+   間違えた問題は、その回の最後にもう一度出す（1 回だけ）。
+   押し間違えたときのために、次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44） */
 import { useMemo, useState } from "preact/hooks";
 import { optionOrder, planPractice } from "../../engine/practice";
 import { seeded } from "../../engine/rng";
 import type { Exam } from "../../exams/types";
 import { findTask } from "../../exams/types";
-import { answer, savedIds } from "../../store/actions";
+import type { ItemStat } from "../../engine/schedule";
+import { answer, restoreItem, savedIds } from "../../store/actions";
 import { itemKey } from "../../store/schema";
 import { getData, update, useData } from "../../store/store";
 import { LangSwitch } from "../LangSwitch";
@@ -16,6 +18,12 @@ import { href } from "../route";
 interface Done {
   readonly id: string;
   readonly ok: boolean;
+}
+
+/** 取り消すときに戻す先：答える前の記録と、この答えでやり直しに足したかどうか */
+interface Undo {
+  readonly prev: ItemStat | undefined;
+  readonly requeued: boolean;
 }
 
 function onlyLabel(exam: Exam, only?: string): string | undefined {
@@ -50,6 +58,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   const [chosen, setChosen] = useState<number | undefined>();
   const [done, setDone] = useState<Done[]>([]);
   const [requeued, setRequeued] = useState<ReadonlySet<string>>(new Set());
+  const [undo, setUndo] = useState<Undo | undefined>();
   const orders = useMemo(() => {
     const rng = seeded(seed + round + 7);
     return new Map(initial.map(id => [id, optionOrder(rng)]));
@@ -61,6 +70,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     setQueue(next);
     setPos(0);
     setChosen(undefined);
+    setUndo(undefined);
     setDone([]);
     setRequeued(new Set());
   };
@@ -124,17 +134,33 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   const choose = (orig: number) => {
     if (revealed) return;
     const ok = orig === q.answer;
+    const requeue = !ok && !requeued.has(id);
     setChosen(orig);
     setDone([...done, { id, ok }]);
+    setUndo({ prev: getData().items[itemKey(exam.id, id)], requeued: requeue });
     update(d => answer(d, exam.id, id, ok, Date.now()));
-    if (!ok && !requeued.has(id)) {
+    if (requeue) {
       setQueue([...queue, id]);
       setRequeued(new Set([...requeued, id]));
     }
   };
 
+  /** 答えを取り消して、選び直せるようにする */
+  const cancel = () => {
+    if (!undo) return;
+    update(d => restoreItem(d, exam.id, id, undo.prev));
+    setDone(done.slice(0, -1));
+    if (undo.requeued) {
+      setQueue(queue.slice(0, -1));
+      setRequeued(new Set([...requeued].filter(x => x !== id)));
+    }
+    setUndo(undefined);
+    setChosen(undefined);
+  };
+
   const next = () => {
     setChosen(undefined);
+    setUndo(undefined);
     setPos(pos + 1);
     scrollTo(0, 0);
   };
@@ -168,9 +194,18 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
       />
       {revealed && (
         <div class="sticky-next">
-          <p class={chosen === q.answer ? "okc" : "ngc"}>
-            <strong>{chosen === q.answer ? "正解" : "不正解"}</strong>
-          </p>
+          <div class="verdict">
+            <strong class={chosen === q.answer ? "okc" : "ngc"}>{chosen === q.answer ? "正解" : "不正解"}</strong>
+            {undo && (
+              <button
+                class="btn ghost small undo"
+                onClick={cancel}
+                title="押し間違えたときに。記録も答える前に戻します"
+              >
+                ↶ 取り消す
+              </button>
+            )}
+          </div>
           <SaveButton examId={exam.id} questionId={id} />
           <button class="btn primary" onClick={next}>
             {pos + 1 < queue.length ? "次へ" : "結果を見る"}

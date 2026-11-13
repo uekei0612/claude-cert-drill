@@ -448,6 +448,19 @@ a.tap {
   justify-content: space-between;
   gap: 12px;
 }
+/* 練習の帯の左：正解・不正解と、押し間違えたときの取り消し */
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.verdict .undo {
+  padding-left: 8px;
+  padding-right: 8px;
+  color: var(--muted);
+}
 
 /* 模擬試験 */
 .mock-head {
