@@ -154,7 +154,9 @@ export function validateExam(exam: Exam): string[] {
       bad(q.id, `選択肢は ${MIN_OPTIONS}〜${MAX_OPTIONS} 個`);
     if (!(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length))
       bad(q.id, "正解の位置が選択肢の外");
-    if (stemText(q.stem).trim().length <= 40) bad(q.id, "問題文が短い");
+    // 短すぎる問題文は書きかけの印。出典のある問題は原文のまま載せるので、短くても見ない（#65）
+    if (!q.source && stemText(q.stem).trim().length <= 40) bad(q.id, "問題文が短い");
+    if (!stemText(q.stem).trim()) bad(q.id, "問題文が空");
     checkStem(q.id, q.stem, bad);
     if (!q.point.trim()) bad(q.id, "覚えること（point）が無い");
     if (q.source) {
