@@ -36,8 +36,8 @@ function submit(exam: Exam): void {
 function begin(exam: Exam): void {
   const rng = seeded(Math.floor(Math.random() * 2 ** 31));
   const p = planMock(exam, rng);
-  const count = new Map(exam.questions.map(q => [q.id, q.options.length]));
-  const orders = Object.fromEntries(p.questionIds.map(id => [id, optionOrder(rng, count.get(id) ?? 4)]));
+  const byId = new Map(exam.questions.map(q => [q.id, q]));
+  const orders = Object.fromEntries(p.questionIds.map(id => [id, optionOrder(rng, exam, byId.get(id)!)]));
   update(d =>
     startMock(d, {
       examId: exam.id,
@@ -179,12 +179,12 @@ export function Mock({ exam }: { exam: Exam }) {
       </main>
     );
 
-  const order = orderFor(q, m.orders[id]);
+  const order = orderFor(exam, q, m.orders[id]);
   const choose = (orig: number) => update(d => patchMock(d, x => ({ ...x, answers: { ...x.answers, [id]: orig } })));
   const toggleFlag = () =>
     update(d => patchMock(d, x => ({ ...x, flags: flagged ? x.flags.filter(f => f !== id) : [...x.flags, id] })));
   onKey.current = key => {
-    const i = optionIndex(key);
+    const i = optionIndex(key, exam);
     if (i >= 0 && i < order.length) choose(order[i]!);
     else if (key === "ArrowLeft" && cursor > 0) setCursor(cursor - 1);
     else if (key === "ArrowRight" && cursor + 1 < ids.length) setCursor(cursor + 1);
@@ -222,7 +222,7 @@ export function Mock({ exam }: { exam: Exam }) {
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={data.settings.lang}
       />
-      <p class="kbd-hint muted small">キー：{optionKeys(order.length)}で選ぶ・← → で前後・F で旗</p>
+      <p class="kbd-hint muted small">キー：{optionKeys(exam, order.length)}で選ぶ・← → で前後・F で旗</p>
       <div class="sticky-next">
         <button class="btn" disabled={cursor === 0} onClick={() => setCursor(cursor - 1)}>
           ← 前へ

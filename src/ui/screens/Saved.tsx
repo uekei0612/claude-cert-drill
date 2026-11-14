@@ -1,7 +1,7 @@
 /* 後で振り返る印を付けた問題の一覧。開くと答えと解説が読め、印を外せる。印を付けた問題だけで練習もできる */
 import { useState } from "preact/hooks";
 import { naturalOrder } from "../../core/engine/practice";
-import type { Exam } from "../../core/exam/types";
+import { type Exam, optionLabel } from "../../core/exam/types";
 import { savedIds } from "../../core/store/actions";
 import { getData, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
@@ -33,8 +33,10 @@ export function Saved({ exam }: { exam: Exam }) {
       ) : (
         <>
           <p class="muted small">
-            印を付けた問題 {count} 問（新しく付けた順）。開くと答えと解説が読めます。選択肢は元の並び（A
-            から順）で出すので、練習のときと記号が違うことがあります。
+            印を付けた問題 {count} 問（新しく付けた順）。開くと答えと解説が読めます。
+            {exam.options?.shuffle === false
+              ? ""
+              : `選択肢は元の並び（${optionLabel(exam, 0)} から順）で出すので、練習のときと記号が違うことがあります。`}
           </p>
           {count > 0 && (
             <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: "saved" })}>

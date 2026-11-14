@@ -103,7 +103,8 @@ export const flatFixture: Exam = {
   sources: [],
 };
 
-/* 日本語が原文のテスト用の資格（#57〜）。基本情報技術者試験のような形：シナリオ無し・訳なし・分野の公式名が日本語。
+/* 日本語が原文のテスト用の資格（#57〜）。基本情報技術者試験のような形：シナリオ無し・訳なし・分野の公式名が日本語・
+   選択肢の記号はア〜で、混ぜない（#58）。
    画面と基盤が「原文は英語」を前提にしていないかを確かめる */
 const jaQ = (id: string, task: string, stem: string, options: readonly string[], answer: number): Question => ({
   id,
@@ -121,6 +122,7 @@ export const jaFixture: Exam = {
   id: "ja-x",
   code: "JA-X",
   lang: "ja",
+  options: { labels: "kana", shuffle: false },
   title: "日本語のテスト試験",
   summary: "問題文が日本語の資格",
   domains: [

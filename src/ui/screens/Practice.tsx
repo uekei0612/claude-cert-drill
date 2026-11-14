@@ -101,8 +101,8 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   const [guess, setGuess] = useState(false);
   const orders = useMemo(() => {
     const rng = seeded(seed + round + 7);
-    const count = new Map(exam.questions.map(q => [q.id, q.options.length]));
-    return new Map(initial.map(id => [id, optionOrder(rng, count.get(id) ?? 4)]));
+    const byId = new Map(exam.questions.map(q => [q.id, q]));
+    return new Map(initial.flatMap(id => (byId.has(id) ? [[id, optionOrder(rng, exam, byId.get(id)!)] as const] : [])));
   }, [initial]);
 
   const restart = () => {
@@ -238,9 +238,9 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     scrollTo(0, 0);
   };
 
-  const order = orderFor(q, orders.get(id));
+  const order = orderFor(exam, q, orders.get(id));
   onKey.current = key => {
-    const i = optionIndex(key);
+    const i = optionIndex(key, exam);
     if (!revealed && i >= 0 && i < order.length) {
       choose(order[i]!);
       return true;
@@ -284,7 +284,9 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={lang}
       />
-      <p class="kbd-hint muted small">キー：{optionKeys(order.length)}で選ぶ・Enter で次へ・S で振り返りに入れる</p>
+      <p class="kbd-hint muted small">
+        キー：{optionKeys(exam, order.length)}で選ぶ・Enter で次へ・S で振り返りに入れる
+      </p>
       {revealed && (
         <div class="sticky-next">
           <div class="verdict">

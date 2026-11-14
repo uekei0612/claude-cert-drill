@@ -1223,6 +1223,10 @@ pre.code code {
   display: grid;
   gap: 4px;
 }
+/* 記号がア〜の資格（#58） */
+.lesson .quiz ol.kana {
+  list-style: katakana;
+}
 .lesson .quiz summary {
   cursor: pointer;
   color: var(--accent);

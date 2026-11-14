@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { ccarF as exam } from "../exams/ccar-f/exam";
 import { PRIMER_ID } from "../core/exam/types";
+import { jaFixture } from "../core/engine/fixture";
 import { hintText, lessonText, questionText, sectionText } from "./copyText";
 
 const q = exam.questions.find(x => x.id === "s1-01")!;
@@ -32,6 +33,15 @@ describe("questionText", () => {
     expect(text).toContain(`A（誤り）：${q.options[3]!.why}`);
     expect(text).toContain(q.point);
     expect(text).toContain("細目：1.1");
+  });
+
+  test("記号がア〜の資格はア〜で書き、訳は付けない（#57・#58）", () => {
+    const jq = jaFixture.questions[0]!;
+    const t = questionText({ exam: jaFixture, q: jq, order: [0, 1, 2, 3], chosen: 0 });
+    expect(t).toContain(`ア. ${jq.options[0]!.text}`);
+    expect(t).toContain(`■ 正解：${"アイウエ"[jq.answer]}`);
+    expect(t).toContain("■ 私の答え：ア");
+    expect(t).not.toContain("（訳）");
   });
 
   test("未回答（振り返りの一覧）なら自分の答えは書かない", () => {
