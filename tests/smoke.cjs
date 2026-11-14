@@ -52,11 +52,17 @@ const OUT = process.argv[3] || "/tmp/shots";
 
   await page.goto(BASE, { waitUntil: "networkidle0" });
   await page.evaluate(() => localStorage.clear());
-  // 初めて開くと、資格が 1 つならそのホームから始まり、進め方が出る（#50）
+  // 初めて開くと、資格が 1 つならそのホームから始まり、複数なら資格の一覧から選ぶ（#50・#64）。
+  // 資格のホームには進め方が出る
   await page.goto("about:blank");
   await page.goto(BASE, { waitUntil: "networkidle0" });
-  if ((await page.evaluate(() => location.hash)) !== "#/ccar-f")
-    throw new Error("初めて開いても資格のホームから始まらない");
+  if ((await page.evaluate(() => location.hash)) !== "#/ccar-f") {
+    if (!/CCAR-F[\s\S]*FE-B/.test(await text())) throw new Error("初めて開いても資格の一覧もホームも出ない");
+    await shot("29-picker");
+    await click('a.card[href="#/ccar-f"]');
+    await page.waitForSelector(".card.intro");
+    if ((await page.evaluate(() => location.hash)) !== "#/ccar-f") throw new Error("一覧から資格のホームへ行けない");
+  }
   if (!/はじめての方へ[\s\S]*「はじめに」を読む/.test(await text())) throw new Error("初めてなのに進め方が出ない");
   await shot("29-first-run");
   // 指標の「?」を押すと定義が開き、外を押すと閉じる
