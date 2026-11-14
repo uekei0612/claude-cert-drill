@@ -5,7 +5,7 @@ import type { Exam } from "../../core/exam/types";
 import { useData } from "../../app/store";
 import { Meter, pct } from "../Meter";
 import { LangSwitch } from "../LangSwitch";
-import { QuestionCard, stemOf } from "../QuestionCard";
+import { QuestionCard, stemLang, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
 import { href } from "../route";
 
@@ -107,7 +107,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                   <span class={ok ? "okc" : "ngc"}>{ok ? "○" : chosen === undefined ? "－" : "×"}</span>
                   <span>
                     {i + 1}. <span class="tag">{q.tasks[0]}</span>
-                    <span class="small row-stem" lang={data.settings.lang === "ja" ? "ja" : "en"}>
+                    <span class="small row-stem" lang={stemLang(exam, data.settings.lang)}>
                       {stemOf(exam, q, data.settings.lang)}
                     </span>
                   </span>
@@ -117,7 +117,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                     <QuestionCard
                       exam={exam}
                       q={q}
-                      order={orderFor(q, r.orders?.[id])}
+                      order={orderFor(exam, q, r.orders?.[id])}
                       chosen={chosen}
                       reveal={true}
                       scenarioOpen={false}

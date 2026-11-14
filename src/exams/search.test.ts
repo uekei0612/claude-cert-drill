@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 /* 検索を、載せている資格の中身で確かめる（検索そのものは core/engine/search.ts） */
 import { ccarF as exam } from "./ccar-f/exam";
 import { buildIndex, normalize, search } from "../core/engine/search";
+import { optionText, stemText } from "../core/exam/types";
 
 const docs = buildIndex(exam);
 
@@ -30,9 +31,9 @@ describe("検索（#41）", () => {
     // 問題文にしか出てこない語は見つからない
     const q = exam.questions[0]!;
     const all = docs.map(d => d.text).join("\n");
-    expect(all).not.toContain(q.stem);
+    expect(all).not.toContain(stemText(q.stem));
     for (const o of q.options) {
-      expect(all).not.toContain(o.text);
+      expect(all).not.toContain(optionText(q, o));
       expect(all).not.toContain(o.why);
     }
     // 覚えることは探す

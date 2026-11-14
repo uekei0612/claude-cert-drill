@@ -1,8 +1,8 @@
 /* 使い方と用語（#50）。おすすめの進め方と、画面に出るアプリ独自の用語をまとめる。
    用語の文は「?」と同じ glossary から読む */
-import { APP } from "../../app/config";
 import { useData } from "../../app/store";
 import { STEPS, TERMS } from "../glossary";
+import { Notices } from "../Notices";
 import { href } from "../route";
 import { useExam } from "../useExam";
 import { catalog } from "../../exams";
@@ -41,7 +41,7 @@ export function Help() {
           ))}
         </dl>
       </section>
-      <p class="muted small">{APP.disclaimer}</p>
+      <Notices />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 import { APP } from "../../app/config";
 import { catalog } from "../../exams";
 import { href } from "../route";
+import { srcAttrs } from "../src";
 
 export function ExamPicker() {
   return (
@@ -20,9 +21,7 @@ export function ExamPicker() {
               </span>
             )}
           </div>
-          <p class="en" lang="en">
-            {e.title}
-          </p>
+          <p {...srcAttrs(e)}>{e.title}</p>
           <p class="muted small">{e.summary}</p>
         </a>
       ))}

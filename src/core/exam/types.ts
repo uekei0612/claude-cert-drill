@@ -13,7 +13,31 @@ export interface ExamMeta {
   /** 日本語の短い説明 */
   readonly summary: string;
   readonly format: ExamFormat;
+  /** 問題文・選択肢・シナリオの原文の言語（#57）。無ければ "en"。"ja" の資格は訳を持たない */
+  readonly lang?: SourceLang;
+  /** 選択肢の記号と、混ぜるか（#58）。無ければ A〜 で、表示のたびに混ぜる */
+  readonly options?: OptionStyle;
+  /** この資格の断り書き（#61）。問題の出どころ（自作か、公開問題か）と、試験を実施する団体との関係。
+      使い方と設定の下に、資格の試験コードを添えて出す */
+  readonly notice: string;
 }
+
+/** 選択肢の出し方（#58） */
+export interface OptionStyle {
+  /** 記号。latin＝A B C …、kana＝ア イ ウ …（IPA の試験の記号）。無ければ latin */
+  readonly labels?: OptionLabels;
+  /** 表示のたびに選択肢を混ぜるか。無ければ混ぜる（位置で覚えないように）。
+      混ぜない資格は、公式の問題の記号と答えがそのまま合い、数値の選択肢も小さい順のまま並ぶ */
+  readonly shuffle?: boolean;
+}
+
+export type OptionLabels = "latin" | "kana";
+
+/** 問題の原文の言語 */
+export type SourceLang = "en" | "ja";
+
+/** 資格の原文の言語 */
+export const sourceLang = (exam: Pick<ExamMeta, "lang">): SourceLang => exam.lang ?? "en";
 
 /** 資格の中身。一覧の情報（ExamMeta）に、分野・問題・教科書などを足したもの */
 export interface Exam extends ExamMeta {
@@ -30,7 +54,7 @@ export interface Exam extends ExamMeta {
   readonly outOfScope: readonly string[];
   /** 出どころと、数字の確からしさ（画面の「この試験について」に出す） */
   readonly sources: readonly { readonly label: string; readonly note: string }[];
-  /** 問題文・選択肢・シナリオの訳。キーは言語（"ja"）。原文（英語）が正で、訳は読むための補助 */
+  /** 問題文・選択肢・シナリオの訳。キーは言語（"ja"）。原文が正で、訳は読むための補助。原文が日本語の資格は持たない */
   readonly translations?: Readonly<Partial<Record<TranslationLang, Translation>>>;
 }
 
@@ -44,7 +68,7 @@ export interface Translation {
 }
 
 export interface QuestionTranslation {
-  readonly stem: string;
+  readonly stem: Stem;
   /** 原文と同じ並び・同じ数 */
   readonly options: readonly string[];
 }
@@ -69,7 +93,7 @@ export interface ExamFormat {
 export interface Domain {
   /** "d1" */
   readonly id: string;
-  /** 公式の英語名 */
+  /** 公式の名前（原文の言語。日本語名と同じなら画面には 1 度だけ出す） */
   readonly title: string;
   /** 日本語名 */
   readonly ja: string;
@@ -81,7 +105,7 @@ export interface Domain {
 export interface Task {
   /** 公式の番号（"1.1"）。分野の番号で始まる */
   readonly id: string;
-  /** 公式の英語名 */
+  /** 公式の名前（原文の言語） */
   readonly title: string;
   /** 日本語名 */
   readonly ja: string;
@@ -92,18 +116,40 @@ export interface Scenario {
   readonly id: string;
   readonly title: string;
   readonly ja: string;
-  /** 状況の説明（英語。試験ガイドの文の転載ではなく自分の言葉で） */
+  /** 状況の説明（原文の言語。試験ガイドの文の転載ではなく自分の言葉で） */
   readonly context: string;
   /** 主に問われる分野 */
   readonly domains: readonly string[];
 }
 
-export interface Option {
-  /** 英語 */
+/** 選択肢。文 1 つか、解答群の表の 1 行（#60） */
+export type Option = TextOption | CellOption;
+
+export interface TextOption {
+  /** 原文の言語。`…` はコードとして出す */
   readonly text: string;
   /** なぜ正解か／なぜ誤りか（日本語） */
   readonly why: string;
 }
+
+/** 解答群の表の 1 行（「a と b の組合せ」など。#60）。cells は問題の columns と同じ並び・同じ数 */
+export interface CellOption {
+  readonly cells: readonly string[];
+  readonly why: string;
+}
+
+/** 問題文の部品（#60）。段落（文字列。`…` はコード）・コード・表・図・箇条書き */
+export type StemBlock =
+  | string
+  | { readonly code: string; readonly lang?: string }
+  /** 表。head は見出しの行（無くてもよい）。行の数はそろえる */
+  | { readonly table: readonly (readonly string[])[]; readonly head?: readonly string[] }
+  /** 図。figure は SVG の文字列（core/exam/figure.ts で組む）、caption は図の説明（読み上げにも使う） */
+  | { readonly figure: string; readonly caption: string }
+  | { readonly list: readonly string[] };
+
+/** 問題文。文 1 つか、部品の並び（プログラムや表を含む問題。#60） */
+export type Stem = string | readonly StemBlock[];
 
 export interface Question {
   /** "<シナリオ>-<2 桁>"（"s1-03"）。記録のキーなので変えない */
@@ -111,15 +157,34 @@ export interface Question {
   readonly scenario?: string;
   /** 細目の ID。先頭が主たる細目（集計はこれで行う） */
   readonly tasks: readonly [string, ...string[]];
-  /** 英語 */
-  readonly stem: string;
+  /** 原文の言語。文 1 つか、部品の並び（#60） */
+  readonly stem: Stem;
+  /** 解答群の列の名前（["a", "b"]。#60）。あれば選択肢はすべて cells で書き、表の形で出す */
+  readonly columns?: readonly string[];
   /** MIN_OPTIONS〜MAX_OPTIONS 個。資格の中でそろっていなくてもよい（#54） */
   readonly options: readonly Option[];
   /** 正解の位置（0 始まり）。正解は 1 つだけ */
   readonly answer: number;
+  /** 混ぜる資格でも、この問題の選択肢は混ぜない（並びに意味があるとき。#58） */
+  readonly keepOrder?: boolean;
   /** この問題で覚えること 1 行（日本語） */
   readonly point: string;
+  /** 出典（#61）。公式の公開問題などを使った問題に付ける。無ければ自作の問題 */
+  readonly source?: QuestionSource;
 }
+
+/** 問題の出典（#61） */
+export interface QuestionSource {
+  /** 出典の名前（「令和5年度 基本情報技術者試験 科目B 問3」） */
+  readonly label: string;
+  /** 元の問題に手を加えたか（「一部改変」を添える） */
+  readonly modified?: boolean;
+  /** 元の問題を公開している場所（https://…） */
+  readonly url?: string;
+}
+
+/** 出典の 1 行（「出典：… （一部改変）」） */
+export const sourceText = (s: QuestionSource): string => `出典：${s.label}${s.modified ? "（一部改変）" : ""}`;
 
 export interface Note {
   /** 要点（日本語、1 行ずつ） */
@@ -164,12 +229,60 @@ export type LessonBlock =
   | { readonly quiz: string; readonly choices: readonly string[]; readonly answer: number; readonly why: string }
   | { readonly code: string; readonly lang?: string };
 
-/** 1 問の選択肢の数（#54）。PC のキー操作で 1〜5／A〜E を選択肢に使い、F は模擬試験の旗なので 5 までにする */
+/** 1 問の選択肢の数（#54・#59）。基本情報の科目B の解答群（ア〜コ）まで。
+    PC のキーは数字の 1〜9 と 0（10 個目）で選ぶ。英字の A〜E は 5 個目まで（F は模擬試験の旗） */
 export const MIN_OPTIONS = 2;
-export const MAX_OPTIONS = 5;
+export const MAX_OPTIONS = 10;
 
-/** 選択肢の記号（0 → "A"） */
-export const optionLetter = (i: number): string => "ABCDE"[i] ?? "?";
+const LABELS: Record<OptionLabels, string> = { latin: "ABCDEFGHIJ", kana: "アイウエオカキクケコ" };
+
+/** 資格の選択肢の記号の種類 */
+export const optionLabels = (exam: Pick<ExamMeta, "options">): OptionLabels => exam.options?.labels ?? "latin";
+
+/** 選択肢の記号（0 → "A" または "ア"） */
+export const optionLabel = (exam: Pick<ExamMeta, "options">, i: number): string => LABELS[optionLabels(exam)][i] ?? "?";
+
+/** この問題の選択肢を、表示のたびに混ぜるか */
+export const shufflesOptions = (exam: Pick<ExamMeta, "options">, q: Pick<Question, "keepOrder">): boolean =>
+  (exam.options?.shuffle ?? true) && !q.keepOrder;
+
+/** 問題文の部品を平文にする（コピー以外の、一覧の見出し・検査・長さの比較に使う） */
+export function stemBlockText(b: StemBlock): string {
+  if (typeof b === "string") return b;
+  if ("code" in b) return b.code;
+  if ("table" in b) return [...(b.head ? [b.head] : []), ...b.table].map(r => r.join(" ")).join(" ");
+  if ("figure" in b) return b.caption;
+  return b.list.join(" ");
+}
+
+/** 問題文の空欄（#62）。全角の角かっこに英小文字（またはギリシャ文字の小文字）1〜2 字：［a］ ［β］ */
+export const BLANK = /［([a-zα-ω]{1,2})］/g;
+
+/** 問題文の中の空欄の名前（出てくる順・重複なし） */
+export function blanksOf(stem: Stem): string[] {
+  const texts =
+    typeof stem === "string"
+      ? [stem]
+      : stem.flatMap(b =>
+          typeof b === "string"
+            ? [b]
+            : "code" in b
+              ? [b.code]
+              : "table" in b
+                ? [...(b.head ?? []), ...b.table.flat()]
+                : "list" in b
+                  ? b.list
+                  : [],
+        );
+  return [...new Set(texts.flatMap(t => [...t.matchAll(BLANK)].map(m => m[1]!)))];
+}
+
+/** 問題文を平文にする */
+export const stemText = (stem: Stem): string => (typeof stem === "string" ? stem : stem.map(stemBlockText).join(" "));
+
+/** 選択肢を平文にする。表の形は「a：x、b：y」 */
+export const optionText = (q: Pick<Question, "columns">, o: Option): string =>
+  "text" in o ? o.text : o.cells.map((c, i) => `${q.columns?.[i] ?? ""}：${c}`).join("、");
 
 /** 教科書の「はじめに」の ID（URL の #/<資格>/learn/intro） */
 export const PRIMER_ID = "intro";

@@ -8,6 +8,7 @@ export const meta: ExamMeta = {
   title: "Claude Certified Architect – Foundations",
   summary:
     "Claude Code・Claude Agent SDK・Claude API・MCP を使った本番システムの設計判断を問う、Anthropic の基礎の技術資格。",
+  notice: "問題と教科書はすべて自作の非公式教材です。Anthropic とは関係がありません。",
   format: {
     questions: 60,
     minutes: 120,

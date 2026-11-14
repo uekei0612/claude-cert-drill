@@ -13,6 +13,7 @@ import { STEPS } from "../glossary";
 import { href } from "../route";
 import { chapterTag, chapterTitle, nextChapter } from "./Learn";
 import { fmt } from "./Mock";
+import { srcAttrs } from "../src";
 
 export function Home({ exam, now }: { exam: Exam; now: number }) {
   const data = useData();
@@ -40,9 +41,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
       <header class="row between">
         <div>
           <h1>{exam.code}</h1>
-          <p class="muted small en" lang="en">
-            {exam.title}
-          </p>
+          <p {...srcAttrs(exam, "muted small")}>{exam.title}</p>
         </div>
         <nav class="row head-links" aria-label="ほかの画面">
           <a class="btn ghost small" href={href({ name: "settings" })}>

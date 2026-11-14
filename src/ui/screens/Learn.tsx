@@ -1,11 +1,10 @@
 /* 教科書。目次（はじめに → 分野 → 細目）と章。章は前後の章へ順に読み進められる。
    章と節は、Claude に解説を頼めるようにまとめてコピーできる。
    章の終わり（まとめの後）まで読み進めると「読んだ」を自動で付ける。手で外せる（#29） */
-import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { questionsOfTask, ratio, tally } from "../../core/engine/progress";
 import type { Exam, Lesson, LessonBlock } from "../../core/exam/types";
-import { PRIMER_ID, domainOfTask, findTask, lessonOrder, optionLetter } from "../../core/exam/types";
+import { PRIMER_ID, domainOfTask, findTask, lessonOrder, optionLabel, optionLabels } from "../../core/exam/types";
 import { readChapters, setRead } from "../../core/store/actions";
 import { itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
@@ -13,6 +12,8 @@ import { CopyButton } from "../CopyButton";
 import { Meter } from "../Meter";
 import { lessonText, sectionText } from "../copyText";
 import { href } from "../route";
+import { inline } from "../Rich";
+import { showOfficial, srcAttrs } from "../src";
 
 /** 章の名前（「はじめに」の章は教科書の題、ほかは細目の名前） */
 export const chapterTitle = (exam: Exam, id: string): string =>
@@ -25,16 +26,7 @@ export const chapterTag = (id: string): string => (id === PRIMER_ID ? "0" : id);
 export const nextChapter = (exam: Exam, read: ReadonlySet<string>): string | undefined =>
   lessonOrder(exam).find(id => !read.has(id));
 
-/** 文の中の `…` をコードとして出す */
-export function inline(text: string): ComponentChildren[] {
-  return text
-    .split(/(`[^`]+`)/)
-    .map((part, i) =>
-      part.length > 2 && part.startsWith("`") && part.endsWith("`") ? <code key={i}>{part.slice(1, -1)}</code> : part,
-    );
-}
-
-function Block({ b }: { b: LessonBlock }) {
+function Block({ exam, b }: { exam: Exam; b: LessonBlock }) {
   if (typeof b === "string") return <p>{inline(b)}</p>;
   if ("list" in b)
     return (
@@ -88,7 +80,7 @@ function Block({ b }: { b: LessonBlock }) {
       <div class="quiz">
         <strong>例題</strong>
         <p>{inline(b.quiz)}</p>
-        <ol>
+        <ol class={optionLabels(exam)}>
           {b.choices.map(c => (
             <li key={c}>{inline(c)}</li>
           ))}
@@ -96,7 +88,7 @@ function Block({ b }: { b: LessonBlock }) {
         <details>
           <summary>答えと考え方を見る</summary>
           <p>
-            <strong>答え：{optionLetter(b.answer)}</strong> {inline(b.why)}
+            <strong>答え：{optionLabel(exam, b.answer)}</strong> {inline(b.why)}
           </p>
         </details>
       </div>
@@ -121,7 +113,7 @@ function Body({ exam, chapter, lesson }: { exam: Exam; chapter: string; lesson: 
             <CopyButton label="コピー" done="コピー済み" text={() => sectionText(exam, chapter, s)} />
           </div>
           {s.body.map((b, k) => (
-            <Block key={k} b={b} />
+            <Block key={k} exam={exam} b={b} />
           ))}
         </section>
       ))}
@@ -314,11 +306,7 @@ export function Learn({ exam, taskId, section, now }: { exam: Exam; taskId?: str
         <h1>
           <span class="tag">{tagOf(taskId)}</span> {titleOf(taskId)}
         </h1>
-        {task && (
-          <p class="muted small en" lang="en">
-            {task.title}
-          </p>
-        )}
+        {task && showOfficial(task) && <p {...srcAttrs(exam, "muted small")}>{task.title}</p>}
         <div class="row end">
           <CopyButton label="この章をコピー" text={() => lessonText(exam, chapterName, lesson)} />
         </div>

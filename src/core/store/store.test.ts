@@ -59,7 +59,7 @@ describe("parseData", () => {
     expect(parseData(null)).toEqual(emptyData());
     expect(parseData([1, 2])).toEqual(emptyData());
   });
-  test("途中の模擬試験：選択肢の順番が 0〜3 の並べ替えでなければ捨てる", () => {
+  test("途中の模擬試験：選択肢の順番が 0〜n−1 の並べ替えでなければ捨てる", () => {
     const d = parseData({
       activeMock: {
         examId: "ccar-f",
@@ -67,15 +67,21 @@ describe("parseData", () => {
         scenarioIds: ["s1"],
         startedAt: NOW,
         limitMs: 1000,
-        answers: { "s1-01": 2, "s1-02": 9, "s1-03": 4 },
+        answers: { "s1-01": 2, "s1-02": 10, "s1-03": 9 },
         flags: [],
-        orders: { "s1-01": [3, 2, 1, 0], "s1-02": [0, 0, 1, 2], "s1-03": [4, 0, 3, 1, 2], "s1-04": [0, 1, 2, 3, 4, 5] },
+        orders: {
+          "s1-01": [3, 2, 1, 0],
+          "s1-02": [0, 0, 1, 2],
+          "s1-03": [4, 0, 3, 1, 2],
+          "s1-04": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          "s1-05": [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+        },
         cursor: 5,
       },
     });
-    // 5 択まで読む（#54）。6 個以上の並びと、範囲の外の答えは捨てる
-    expect(d.activeMock?.answers).toEqual({ "s1-01": 2, "s1-03": 4 });
-    expect(Object.keys(d.activeMock!.orders)).toEqual(["s1-01", "s1-03"]);
+    // 10 択まで読む（#54・#59）。11 個以上の並びと、範囲の外の答えは捨てる
+    expect(d.activeMock?.answers).toEqual({ "s1-01": 2, "s1-03": 9 });
+    expect(Object.keys(d.activeMock!.orders)).toEqual(["s1-01", "s1-03", "s1-05"]);
     expect(d.activeMock?.cursor).toBe(1);
   });
   test("途中の模擬試験：使った時間を持たない記録（#42 より前）は、時間を使っていない扱い", () => {
