@@ -2,6 +2,7 @@
    分野と細目は IPA の試験要綱の科目B の出題範囲に合わせる（問1〜問16 がアルゴリズムとプログラミング、
    問17〜問20 が情報セキュリティ）。問題は IPA の公開問題を出典付きで載せ、解説と要点は自作 */
 import type { Domain, Exam } from "../../core/exam/types";
+import { primer } from "./lessons/primer";
 import { meta } from "./meta";
 import { notes } from "./notes";
 import { questions } from "./questions";
@@ -33,6 +34,7 @@ export const feB: Exam = {
   scenarios: [],
   questions,
   notes,
+  primer,
   outOfScope: [
     "科目A（知識を問う 60 問の小問）はまだ載せていない",
     "公開されていない年度（令和4年度以前の新形式前の問題など）は載せていない",
@@ -41,6 +43,10 @@ export const feB: Exam = {
     {
       label: "IPA 基本情報技術者試験 公開問題（令和5〜8年度 科目B）",
       note: "問題と解答例。https://www.ipa.go.jp/shiken/mondai-kaiotu/sg_fe/koukai/index.html 。各年度とも本番 20 問のうち 6 問が公開されている",
+    },
+    {
+      label: "IPA 基本情報技術者試験 科目B サンプル問題（20 問）セット",
+      note: "2022 年 12 月公開の問題と解答例（#66）。https://www.ipa.go.jp/shiken/syllabus/henkou/2022/20221226.html",
     },
     {
       label: "IPA よくある質問（過去問題の使用）",

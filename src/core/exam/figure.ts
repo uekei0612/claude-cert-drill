@@ -94,6 +94,30 @@ export function line(pts: readonly Pt[], o: { dashed?: boolean; tone?: "muted" |
   return `<path d="${d}" class="fa t-${o.tone ?? "muted"}${o.dashed ? " dash" : ""}"/>`;
 }
 
+/** 円（ry を渡すと楕円）と中央の文字。アローダイアグラムの結合点・木の節など（#65） */
+export function circle(cx: number, cy: number, r: number, label = "", o: { ry?: number; fs?: number } = {}): string {
+  const fs = o.fs ?? FS;
+  if (label && textWidth(label, fs) > r * 2 - 4) overflows.push(`「${label}」が円（半径 ${r}）に収まらない`);
+  const shape =
+    o.ry === undefined
+      ? `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r)}" class="fb"/>`
+      : `<ellipse cx="${n(cx)}" cy="${n(cy)}" rx="${n(r)}" ry="${n(o.ry)}" class="fb"/>`;
+  return shape + (label ? text(cx, cy, label, { fs }) : "");
+}
+
+/** 記号の輪郭（論理素子・流れ図の判断など）。d は SVG の path。中は背景の色で塗る（#65） */
+export const shape = (d: string): string => `<path d="${d}" class="fg"/>`;
+
+/** 濃い線（回路の配線・信号の波形など。#65） */
+export function wire(pts: readonly Pt[]): string {
+  const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${n(x)} ${n(y)}`).join(" ");
+  return `<path d="${d}" class="fw"/>`;
+}
+
+/** 点（散布図の点・配線の接続点。#65） */
+export const dot = (cx: number, cy: number, r = 2.5): string =>
+  `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r)}" class="fd"/>`;
+
 let seq = 0;
 
 const marker = (tone: string, id: string) =>

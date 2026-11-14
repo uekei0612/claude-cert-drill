@@ -1269,6 +1269,19 @@ figure.fig {
 .fig .fm.t-ng {
   fill: var(--ng);
 }
+.fig .fg {
+  fill: var(--surface);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+.fig .fw {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 1.6;
+}
+.fig .fd {
+  fill: var(--text);
+}
 .fig .dash {
   stroke-dasharray: 4 3;
 }
