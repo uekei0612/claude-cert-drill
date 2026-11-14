@@ -13,6 +13,7 @@ import { CopyButton } from "../CopyButton";
 import { Meter } from "../Meter";
 import { lessonText, sectionText } from "../copyText";
 import { href } from "../route";
+import { showOfficial, srcAttrs } from "../src";
 
 /** 章の名前（「はじめに」の章は教科書の題、ほかは細目の名前） */
 export const chapterTitle = (exam: Exam, id: string): string =>
@@ -314,11 +315,7 @@ export function Learn({ exam, taskId, section, now }: { exam: Exam; taskId?: str
         <h1>
           <span class="tag">{tagOf(taskId)}</span> {titleOf(taskId)}
         </h1>
-        {task && (
-          <p class="muted small en" lang="en">
-            {task.title}
-          </p>
-        )}
+        {task && showOfficial(task) && <p {...srcAttrs(exam, "muted small")}>{task.title}</p>}
         <div class="row end">
           <CopyButton label="この章をコピー" text={() => lessonText(exam, chapterName, lesson)} />
         </div>

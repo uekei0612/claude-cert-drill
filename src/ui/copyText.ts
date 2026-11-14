@@ -1,5 +1,5 @@
 /* Claude に解説を頼むときに貼る文。問題 1 問・教科書の章・節を、読める平文（Markdown 寄り）にする。
-   問題文は英語が原文なので、訳があれば「（訳）」として添える（Claude には原文、自分には訳）。
+   原文に訳があれば「（訳）」として添える（Claude には原文、自分には訳）。
    選択肢の記号は画面に出ている並びに合わせる（「C を選んだ」が画面と食い違わないように） */
 import type { Exam, Lesson, LessonBlock, LessonSection, Question } from "../core/exam/types";
 import { domainOf, findTask, optionLetter } from "../core/exam/types";

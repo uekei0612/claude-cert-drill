@@ -13,7 +13,15 @@ export interface ExamMeta {
   /** 日本語の短い説明 */
   readonly summary: string;
   readonly format: ExamFormat;
+  /** 問題文・選択肢・シナリオの原文の言語（#57）。無ければ "en"。"ja" の資格は訳を持たない */
+  readonly lang?: SourceLang;
 }
+
+/** 問題の原文の言語 */
+export type SourceLang = "en" | "ja";
+
+/** 資格の原文の言語 */
+export const sourceLang = (exam: Pick<ExamMeta, "lang">): SourceLang => exam.lang ?? "en";
 
 /** 資格の中身。一覧の情報（ExamMeta）に、分野・問題・教科書などを足したもの */
 export interface Exam extends ExamMeta {
@@ -30,7 +38,7 @@ export interface Exam extends ExamMeta {
   readonly outOfScope: readonly string[];
   /** 出どころと、数字の確からしさ（画面の「この試験について」に出す） */
   readonly sources: readonly { readonly label: string; readonly note: string }[];
-  /** 問題文・選択肢・シナリオの訳。キーは言語（"ja"）。原文（英語）が正で、訳は読むための補助 */
+  /** 問題文・選択肢・シナリオの訳。キーは言語（"ja"）。原文が正で、訳は読むための補助。原文が日本語の資格は持たない */
   readonly translations?: Readonly<Partial<Record<TranslationLang, Translation>>>;
 }
 
@@ -69,7 +77,7 @@ export interface ExamFormat {
 export interface Domain {
   /** "d1" */
   readonly id: string;
-  /** 公式の英語名 */
+  /** 公式の名前（原文の言語。日本語名と同じなら画面には 1 度だけ出す） */
   readonly title: string;
   /** 日本語名 */
   readonly ja: string;
@@ -81,7 +89,7 @@ export interface Domain {
 export interface Task {
   /** 公式の番号（"1.1"）。分野の番号で始まる */
   readonly id: string;
-  /** 公式の英語名 */
+  /** 公式の名前（原文の言語） */
   readonly title: string;
   /** 日本語名 */
   readonly ja: string;
@@ -92,14 +100,14 @@ export interface Scenario {
   readonly id: string;
   readonly title: string;
   readonly ja: string;
-  /** 状況の説明（英語。試験ガイドの文の転載ではなく自分の言葉で） */
+  /** 状況の説明（原文の言語。試験ガイドの文の転載ではなく自分の言葉で） */
   readonly context: string;
   /** 主に問われる分野 */
   readonly domains: readonly string[];
 }
 
 export interface Option {
-  /** 英語 */
+  /** 原文の言語 */
   readonly text: string;
   /** なぜ正解か／なぜ誤りか（日本語） */
   readonly why: string;
@@ -111,7 +119,7 @@ export interface Question {
   readonly scenario?: string;
   /** 細目の ID。先頭が主たる細目（集計はこれで行う） */
   readonly tasks: readonly [string, ...string[]];
-  /** 英語 */
+  /** 原文の言語 */
   readonly stem: string;
   /** MIN_OPTIONS〜MAX_OPTIONS 個。資格の中でそろっていなくてもよい（#54） */
   readonly options: readonly Option[];

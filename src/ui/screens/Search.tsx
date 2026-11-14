@@ -64,7 +64,12 @@ export function Search({ exam, q }: { exam: Exam; q: string }) {
       <p class="muted small">
         教科書の節と、細目の要点・問題の「覚えること」から探します。問題文と選択肢は、答えが見えるので探しません。
       </p>
-      {text.trim() && hits.length === 0 && <p>見つかりませんでした。語を短くするか、英語の表記でも試してください。</p>}
+      {text.trim() && hits.length === 0 && (
+        <p>
+          見つかりませんでした。語を短くするか、{exam.translations?.ja ? "英語の表記でも" : "別の言い方でも"}
+          試してください。
+        </p>
+      )}
       {sections.length > 0 && (
         <section class="stack">
           <h2>

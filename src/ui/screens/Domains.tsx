@@ -6,6 +6,7 @@ import { itemKey } from "../../core/store/schema";
 import { useData } from "../../app/store";
 import { Meter, pct } from "../Meter";
 import { href } from "../route";
+import { showOfficial, srcAttrs } from "../src";
 
 export function Domains({ exam, domainId, now }: { exam: Exam; domainId?: string; now: number }) {
   const data = useData();
@@ -28,9 +29,7 @@ export function Domains({ exam, domainId, now }: { exam: Exam; domainId?: string
             </h2>
             <span class="muted small">配点 {pct(d.weight)}</span>
           </div>
-          <p class="muted small en" lang="en">
-            {d.title}
-          </p>
+          {showOfficial(d) && <p {...srcAttrs(exam, "muted small")}>{d.title}</p>}
           {d.tasks.map(t => {
             const tl = tally(questionsOfTask(exam, t.id), statOf, now);
             return (

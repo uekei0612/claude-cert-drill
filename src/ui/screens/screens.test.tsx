@@ -5,7 +5,7 @@ import { type ComponentChild, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { store } from "../../app/store";
-import { fixture, flatFixture } from "../../core/engine/fixture";
+import { fixture, flatFixture, jaFixture } from "../../core/engine/fixture";
 import type { Exam } from "../../core/exam/types";
 import { ccarF } from "../../exams/ccar-f/exam";
 import { Domains } from "./Domains";
@@ -56,6 +56,7 @@ describe.each([
   ["CCAR-F", ccarF],
   ["シナリオあり・4 択（テスト用）", fixture],
   ["シナリオ無し・5 択と 3 択・教科書と訳なし（テスト用）", flatFixture],
+  ["日本語が原文（テスト用）", jaFixture],
 ] as const)("%s", (_name, exam: Exam) => {
   const firstTask = exam.domains[0]!.tasks[0]!.id;
 
@@ -106,6 +107,22 @@ describe.each([
     mount(<MockResult exam={exam} at={result.finishedAt} />);
     expect(root.textContent).toContain(`${result.total}`);
   });
+});
+
+test("日本語が原文の資格は、問題文を lang=ja で出し、言語の切り替えを出さない（#57）", () => {
+  mount(<Practice exam={jaFixture} now={NOW} />);
+  const stem = root.querySelector(".stem span")!;
+  expect(stem.getAttribute("lang")).toBe("ja");
+  expect(stem.classList.contains("en")).toBe(false);
+  expect(root.querySelector(".lang-menu")).toBeNull();
+  // 分野の公式名が日本語名と同じなら、下の行に重ねて出さない
+  mount(<Domains exam={jaFixture} now={NOW} />);
+  expect(root.textContent!.split("テクノロジ系").length - 1).toBe(1);
+});
+
+test("英語が原文の資格は、問題文を lang=en で出す", () => {
+  mount(<Practice exam={ccarF} now={NOW} />);
+  expect(root.querySelector(".stem span.en")?.getAttribute("lang")).toBe("en");
 });
 
 test("資格の外の画面（資格一覧・設定・使い方）が描ける", () => {
