@@ -1,13 +1,32 @@
 /* Claude に解説を頼むときに貼る文。問題 1 問・教科書の章・節を、読める平文（Markdown 寄り）にする。
    原文に訳があれば「（訳）」として添える（Claude には原文、自分には訳）。
    選択肢の記号は画面に出ている並びに合わせる（「C を選んだ」が画面と食い違わないように） */
-import type { Exam, Lesson, LessonBlock, LessonSection, Question } from "../core/exam/types";
-import { domainOf, findTask, optionLabel } from "../core/exam/types";
+import type { Exam, Lesson, LessonBlock, LessonSection, Question, Stem, StemBlock } from "../core/exam/types";
+import { domainOf, findTask, optionLabel, optionText } from "../core/exam/types";
 
 /** 資格の名前（「CCAR-F（Claude Certified Architect – Foundations）」） */
 const examName = (exam: Exam) => `${exam.code}（${exam.title}）`;
 
 const withJa = (en: string, ja: string | undefined, indent = "") => (ja ? `${en}\n${indent}（訳）${ja}` : en);
+
+/** 表を Markdown の表にする */
+function mdTable(rows: readonly (readonly string[])[], head?: readonly string[]): string {
+  const line = (r: readonly string[]) => `| ${r.join(" | ")} |`;
+  const top = head ?? rows[0] ?? [];
+  const body = head ? rows : rows.slice(1);
+  return [line(top), line(top.map(() => "---")), ...body.map(line)].join("\n");
+}
+
+/** 問題文の部品を、読める平文（コードは ``` で囲み、表は Markdown の表）にする（#60） */
+function stemPart(b: StemBlock): string {
+  if (typeof b === "string") return b;
+  if ("code" in b) return `\`\`\`${b.lang ?? ""}\n${b.code}\n\`\`\``;
+  if ("table" in b) return mdTable(b.table, b.head);
+  if ("figure" in b) return `［図］${b.caption}`;
+  return b.list.map(x => `- ${x}`).join("\n");
+}
+
+const stemMd = (s: Stem): string => (typeof s === "string" ? s : s.map(stemPart).join("\n\n"));
 
 export interface QuestionCopy {
   readonly exam: Exam;
@@ -31,9 +50,9 @@ function questionHead({ exam, q, order }: QuestionCopy, ask: string): string[] {
     out.push(
       `■ シナリオ：${scenario.ja}\n${withJa(`${scenario.title}. ${scenario.context}`, ja?.scenarios[scenario.id])}`,
     );
-  out.push(`■ 問題\n${withJa(q.stem, tq?.stem)}`);
+  out.push(`■ 問題\n${withJa(stemMd(q.stem), tq && stemMd(tq.stem))}`);
   out.push(
-    `■ 選択肢\n${order.map((orig, i) => `${optionLabel(exam, i)}. ${withJa(q.options[orig]!.text, tq?.options[orig], "   ")}`).join("\n")}`,
+    `■ 選択肢\n${order.map((orig, i) => `${optionLabel(exam, i)}. ${withJa(optionText(q, q.options[orig]!), tq?.options[orig], "   ")}`).join("\n")}`,
   );
   return out;
 }

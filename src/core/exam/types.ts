@@ -65,7 +65,7 @@ export interface Translation {
 }
 
 export interface QuestionTranslation {
-  readonly stem: string;
+  readonly stem: Stem;
   /** 原文と同じ並び・同じ数 */
   readonly options: readonly string[];
 }
@@ -119,12 +119,34 @@ export interface Scenario {
   readonly domains: readonly string[];
 }
 
-export interface Option {
-  /** 原文の言語 */
+/** 選択肢。文 1 つか、解答群の表の 1 行（#60） */
+export type Option = TextOption | CellOption;
+
+export interface TextOption {
+  /** 原文の言語。`…` はコードとして出す */
   readonly text: string;
   /** なぜ正解か／なぜ誤りか（日本語） */
   readonly why: string;
 }
+
+/** 解答群の表の 1 行（「a と b の組合せ」など。#60）。cells は問題の columns と同じ並び・同じ数 */
+export interface CellOption {
+  readonly cells: readonly string[];
+  readonly why: string;
+}
+
+/** 問題文の部品（#60）。段落（文字列。`…` はコード）・コード・表・図・箇条書き */
+export type StemBlock =
+  | string
+  | { readonly code: string; readonly lang?: string }
+  /** 表。head は見出しの行（無くてもよい）。行の数はそろえる */
+  | { readonly table: readonly (readonly string[])[]; readonly head?: readonly string[] }
+  /** 図。figure は SVG の文字列（core/exam/figure.ts で組む）、caption は図の説明（読み上げにも使う） */
+  | { readonly figure: string; readonly caption: string }
+  | { readonly list: readonly string[] };
+
+/** 問題文。文 1 つか、部品の並び（プログラムや表を含む問題。#60） */
+export type Stem = string | readonly StemBlock[];
 
 export interface Question {
   /** "<シナリオ>-<2 桁>"（"s1-03"）。記録のキーなので変えない */
@@ -132,8 +154,10 @@ export interface Question {
   readonly scenario?: string;
   /** 細目の ID。先頭が主たる細目（集計はこれで行う） */
   readonly tasks: readonly [string, ...string[]];
-  /** 原文の言語 */
-  readonly stem: string;
+  /** 原文の言語。文 1 つか、部品の並び（#60） */
+  readonly stem: Stem;
+  /** 解答群の列の名前（["a", "b"]。#60）。あれば選択肢はすべて cells で書き、表の形で出す */
+  readonly columns?: readonly string[];
   /** MIN_OPTIONS〜MAX_OPTIONS 個。資格の中でそろっていなくてもよい（#54） */
   readonly options: readonly Option[];
   /** 正解の位置（0 始まり）。正解は 1 つだけ */
@@ -203,6 +227,22 @@ export const optionLabel = (exam: Pick<ExamMeta, "options">, i: number): string 
 /** この問題の選択肢を、表示のたびに混ぜるか */
 export const shufflesOptions = (exam: Pick<ExamMeta, "options">, q: Pick<Question, "keepOrder">): boolean =>
   (exam.options?.shuffle ?? true) && !q.keepOrder;
+
+/** 問題文の部品を平文にする（コピー以外の、一覧の見出し・検査・長さの比較に使う） */
+export function stemBlockText(b: StemBlock): string {
+  if (typeof b === "string") return b;
+  if ("code" in b) return b.code;
+  if ("table" in b) return [...(b.head ? [b.head] : []), ...b.table].map(r => r.join(" ")).join(" ");
+  if ("figure" in b) return b.caption;
+  return b.list.join(" ");
+}
+
+/** 問題文を平文にする */
+export const stemText = (stem: Stem): string => (typeof stem === "string" ? stem : stem.map(stemBlockText).join(" "));
+
+/** 選択肢を平文にする。表の形は「a：x、b：y」 */
+export const optionText = (q: Pick<Question, "columns">, o: Option): string =>
+  "text" in o ? o.text : o.cells.map((c, i) => `${q.columns?.[i] ?? ""}：${c}`).join("、");
 
 /** 教科書の「はじめに」の ID（URL の #/<資格>/learn/intro） */
 export const PRIMER_ID = "intro";

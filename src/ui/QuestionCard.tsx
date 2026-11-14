@@ -9,12 +9,13 @@
    練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { APP } from "../app/config";
-import type { Exam, ExamMeta, Question } from "../core/exam/types";
-import { domainOf, findTask, optionLabel } from "../core/exam/types";
+import type { Exam, ExamMeta, Question, Stem } from "../core/exam/types";
+import { domainOf, findTask, optionLabel, stemText } from "../core/exam/types";
 import type { QuestionLang } from "../core/store/schema";
 import { CopyButton } from "./CopyButton";
 import { hintText, questionText } from "./copyText";
 import { href } from "./route";
+import { RichText, inline } from "./Rich";
 import { srcAttrs } from "./src";
 
 export interface QuestionCardProps {
@@ -51,14 +52,16 @@ function keepInPlace(el: HTMLElement, top: number): void {
 
 /** 一覧の行の見出しに使う問題文（言語の設定が「日本語」で訳があれば訳、ほかは原文）。
     「覚えること」は答えそのものなので、一覧では見せない（#47） */
-export const stemOf = (exam: Exam, q: Question, lang: QuestionLang): string =>
-  (lang === "ja" && exam.translations?.ja?.questions[q.id]?.stem) || q.stem;
+export function stemOf(exam: Exam, q: Question, lang: QuestionLang): string {
+  const tr = lang === "ja" ? exam.translations?.ja?.questions[q.id]?.stem : undefined;
+  return stemText(tr ?? q.stem);
+}
 
 /** 一覧の行の見出し（stemOf）の言語 */
 export const stemLang = (exam: Exam, lang: QuestionLang): string =>
   lang === "ja" && exam.translations?.ja ? "ja" : srcAttrs(exam).lang;
 
-/** 原文・訳・併記のどれかで文を出す */
+/** 原文・訳・併記のどれかで文を出す。文は 1 つの文か、部品の並び（#60） */
 function Text({
   exam,
   src,
@@ -66,22 +69,34 @@ function Text({
   lang,
 }: {
   exam: Pick<ExamMeta, "lang">;
-  src: string;
-  ja?: string;
+  src: Stem;
+  ja?: Stem;
   lang: Exclude<QuestionLang, "peek">;
 }) {
-  if (lang === "ja" && ja) return <span lang="ja">{ja}</span>;
-  const original = <span {...srcAttrs(exam)}>{src}</span>;
+  if (lang === "ja" && ja) return <RichText value={ja} lang="ja" />;
+  const a = srcAttrs(exam);
+  const original = <RichText value={src} lang={a.lang} cls={a.class} />;
   if (lang === "both" && ja)
     return (
       <>
         {original}
-        <span class="ja-sub" lang="ja">
-          {ja}
-        </span>
+        <RichText value={ja} lang="ja" cls="ja-sub" />
       </>
     );
   return original;
+}
+
+/** 解答群の表の 1 行（#60）。列の名前を添えて、列をそろえて並べる */
+function Cells({ exam, q, cells }: { exam: Pick<ExamMeta, "lang">; q: Question; cells: readonly string[] }) {
+  return (
+    <span class="cells" style={{ "--cols": String(cells.length) }}>
+      {cells.map((c, i) => (
+        <span class="ocell" key={i}>
+          <span class="ocol">{q.columns?.[i]}</span> <span {...srcAttrs(exam)}>{inline(c)}</span>
+        </span>
+      ))}
+    </span>
+  );
 }
 
 export function QuestionCard({
@@ -128,9 +143,9 @@ export function QuestionCard({
           </p>
         </details>
       )}
-      <p class="stem">
+      <div class="stem">
         <Text exam={exam} src={q.stem} ja={tq?.stem} lang={shown} />
-      </p>
+      </div>
       {peeking && tq && shown === "en" && (
         <button class="btn ghost peek" onClick={() => setOpenedId(q.id)}>
           訳を見る
@@ -156,7 +171,11 @@ export function QuestionCard({
               >
                 <span class="letter">{optionLabel(exam, i)}</span>
                 <span class="otext">
-                  <Text exam={exam} src={o.text} ja={tq?.options[orig]} lang={shown} />
+                  {"cells" in o ? (
+                    <Cells exam={exam} q={q} cells={o.cells} />
+                  ) : (
+                    <Text exam={exam} src={o.text} ja={tq?.options[orig]} lang={shown} />
+                  )}
                 </span>
               </button>
               {reveal && (

@@ -95,7 +95,10 @@ interface Question {
   answer: number;          // 正解の位置（0 始まり）。正解は 1 つだけ（複数選択はまだ無い）
   point: string;           // 日本語。この問題で覚えること 1 行
 }
-interface Option { text: string; why: string }   // text は原文の言語、why は日本語
+type Option =
+  | { text: string; why: string }               // text は原文の言語、why は日本語
+  | { cells: string[]; why: string };           // 解答群の表の 1 行（問題の columns と同じ数。#60）
+// stem は文 1 つか、部品（段落・コード・表・図・箇条書き）の並び。プログラムや表を含む問題に使う（#60）
 ```
 
 表示のときに選択肢の順番を混ぜる（位置で覚えないように）。記号は A〜J、PC のキーは数字の 1〜9 と 0（10 個目）。

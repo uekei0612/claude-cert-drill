@@ -385,6 +385,55 @@ a.tap {
   font-size: 1.06rem;
   line-height: 1.7;
 }
+/* 部品の並びで書いた問題文（段落・コード・表・図。#60） */
+.rich {
+  display: grid;
+  gap: 10px;
+}
+.rich p,
+.rich ul {
+  margin: 0;
+}
+.rich ul {
+  padding-left: 1.4em;
+}
+.ja-sub.rich {
+  margin-top: 10px;
+}
+.qtable-wrap {
+  overflow-x: auto;
+}
+.qtable {
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.qtable th,
+.qtable td {
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.qtable th {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+/* 解答群の表の 1 行（#60）。列の名前を添えて、列をそろえる */
+.otext:has(> .cells) {
+  flex: 1;
+  min-width: 0;
+}
+.cells {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: 2px 14px;
+}
+.ocol {
+  color: var(--muted);
+  font-size: 0.8em;
+  margin-right: 2px;
+}
 .options {
   list-style: none;
   margin: 0;
@@ -1118,18 +1167,18 @@ pre.code code {
   font-size: 0.92rem;
 }
 /* 図（SVG の色は CSS の変数で付ける＝ダークでもそのまま読める） */
-.lesson figure.fig {
+figure.fig {
   margin: 0;
   display: grid;
   gap: 6px;
 }
-.lesson .fig-svg {
+.fig-svg {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 6px;
 }
-.lesson .fig-svg svg {
+.fig-svg svg {
   display: block;
   width: 100%;
   height: auto;

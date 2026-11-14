@@ -8,8 +8,11 @@ import {
   type Exam,
   type Lesson,
   type LessonBlock,
+  type Stem,
   allTasks,
+  optionText,
   sourceLang,
+  stemText,
 } from "./types";
 
 /** 偏りの検査（正解が一番長い選択肢・正解の位置）は、この数から見る（少ないうちは偏って当たり前） */
@@ -149,12 +152,24 @@ export function validateExam(exam: Exam): string[] {
       bad(q.id, `選択肢は ${MIN_OPTIONS}〜${MAX_OPTIONS} 個`);
     if (!(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length))
       bad(q.id, "正解の位置が選択肢の外");
-    if (q.stem.trim().length <= 40) bad(q.id, "問題文が短い");
+    if (stemText(q.stem).trim().length <= 40) bad(q.id, "問題文が短い");
+    checkStem(q.id, q.stem, bad);
     if (!q.point.trim()) bad(q.id, "覚えること（point）が無い");
-    const texts = q.options.map(o => o.text.trim());
+    const texts = q.options.map(o => optionText(q, o).trim());
     if (new Set(texts).size !== texts.length) bad(q.id, "選択肢が重複している");
+    // 解答群の表（#60）。列があれば選択肢はすべて列と同じ数の cells、無ければすべて text
+    if (q.columns && (!q.columns.length || q.columns.some(c => !c.trim()))) bad(q.id, "解答群の列の名前が空");
     for (const o of q.options) {
-      if (!o.text.trim()) bad(q.id, "空の選択肢がある");
+      if ("cells" in o) {
+        if (!q.columns) bad(q.id, "解答群の列（columns）が無いのに、選択肢が cells で書いてある");
+        else if (o.cells.length !== q.columns.length) bad(q.id, "選択肢の cells の数が、解答群の列の数と違う");
+        if (o.cells.some(c => !c.trim())) bad(q.id, "空の cells がある");
+        for (const c of o.cells) if (oddTicks(c)) bad(q.id, `\` の数が合わない：${c}`);
+      } else {
+        if (q.columns) bad(q.id, "解答群の列（columns）があるのに、選択肢が text で書いてある");
+        if (!o.text.trim()) bad(q.id, "空の選択肢がある");
+        if (oddTicks(o.text)) bad(q.id, `\` の数が合わない：${o.text}`);
+      }
       if (o.why.trim().length <= 10) bad(q.id, "選択肢ごとの解説が短い");
     }
     // 本番の択一は 1 つだけが正解。「上のすべて」などは使わない
@@ -166,7 +181,7 @@ export function validateExam(exam: Exam): string[] {
   if (missingScenarios.length) bad(exam.id, `問題の無いシナリオ：${missingScenarios.join(" ")}`);
   checkLongest(
     "問題",
-    exam.questions.map(q => [q.id, q.options.map(o => o.text), q.answer]),
+    exam.questions.map(q => [q.id, q.options.map(o => optionText(q, o)), q.answer]),
     bad,
   );
 
@@ -180,8 +195,11 @@ export function validateExam(exam: Exam): string[] {
     if (!same(Object.keys(tr.questions), ids)) bad(where, "問題の訳が、問題と 1 対 1 でない");
     for (const [id, v] of Object.entries(tr.scenarios)) if (v.trim().length <= 20) bad(`${where} ${id}`, "訳が短い");
     const optionCount = new Map(exam.questions.map(q => [q.id, q.options.length]));
+    const withColumns = new Set(exam.questions.filter(q => q.columns).map(q => q.id));
     for (const [id, t] of Object.entries(tr.questions)) {
-      if (t.stem.trim().length <= 20) bad(`${where} ${id}`, "問題文の訳が短い");
+      if (stemText(t.stem).trim().length <= 20) bad(`${where} ${id}`, "問題文の訳が短い");
+      checkStem(`${where} ${id}`, t.stem, bad);
+      if (withColumns.has(id)) bad(`${where} ${id}`, "解答群の表の問題には訳を付けない（訳は文の選択肢だけ）");
       if (t.options.length !== optionCount.get(id)) bad(`${where} ${id}`, "選択肢の訳の数が原文と違う");
       if (new Set(t.options.map(o => o.trim())).size !== t.options.length) bad(`${where} ${id}`, "選択肢の訳が重複");
       if (t.options.some(o => !o.trim())) bad(`${where} ${id}`, "空の選択肢の訳がある");
@@ -196,6 +214,31 @@ export function validateExam(exam: Exam): string[] {
     );
   }
   return out;
+}
+
+/** 問題文の部品の形（#60） */
+function checkStem(where: string, stem: Stem, bad: (where: string, what: string) => void): void {
+  if (typeof stem === "string") {
+    if (oddTicks(stem)) bad(where, "問題文の ` の数が合わない");
+    return;
+  }
+  if (!stem.length) bad(where, "問題文の部品が無い");
+  if (typeof stem[0] !== "string") bad(where, "問題文は文（段落）で始める");
+  for (const b of stem) {
+    if (typeof b === "string") {
+      if (!b.trim()) bad(where, "空の段落がある");
+      if (oddTicks(b)) bad(where, `\` の数が合わない：${b}`);
+    } else if ("code" in b) {
+      if (!b.code.trim()) bad(where, "空のコードがある");
+    } else if ("table" in b) {
+      const width = b.head?.length ?? b.table[0]?.length ?? 0;
+      if (!b.table.length || !width) bad(where, "空の表がある");
+      if (b.table.some(r => r.length !== width)) bad(where, "表の行ごとの列の数がそろっていない");
+    } else if ("figure" in b) {
+      if (!b.figure.startsWith("<svg ")) bad(where, "図が SVG でない");
+      if (b.caption.trim().length <= 10) bad(where, "図の説明が短い");
+    } else if (!b.list.length) bad(where, "空の箇条書きがある");
+  }
 }
 
 /** 正解が一番長い選択肢になっている問題が多すぎないか */

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { store } from "../../app/store";
 import { fixture, flatFixture, jaFixture } from "../../core/engine/fixture";
 import { idsOnly } from "../../core/engine/practice";
-import { type Exam, optionLabel, shufflesOptions } from "../../core/exam/types";
+import { type Exam, optionLabel, optionText, shufflesOptions, stemText } from "../../core/exam/types";
 import { ccarF } from "../../exams/ccar-f/exam";
 import { Domains } from "./Domains";
 import { ExamPicker } from "./ExamPicker";
@@ -115,14 +115,15 @@ describe.each([
 });
 
 test("日本語が原文の資格は、問題文を lang=ja で出し、言語の切り替えを出さない（#57）", () => {
-  mount(<Practice exam={jaFixture} now={NOW} />);
-  const stem = root.querySelector(".stem span")!;
+  // 4 択の文の問題だけで練習する
+  mount(<Practice exam={jaFixture} only={idsOnly(["d1-01", "d1-02", "d1-03", "d1-04"])} now={NOW} />);
+  const stem = root.querySelector(".stem > [lang]")!;
   expect(stem.getAttribute("lang")).toBe("ja");
   expect(stem.classList.contains("en")).toBe(false);
   expect(root.querySelector(".lang-menu")).toBeNull();
   // 記号はア〜で、選択肢は混ぜない（#58）
-  const q = jaFixture.questions.find(x => root.querySelector(".stem")!.textContent!.includes(x.stem))!;
-  expect([...root.querySelectorAll(".otext")].map(o => o.textContent)).toEqual(q.options.map(o => o.text));
+  const q = jaFixture.questions.find(x => root.querySelector(".stem")!.textContent!.includes(stemText(x.stem)))!;
+  expect([...root.querySelectorAll(".otext")].map(o => o.textContent)).toEqual(q.options.map(o => optionText(q, o)));
   expect(root.querySelector(".letter")!.textContent).toBe("ア");
   expect(root.textContent).toContain("キー：1〜4で選ぶ");
   // 分野の公式名が日本語名と同じなら、下の行に重ねて出さない
@@ -142,9 +143,22 @@ test("10 択の問題は ア〜コ を出し、0 キーで 10 個目を選べる
   expect(chosen.dataset.orig).toBe("9");
 });
 
+test("プログラムと表を含む問題文と、解答群の表を出す（#60）", () => {
+  const q = jaFixture.questions.find(x => x.columns)!;
+  mount(<Practice exam={jaFixture} only={idsOnly([q.id])} now={NOW} />);
+  expect(root.querySelector(".stem pre.code")!.textContent).toContain("return [ b ]");
+  expect(root.querySelector(".stem .qtable th")!.textContent).toBe("引数");
+  expect(root.querySelector(".stem code")!.textContent).toBe("sum");
+  const rows = [...root.querySelectorAll("button.option .cells")];
+  expect(rows.length).toBe(q.options.length);
+  expect(rows[0]!.querySelectorAll(".ocell").length).toBe(2);
+  expect(rows[0]!.textContent).toContain("a");
+  expect(rows[0]!.textContent).toContain("s + arr[i]");
+});
+
 test("英語が原文の資格は、問題文を lang=en で出す", () => {
   mount(<Practice exam={ccarF} now={NOW} />);
-  expect(root.querySelector(".stem span.en")?.getAttribute("lang")).toBe("en");
+  expect(root.querySelector(".stem > .en")?.getAttribute("lang")).toBe("en");
 });
 
 test("資格の外の画面（資格一覧・設定・使い方）が描ける", () => {
