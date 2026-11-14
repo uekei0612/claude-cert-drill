@@ -46,7 +46,7 @@ describe("資格の形の検査（#53）", () => {
     ).toBe(true);
     expect(has({ ...base, questions: base.questions.filter(q => q.tasks[0] !== "1.2") }, /1\.2/)).toBe(true);
   });
-  test("選択肢は 2〜5 個。正解は選択肢の中。訳の選択肢は原文と同じ数（#54）", () => {
+  test("選択肢は 2〜10 個。正解は選択肢の中。訳の選択肢は原文と同じ数（#54・#59）", () => {
     const five = withQ(q => ({
       ...q,
       options: [...q.options, { text: "option 4", why: "解説 4 の理由をここに書く" }],
@@ -55,9 +55,19 @@ describe("資格の形の検査（#53）", () => {
     expect(
       has(
         withQ(q => ({ ...q, options: q.options.slice(0, 1) })),
-        /2〜5/,
+        /2〜10/,
       ),
     ).toBe(true);
+    const many = (n: number) =>
+      withQ(q => ({
+        ...q,
+        options: Array.from({ length: n }, (_, i) => ({
+          text: i ? `option ${i}` : "a",
+          why: `解説 ${i} の理由をここに書く`,
+        })),
+      }));
+    expect(validateExam(many(10))).toEqual([]);
+    expect(has(many(11), /2〜10/)).toBe(true);
     expect(
       has(
         withQ(q => ({ ...q, answer: 4 })),
