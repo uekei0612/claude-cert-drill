@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { fixture } from "./fixture";
+import { fixture, flatFixture, jaFixture } from "./fixture";
 import { addUsed, mockLeft, planMock, scoreMock } from "./mock";
 import { filterQuestions, idsOnly, isPermutation, optionOrder, orderFor, parseIdsOnly, planPractice } from "./practice";
 import { questionsOfDomain, questionsOfTask, readiness, tally, weakestTasks } from "./progress";
@@ -132,15 +132,28 @@ describe("planPractice", () => {
     expect([...ids].sort()).toEqual(["s2-02", "s3-04"]);
   });
   test("選択肢の順番は 0〜n−1 の並べ替え（#54）", () => {
-    expect([...optionOrder(seeded(5), 4)].sort()).toEqual([0, 1, 2, 3]);
-    expect([...optionOrder(seeded(5), 5)].sort()).toEqual([0, 1, 2, 3, 4]);
+    const five = flatFixture.questions.find(q => q.options.length === 5)!;
+    expect([...optionOrder(seeded(5), fixture, fixture.questions[0]!)].sort()).toEqual([0, 1, 2, 3]);
+    expect([...optionOrder(seeded(5), flatFixture, five)].sort()).toEqual([0, 1, 2, 3, 4]);
+  });
+  test("混ぜない資格と、keepOrder の問題は元の並び（#58）", () => {
+    const q = fixture.questions[0]!;
+    const mixed = [1, 2, 3, 4, 5, 6].map(s => optionOrder(seeded(s), fixture, q).join(""));
+    expect(mixed.some(o => o !== "0123")).toBe(true);
+    for (const s of [1, 2, 3, 4, 5, 6]) {
+      expect(optionOrder(seeded(s), fixture, { ...q, keepOrder: true })).toEqual([0, 1, 2, 3]);
+      expect(optionOrder(seeded(s), jaFixture, jaFixture.questions[0]!)).toEqual([0, 1, 2, 3]);
+    }
+    // 混ぜていたころの並びが記録に残っていても、元の並びで出す
+    expect(orderFor(jaFixture, jaFixture.questions[0]!, [3, 1, 0, 2])).toEqual([0, 1, 2, 3]);
+    expect(orderFor(fixture, { ...q, keepOrder: true }, [3, 1, 0, 2])).toEqual([0, 1, 2, 3]);
   });
   test("記録にある並びは、その問題の並べ替えのときだけ使う（選択肢の数が変わったら元の並び）", () => {
     const q = fixture.questions[0]!;
-    expect(orderFor(q, [3, 1, 0, 2])).toEqual([3, 1, 0, 2]);
-    expect(orderFor(q, [4, 1, 0, 2, 3])).toEqual([0, 1, 2, 3]);
-    expect(orderFor(q, [0, 0, 1, 2])).toEqual([0, 1, 2, 3]);
-    expect(orderFor(q)).toEqual([0, 1, 2, 3]);
+    expect(orderFor(fixture, q, [3, 1, 0, 2])).toEqual([3, 1, 0, 2]);
+    expect(orderFor(fixture, q, [4, 1, 0, 2, 3])).toEqual([0, 1, 2, 3]);
+    expect(orderFor(fixture, q, [0, 0, 1, 2])).toEqual([0, 1, 2, 3]);
+    expect(orderFor(fixture, q)).toEqual([0, 1, 2, 3]);
     expect(isPermutation([1, 0], 2)).toBe(true);
   });
 });

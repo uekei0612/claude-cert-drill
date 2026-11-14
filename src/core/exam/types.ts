@@ -15,7 +15,20 @@ export interface ExamMeta {
   readonly format: ExamFormat;
   /** 問題文・選択肢・シナリオの原文の言語（#57）。無ければ "en"。"ja" の資格は訳を持たない */
   readonly lang?: SourceLang;
+  /** 選択肢の記号と、混ぜるか（#58）。無ければ A〜 で、表示のたびに混ぜる */
+  readonly options?: OptionStyle;
 }
+
+/** 選択肢の出し方（#58） */
+export interface OptionStyle {
+  /** 記号。latin＝A B C …、kana＝ア イ ウ …（IPA の試験の記号）。無ければ latin */
+  readonly labels?: OptionLabels;
+  /** 表示のたびに選択肢を混ぜるか。無ければ混ぜる（位置で覚えないように）。
+      混ぜない資格は、公式の問題の記号と答えがそのまま合い、数値の選択肢も小さい順のまま並ぶ */
+  readonly shuffle?: boolean;
+}
+
+export type OptionLabels = "latin" | "kana";
 
 /** 問題の原文の言語 */
 export type SourceLang = "en" | "ja";
@@ -125,6 +138,8 @@ export interface Question {
   readonly options: readonly Option[];
   /** 正解の位置（0 始まり）。正解は 1 つだけ */
   readonly answer: number;
+  /** 混ぜる資格でも、この問題の選択肢は混ぜない（並びに意味があるとき。#58） */
+  readonly keepOrder?: boolean;
   /** この問題で覚えること 1 行（日本語） */
   readonly point: string;
 }
@@ -176,8 +191,17 @@ export type LessonBlock =
 export const MIN_OPTIONS = 2;
 export const MAX_OPTIONS = 5;
 
-/** 選択肢の記号（0 → "A"） */
-export const optionLetter = (i: number): string => "ABCDE"[i] ?? "?";
+const LABELS: Record<OptionLabels, string> = { latin: "ABCDEFGHIJ", kana: "アイウエオカキクケコ" };
+
+/** 資格の選択肢の記号の種類 */
+export const optionLabels = (exam: Pick<ExamMeta, "options">): OptionLabels => exam.options?.labels ?? "latin";
+
+/** 選択肢の記号（0 → "A" または "ア"） */
+export const optionLabel = (exam: Pick<ExamMeta, "options">, i: number): string => LABELS[optionLabels(exam)][i] ?? "?";
+
+/** この問題の選択肢を、表示のたびに混ぜるか */
+export const shufflesOptions = (exam: Pick<ExamMeta, "options">, q: Pick<Question, "keepOrder">): boolean =>
+  (exam.options?.shuffle ?? true) && !q.keepOrder;
 
 /** 教科書の「はじめに」の ID（URL の #/<資格>/learn/intro） */
 export const PRIMER_ID = "intro";

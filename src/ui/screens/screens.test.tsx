@@ -6,7 +6,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { store } from "../../app/store";
 import { fixture, flatFixture, jaFixture } from "../../core/engine/fixture";
-import type { Exam } from "../../core/exam/types";
+import { type Exam, optionLabel, shufflesOptions } from "../../core/exam/types";
 import { ccarF } from "../../exams/ccar-f/exam";
 import { Domains } from "./Domains";
 import { ExamPicker } from "./ExamPicker";
@@ -81,8 +81,10 @@ describe.each([
     const options = [...root.querySelectorAll<HTMLButtonElement>("button.option")];
     expect(options.length).toBeGreaterThanOrEqual(2);
     expect(exam.questions.some(x => x.options.length === options.length)).toBe(true);
-    // 記号は A から選択肢の数だけ
-    expect(options.map(o => o.querySelector(".letter")?.textContent).join("")).toBe("ABCDE".slice(0, options.length));
+    // 記号は資格の記号（A〜 または ア〜）で、選択肢の数だけ
+    expect(options.map(o => o.querySelector(".letter")?.textContent)).toEqual(
+      options.map((_, i) => optionLabel(exam, i)),
+    );
     click(options[0]!);
     expect(root.querySelectorAll(".why").length).toBe(options.length);
     click(byText("次へ"));
@@ -94,10 +96,12 @@ describe.each([
     click(byText("始める"));
     const active = store.getData().activeMock!;
     expect(active.examId).toBe(exam.id);
-    // 選択肢の並びは、その問題の選択肢の数の並べ替え
+    // 選択肢の並びは、その問題の選択肢の数の並べ替え。混ぜない資格は元の並び（#58）
     for (const id of active.questionIds) {
-      const n = exam.questions.find(q => q.id === id)!.options.length;
-      expect([...active.orders[id]!].sort()).toEqual(Array.from({ length: n }, (_, i) => i));
+      const q = exam.questions.find(x => x.id === id)!;
+      const natural = Array.from({ length: q.options.length }, (_, i) => i);
+      expect([...active.orders[id]!].sort()).toEqual(natural);
+      if (!shufflesOptions(exam, q)) expect(active.orders[id]).toEqual(natural);
     }
     click(root.querySelector<HTMLButtonElement>("button.option")!);
     click(byText("一覧"));
@@ -115,6 +119,11 @@ test("日本語が原文の資格は、問題文を lang=ja で出し、言語�
   expect(stem.getAttribute("lang")).toBe("ja");
   expect(stem.classList.contains("en")).toBe(false);
   expect(root.querySelector(".lang-menu")).toBeNull();
+  // 記号はア〜で、選択肢は混ぜない（#58）
+  const q = jaFixture.questions.find(x => root.querySelector(".stem")!.textContent!.includes(x.stem))!;
+  expect([...root.querySelectorAll(".otext")].map(o => o.textContent)).toEqual(q.options.map(o => o.text));
+  expect(root.querySelector(".letter")!.textContent).toBe("ア");
+  expect(root.textContent).toContain("キー：1〜4で選ぶ");
   // 分野の公式名が日本語名と同じなら、下の行に重ねて出さない
   mount(<Domains exam={jaFixture} now={NOW} />);
   expect(root.textContent!.split("テクノロジ系").length - 1).toBe(1);

@@ -29,6 +29,7 @@ export const meta: ExamMeta = {
   title: "Claude Certified Architect – Professional",
   summary: "日本語の短い説明",
   // lang: "ja",          // 問題文が日本語で書かれた資格（無ければ英語）。日本語の資格は訳（ja.ts）を持たない
+  // options: { labels: "kana", shuffle: false }, // 記号をア〜にし、選択肢を混ぜない（無ければ A〜・混ぜる）
   format: {
     questions: 60, // 本番の問題数（表示用）
     minutes: 120, // 本番の時間（表示用）
@@ -80,6 +81,7 @@ export const ccarP: Exam = {
     { text: "…", why: "…" },
   ],
   answer: 0,                // 正解の位置（1 つだけ）
+  // keepOrder: true,       // 混ぜる資格でも、この問題は混ぜない（並びに意味のある選択肢）
   point: "この問題で覚えること（日本語 1 行）",
 }
 ```

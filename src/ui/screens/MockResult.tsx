@@ -117,7 +117,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                     <QuestionCard
                       exam={exam}
                       q={q}
-                      order={orderFor(q, r.orders?.[id])}
+                      order={orderFor(exam, q, r.orders?.[id])}
                       chosen={chosen}
                       reveal={true}
                       scenarioOpen={false}

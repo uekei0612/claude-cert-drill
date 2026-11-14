@@ -5,7 +5,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { questionsOfTask, ratio, tally } from "../../core/engine/progress";
 import type { Exam, Lesson, LessonBlock } from "../../core/exam/types";
-import { PRIMER_ID, domainOfTask, findTask, lessonOrder, optionLetter } from "../../core/exam/types";
+import { PRIMER_ID, domainOfTask, findTask, lessonOrder, optionLabel, optionLabels } from "../../core/exam/types";
 import { readChapters, setRead } from "../../core/store/actions";
 import { itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
@@ -35,7 +35,7 @@ export function inline(text: string): ComponentChildren[] {
     );
 }
 
-function Block({ b }: { b: LessonBlock }) {
+function Block({ exam, b }: { exam: Exam; b: LessonBlock }) {
   if (typeof b === "string") return <p>{inline(b)}</p>;
   if ("list" in b)
     return (
@@ -89,7 +89,7 @@ function Block({ b }: { b: LessonBlock }) {
       <div class="quiz">
         <strong>例題</strong>
         <p>{inline(b.quiz)}</p>
-        <ol>
+        <ol class={optionLabels(exam)}>
           {b.choices.map(c => (
             <li key={c}>{inline(c)}</li>
           ))}
@@ -97,7 +97,7 @@ function Block({ b }: { b: LessonBlock }) {
         <details>
           <summary>答えと考え方を見る</summary>
           <p>
-            <strong>答え：{optionLetter(b.answer)}</strong> {inline(b.why)}
+            <strong>答え：{optionLabel(exam, b.answer)}</strong> {inline(b.why)}
           </p>
         </details>
       </div>
@@ -122,7 +122,7 @@ function Body({ exam, chapter, lesson }: { exam: Exam; chapter: string; lesson: 
             <CopyButton label="コピー" done="コピー済み" text={() => sectionText(exam, chapter, s)} />
           </div>
           {s.body.map((b, k) => (
-            <Block key={k} b={b} />
+            <Block key={k} exam={exam} b={b} />
           ))}
         </section>
       ))}

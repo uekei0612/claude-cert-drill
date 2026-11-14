@@ -2,7 +2,7 @@
    原文に訳があれば「（訳）」として添える（Claude には原文、自分には訳）。
    選択肢の記号は画面に出ている並びに合わせる（「C を選んだ」が画面と食い違わないように） */
 import type { Exam, Lesson, LessonBlock, LessonSection, Question } from "../core/exam/types";
-import { domainOf, findTask, optionLetter } from "../core/exam/types";
+import { domainOf, findTask, optionLabel } from "../core/exam/types";
 
 /** 資格の名前（「CCAR-F（Claude Certified Architect – Foundations）」） */
 const examName = (exam: Exam) => `${exam.code}（${exam.title}）`;
@@ -33,7 +33,7 @@ function questionHead({ exam, q, order }: QuestionCopy, ask: string): string[] {
     );
   out.push(`■ 問題\n${withJa(q.stem, tq?.stem)}`);
   out.push(
-    `■ 選択肢\n${order.map((orig, i) => `${optionLetter(i)}. ${withJa(q.options[orig]!.text, tq?.options[orig], "   ")}`).join("\n")}`,
+    `■ 選択肢\n${order.map((orig, i) => `${optionLabel(exam, i)}. ${withJa(q.options[orig]!.text, tq?.options[orig], "   ")}`).join("\n")}`,
   );
   return out;
 }
@@ -50,8 +50,8 @@ export function hintText(c: Omit<QuestionCopy, "chosen">): string {
 
 /** 答えを見たあとの問題 1 問 */
 export function questionText(c: QuestionCopy): string {
-  const { q, order, chosen } = c;
-  const letter = (orig: number) => optionLetter(order.indexOf(orig));
+  const { exam, q, order, chosen } = c;
+  const letter = (orig: number) => optionLabel(exam, order.indexOf(orig));
   const out = questionHead(c, "について教えてください。");
   const answer = `■ 正解：${letter(q.answer)}`;
   out.push(
@@ -71,7 +71,7 @@ export function questionText(c: QuestionCopy): string {
   return out.join("\n\n");
 }
 
-function blockText(b: LessonBlock): string {
+function blockText(exam: Exam, b: LessonBlock): string {
   if (typeof b === "string") return b;
   if ("list" in b) return b.list.map(x => `- ${x}`).join("\n");
   if ("steps" in b) return b.steps.map((x, i) => `${i + 1}. ${x}`).join("\n");
@@ -81,26 +81,27 @@ function blockText(b: LessonBlock): string {
   if ("quiz" in b)
     return [
       `［例題］${b.quiz}`,
-      b.choices.map((c, i) => `${optionLetter(i)}. ${c}`).join("\n"),
-      `答え：${optionLetter(b.answer)}　${b.why}`,
+      b.choices.map((c, i) => `${optionLabel(exam, i)}. ${c}`).join("\n"),
+      `答え：${optionLabel(exam, b.answer)}　${b.why}`,
     ].join("\n");
   return `\`\`\`${b.lang ?? ""}\n${b.code}\n\`\`\``;
 }
 
-const sectionBody = (s: LessonSection) => `## ${s.h}\n\n${s.body.map(blockText).join("\n\n")}`;
+const sectionBody = (exam: Exam, s: LessonSection) =>
+  `## ${s.h}\n\n${s.body.map(b => blockText(exam, b)).join("\n\n")}`;
 
 const lessonIntro = (exam: Exam, chapter: string) =>
   `${examName(exam)}の試験勉強をしています。次は教科書（非公式の自作教材）の「${chapter}」の章`;
 
 /** 教科書の 1 節。chapter は章の名前（「1.1 エージェントループの設計と実装」） */
 export function sectionText(exam: Exam, chapter: string, s: LessonSection): string {
-  return `${lessonIntro(exam, chapter)}の一部です。この内容について教えてください。\n\n${sectionBody(s)}`;
+  return `${lessonIntro(exam, chapter)}の一部です。この内容について教えてください。\n\n${sectionBody(exam, s)}`;
 }
 
 /** 教科書の 1 章（リード・各節・まとめ・公式ドキュメント） */
 export function lessonText(exam: Exam, chapter: string, lesson: Lesson): string {
   const out = [`${lessonIntro(exam, chapter)}です。この内容について教えてください。`, `# ${chapter}`, lesson.lead];
-  for (const s of lesson.sections) out.push(sectionBody(s));
+  for (const s of lesson.sections) out.push(sectionBody(exam, s));
   if (lesson.summary.length) out.push(`## この章のまとめ\n\n${lesson.summary.map(x => `- ${x}`).join("\n")}`);
   if (lesson.refs.length)
     out.push(`## 公式ドキュメント\n\n${lesson.refs.map(r => `- ${r.label}: ${r.url}`).join("\n")}`);
