@@ -4,7 +4,7 @@ import type { ComponentChildren } from "preact";
 import type { Stem, StemBlock } from "../core/exam/types";
 
 /** 空欄 ［a］ を split したとき、奇数番目に空欄が来るようにした形（BLANK と同じ字の範囲） */
-const BLANK_SPLIT = /(［[a-zα-ω]{0,2}］)/;
+const BLANK_SPLIT = /(［(?:[a-zα-ω]{1,2}[0-9]?)?］)/;
 
 /** 文の中の空欄 ［a］ を枠付きの記号にする */
 function blanks(text: string): ComponentChildren[] {
