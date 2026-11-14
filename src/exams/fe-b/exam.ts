@@ -43,6 +43,10 @@ export const feB: Exam = {
       note: "問題と解答例。https://www.ipa.go.jp/shiken/mondai-kaiotu/sg_fe/koukai/index.html 。各年度とも本番 20 問のうち 6 問が公開されている",
     },
     {
+      label: "IPA 基本情報技術者試験 科目B サンプル問題（20 問）セット",
+      note: "2022 年 12 月公開の問題と解答例（#66）。https://www.ipa.go.jp/shiken/syllabus/henkou/2022/20221226.html",
+    },
+    {
       label: "IPA よくある質問（過去問題の使用）",
       note: "公表している過去問題は許諾・使用料なしで使える。年度・試験区分・問番号などの出典を明記し、改変したときはその旨も明記する",
     },
