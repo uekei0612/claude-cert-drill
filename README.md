@@ -1,13 +1,18 @@
 # claude-cert-drill
 
-Anthropic の Claude の資格の試験勉強用アプリ。iPhone のホーム画面アプリ（PWA）として GitHub Pages から配る。
-今載せているのは **Claude Certified Architect – Foundations（CCAR-F）**。
+資格の試験勉強用アプリ（画面での名前は cert-drill）。iPhone のホーム画面アプリ（PWA）として GitHub Pages から配る。
+今載せているのは次の資格。
+
+- **Claude Certified Architect – Foundations（CCAR-F）**：問題・教科書はすべて自作。Anthropic の試験ガイドの本文やサンプル問題は載せていない
+- **基本情報技術者試験 科目B（FE-B）**：IPA の公開問題を、出典（年度・問番号、手を加えたものは「一部改変」）を明記して載せる。解説と要点は自作
+
+最初は Claude の資格だけのアプリとして作ったので、リポ名・URL・保存キーは claude-cert-drill のまま（変えると記録やホーム画面のアプリが使えなくなる）。
 
 - 本番：https://uekei0612.github.io/claude-cert-drill/
 - develop：https://uekei0612.github.io/claude-cert-drill/dev/
 
-設計と命名規則は [docs/design.md](docs/design.md)。問題はすべて自作で、Anthropic の試験ガイドの本文やサンプル問題は載せていない。
-非公式の教材で、Anthropic とは関係がない。
+設計と命名規則は [docs/design.md](docs/design.md)、資格の足し方は [docs/adding-an-exam.md](docs/adding-an-exam.md)。
+非公式の教材で、Anthropic・IPA とは関係がない。
 
 ## 開発
 

@@ -4,15 +4,15 @@ import type { ComponentChildren } from "preact";
 import type { Stem, StemBlock } from "../core/exam/types";
 
 /** 空欄 ［a］ を split したとき、奇数番目に空欄が来るようにした形（BLANK と同じ字の範囲） */
-const BLANK_SPLIT = /(［[a-zα-ω]{1,2}］)/;
+const BLANK_SPLIT = /(［(?:[a-zα-ω]{1,2}[0-9]?)?］)/;
 
 /** 文の中の空欄 ［a］ を枠付きの記号にする */
 function blanks(text: string): ComponentChildren[] {
   return text.split(BLANK_SPLIT).map((part, i) =>
     i % 2 ? (
-      <span key={i} class="blank">
+      <span key={i} class={part.length > 2 ? "blank" : "blank anon"}>
         <span class="sr-only">空欄</span>
-        {part.slice(1, -1)}
+        {part.length > 2 ? part.slice(1, -1) : "\u00a0"}
       </span>
     ) : (
       part

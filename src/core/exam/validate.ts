@@ -190,9 +190,10 @@ export function validateExam(exam: Exam): string[] {
   if (missingTasks.length) bad(exam.id, `主たる細目の問題が無い細目：${missingTasks.join(" ")}`);
   const missingScenarios = exam.scenarios.filter(s => !exam.questions.some(q => q.scenario === s.id)).map(s => s.id);
   if (missingScenarios.length) bad(exam.id, `問題の無いシナリオ：${missingScenarios.join(" ")}`);
+  // 偏りの検査は自作の問題だけ（出典のある問題は元の選択肢のまま載せるので、長さを揃えられない。#64）
   checkLongest(
     "問題",
-    exam.questions.map(q => [q.id, q.options.map(o => optionText(q, o)), q.answer]),
+    exam.questions.filter(q => !q.source).map(q => [q.id, q.options.map(o => optionText(q, o)), q.answer]),
     bad,
   );
 

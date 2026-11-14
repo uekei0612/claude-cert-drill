@@ -1058,6 +1058,8 @@ select {
 }
 .otext {
   display: block;
+  /* 2 行に分かれた選択肢（プログラムの 2 文など。#64）は改行のまま出す */
+  white-space: pre-line;
 }
 /* 「訳はタップ」の訳を開くボタン。問題文のすぐ下、左に寄せて小さく */
 .qcard .peek {
@@ -1109,6 +1111,9 @@ code {
   line-height: 1.25;
   text-align: center;
   font-weight: 700;
+}
+.blank.anon {
+  min-width: 4em;
 }
 .qsource {
   margin: 6px 0 0;
