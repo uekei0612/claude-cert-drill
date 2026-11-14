@@ -187,9 +187,10 @@ export type LessonBlock =
   | { readonly quiz: string; readonly choices: readonly string[]; readonly answer: number; readonly why: string }
   | { readonly code: string; readonly lang?: string };
 
-/** 1 問の選択肢の数（#54）。PC のキー操作で 1〜5／A〜E を選択肢に使い、F は模擬試験の旗なので 5 までにする */
+/** 1 問の選択肢の数（#54・#59）。基本情報の科目B の解答群（ア〜コ）まで。
+    PC のキーは数字の 1〜9 と 0（10 個目）で選ぶ。英字の A〜E は 5 個目まで（F は模擬試験の旗） */
 export const MIN_OPTIONS = 2;
-export const MAX_OPTIONS = 5;
+export const MAX_OPTIONS = 10;
 
 const LABELS: Record<OptionLabels, string> = { latin: "ABCDEFGHIJ", kana: "アイウエオカキクケコ" };
 

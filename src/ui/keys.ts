@@ -3,18 +3,20 @@
 import { useEffect } from "preact/hooks";
 import { type ExamMeta, optionLabel, optionLabels } from "../core/exam/types";
 
-/** 押したキーが何番目の選択肢か（1〜5、記号が A〜 の資格は A〜E も。F は模擬試験の旗）。
-    選択肢でなければ -1。問題の選択肢の数は呼ぶ側で見る */
+/** 押したキーが何番目の選択肢か。数字の 1〜9 と 0（10 個目。#59）、記号が A〜 の資格は A〜E も
+    （F は模擬試験の旗なので、英字で選べるのは 5 個目まで）。選択肢でなければ -1。問題の選択肢の数は呼ぶ側で見る */
 export function optionIndex(key: string, exam: Pick<ExamMeta, "options">): number {
   if (key.length !== 1) return -1;
-  const i = "12345".indexOf(key);
+  const i = "1234567890".indexOf(key);
   if (i >= 0) return i;
   return optionLabels(exam) === "latin" ? "abcde".indexOf(key.toLowerCase()) : -1;
 }
 
-/** キー操作の説明の「1〜4（A〜D）」。記号がア〜の資格は英字で選べないので「1〜4」 */
-export const optionKeys = (exam: Pick<ExamMeta, "options">, n: number): string =>
-  optionLabels(exam) === "latin" ? `1〜${n}（A〜${optionLabel(exam, n - 1)}）` : `1〜${n}`;
+/** キー操作の説明。「1〜4（A〜D）」。6 個以上と、記号がア〜の資格は数字だけ（「1〜8」「1〜9・0」） */
+export function optionKeys(exam: Pick<ExamMeta, "options">, n: number): string {
+  const digits = n >= 10 ? "1〜9・0" : `1〜${n}`;
+  return optionLabels(exam) === "latin" && n <= 5 ? `${digits}（A〜${optionLabel(exam, n - 1)}）` : digits;
+}
 
 /** このキー入力を、画面のキー操作として扱わないか */
 export function ignoreKey(e: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey" | "target">): boolean {

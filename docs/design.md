@@ -91,14 +91,15 @@ interface Question {
   scenario?: string;       // "s1"。シナリオの無い資格では無し
   tasks: string[];         // ["1.1", "5.2"]。先頭が主たる細目（集計はこれで行う）
   stem: string;            // 原文の言語（資格の lang。既定は英語）
-  options: Option[];        // 2〜5 個（MIN_OPTIONS〜MAX_OPTIONS。#54）。CCAR-F はすべて 4 択
+  options: Option[];        // 2〜10 個（MIN_OPTIONS〜MAX_OPTIONS。#54・#59）。CCAR-F はすべて 4 択
   answer: number;          // 正解の位置（0 始まり）。正解は 1 つだけ（複数選択はまだ無い）
   point: string;           // 日本語。この問題で覚えること 1 行
 }
 interface Option { text: string; why: string }   // text は原文の言語、why は日本語
 ```
 
-表示のときに選択肢の順番を混ぜる（位置で覚えないように）。記号は A〜E、PC のキーは 1〜5／A〜E（F は模擬試験の旗なので、選択肢は 5 つまで）。
+表示のときに選択肢の順番を混ぜる（位置で覚えないように）。記号は A〜J、PC のキーは数字の 1〜9 と 0（10 個目）。
+英字の A〜E でも 5 個目まで選べる（F は模擬試験の旗なので、6 個目からは数字だけ。#59）。
 資格ごとに記号をア〜にし、混ぜないこともできる（`options`。#58）。公式の問題をそのまま載せる資格は、混ぜないと公式の記号と答えが合う。
 問題ごとに `keepOrder` で混ぜないこともできる。記号がア〜の資格は、PC のキーは数字だけで選ぶ。
 

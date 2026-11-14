@@ -74,7 +74,7 @@ export const ccarP: Exam = {
   id: "d1-01",              // シナリオがあれば s1-01
   tasks: ["1.1"],           // 先頭が主たる細目
   stem: "問題文（原文の言語）",
-  options: [                // 2〜5 個。text は原文の言語、why は日本語
+  options: [                // 2〜10 個。text は原文の言語、why は日本語
     { text: "…", why: "正解。…" },
     { text: "…", why: "…" },
     { text: "…", why: "…" },
@@ -110,12 +110,13 @@ docker compose run --rm dev npm run check
 - 「正解が一番長い選択肢」に偏っていないかも見る（問題が 10 問を超えてから）。書いたあとに長さを測り、誤答に理由を足して揃える
 - その資格だけの決まり（例：「はじめに」に必ず説明する言葉）は `src/exams/<資格ID>/<資格ID>.test.ts` に書く
 
-画面が形の違う資格でも動くことは `src/ui/screens/screens.test.tsx` が、シナリオ無し・5 択と 3 択・教科書と訳なしのテスト用の資格（`src/core/engine/fixture.ts` の `flatFixture`）で確かめている。
+画面が形の違う資格でも動くことは `src/ui/screens/screens.test.tsx` が、シナリオ無し・5 択と 3 択・教科書と訳なしのテスト用の資格（`src/core/engine/fixture.ts` の `flatFixture`）と、
+日本語が原文・記号がア〜・混ぜない・8 択と 10 択の入ったテスト用の資格（`jaFixture`）で確かめている。
 
 ## できないこと（足すなら基盤を直す）
 
 - 複数選択の問題（正解は 1 つだけ）
-- 6 択以上（PC のキーの F が模擬試験の旗とぶつかる）
+- 11 択以上（PC のキーが数字の 1〜9 と 0 で尽きる）
 - 画面と解説は日本語だけ。問題文の原文は英語か日本語（`lang`）で、訳は英語の資格の日本語訳（`ja`）だけ
 
 ## 別の資格群のアプリにするとき

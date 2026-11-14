@@ -6,6 +6,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { store } from "../../app/store";
 import { fixture, flatFixture, jaFixture } from "../../core/engine/fixture";
+import { idsOnly } from "../../core/engine/practice";
 import { type Exam, optionLabel, shufflesOptions } from "../../core/exam/types";
 import { ccarF } from "../../exams/ccar-f/exam";
 import { Domains } from "./Domains";
@@ -127,6 +128,18 @@ test("日本語が原文の資格は、問題文を lang=ja で出し、言語�
   // 分野の公式名が日本語名と同じなら、下の行に重ねて出さない
   mount(<Domains exam={jaFixture} now={NOW} />);
   expect(root.textContent!.split("テクノロジ系").length - 1).toBe(1);
+});
+
+test("10 択の問題は ア〜コ を出し、0 キーで 10 個目を選べる（#59）", () => {
+  const q = jaFixture.questions.find(x => x.options.length === 10)!;
+  mount(<Practice exam={jaFixture} only={idsOnly([q.id])} now={NOW} />);
+  expect([...root.querySelectorAll(".letter")].map(l => l.textContent).join("")).toBe("アイウエオカキクケコ");
+  expect(root.textContent).toContain("キー：1〜9・0で選ぶ");
+  act(() => {
+    dispatchEvent(new KeyboardEvent("keydown", { key: "0" }));
+  });
+  const chosen = root.querySelector<HTMLElement>("button.option.ok, button.option.ng")!;
+  expect(chosen.dataset.orig).toBe("9");
 });
 
 test("英語が原文の資格は、問題文を lang=en で出す", () => {
