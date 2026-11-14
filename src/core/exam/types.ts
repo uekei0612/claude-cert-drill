@@ -40,7 +40,8 @@ export interface Translation {
 
 export interface QuestionTranslation {
   readonly stem: string;
-  readonly options: readonly [string, string, string, string];
+  /** 原文と同じ並び・同じ数 */
+  readonly options: readonly string[];
 }
 
 export interface ExamFormat {
@@ -107,8 +108,10 @@ export interface Question {
   readonly tasks: readonly [string, ...string[]];
   /** 英語 */
   readonly stem: string;
-  readonly options: readonly [Option, Option, Option, Option];
-  readonly answer: 0 | 1 | 2 | 3;
+  /** MIN_OPTIONS〜MAX_OPTIONS 個。資格の中でそろっていなくてもよい（#54） */
+  readonly options: readonly Option[];
+  /** 正解の位置（0 始まり）。正解は 1 つだけ */
+  readonly answer: number;
   /** この問題で覚えること 1 行（日本語） */
   readonly point: string;
 }
@@ -155,6 +158,13 @@ export type LessonBlock =
   /** 例題。選択肢は 3〜4 個、answer は正解の位置（0 始まり）、why は答えの理由と他の選択肢が誤りの理由 */
   | { readonly quiz: string; readonly choices: readonly string[]; readonly answer: number; readonly why: string }
   | { readonly code: string; readonly lang?: string };
+
+/** 1 問の選択肢の数（#54）。PC のキー操作で 1〜5／A〜E を選択肢に使い、F は模擬試験の旗なので 5 までにする */
+export const MIN_OPTIONS = 2;
+export const MAX_OPTIONS = 5;
+
+/** 選択肢の記号（0 → "A"） */
+export const optionLetter = (i: number): string => "ABCDE"[i] ?? "?";
 
 /** 教科書の「はじめに」の ID（URL の #/<資格>/learn/intro） */
 export const PRIMER_ID = "intro";

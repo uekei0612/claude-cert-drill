@@ -67,14 +67,15 @@ describe("parseData", () => {
         scenarioIds: ["s1"],
         startedAt: NOW,
         limitMs: 1000,
-        answers: { "s1-01": 2, "s1-02": 9 },
+        answers: { "s1-01": 2, "s1-02": 9, "s1-03": 4 },
         flags: [],
-        orders: { "s1-01": [3, 2, 1, 0], "s1-02": [0, 0, 1, 2] },
+        orders: { "s1-01": [3, 2, 1, 0], "s1-02": [0, 0, 1, 2], "s1-03": [4, 0, 3, 1, 2], "s1-04": [0, 1, 2, 3, 4, 5] },
         cursor: 5,
       },
     });
-    expect(d.activeMock?.answers).toEqual({ "s1-01": 2 });
-    expect(Object.keys(d.activeMock!.orders)).toEqual(["s1-01"]);
+    // 5 択まで読む（#54）。6 個以上の並びと、範囲の外の答えは捨てる
+    expect(d.activeMock?.answers).toEqual({ "s1-01": 2, "s1-03": 4 });
+    expect(Object.keys(d.activeMock!.orders)).toEqual(["s1-01", "s1-03"]);
     expect(d.activeMock?.cursor).toBe(1);
   });
   test("途中の模擬試験：使った時間を持たない記録（#42 より前）は、時間を使っていない扱い", () => {

@@ -2,9 +2,7 @@
    問題文は英語が原文なので、訳があれば「（訳）」として添える（Claude には原文、自分には訳）。
    選択肢の記号は画面に出ている並びに合わせる（「C を選んだ」が画面と食い違わないように） */
 import type { Exam, Lesson, LessonBlock, LessonSection, Question } from "../core/exam/types";
-import { domainOf, findTask } from "../core/exam/types";
-
-const LETTERS = ["A", "B", "C", "D", "E"];
+import { domainOf, findTask, optionLetter } from "../core/exam/types";
 
 /** 資格の名前（「CCAR-F（Claude Certified Architect – Foundations）」） */
 const examName = (exam: Exam) => `${exam.code}（${exam.title}）`;
@@ -35,7 +33,7 @@ function questionHead({ exam, q, order }: QuestionCopy, ask: string): string[] {
     );
   out.push(`■ 問題\n${withJa(q.stem, tq?.stem)}`);
   out.push(
-    `■ 選択肢\n${order.map((orig, i) => `${LETTERS[i]}. ${withJa(q.options[orig]!.text, tq?.options[orig], "   ")}`).join("\n")}`,
+    `■ 選択肢\n${order.map((orig, i) => `${optionLetter(i)}. ${withJa(q.options[orig]!.text, tq?.options[orig], "   ")}`).join("\n")}`,
   );
   return out;
 }
@@ -53,7 +51,7 @@ export function hintText(c: Omit<QuestionCopy, "chosen">): string {
 /** 答えを見たあとの問題 1 問 */
 export function questionText(c: QuestionCopy): string {
   const { q, order, chosen } = c;
-  const letter = (orig: number) => LETTERS[order.indexOf(orig)] ?? "?";
+  const letter = (orig: number) => optionLetter(order.indexOf(orig));
   const out = questionHead(c, "について教えてください。");
   const answer = `■ 正解：${letter(q.answer)}`;
   out.push(
@@ -83,8 +81,8 @@ function blockText(b: LessonBlock): string {
   if ("quiz" in b)
     return [
       `［例題］${b.quiz}`,
-      b.choices.map((c, i) => `${LETTERS[i]}. ${c}`).join("\n"),
-      `答え：${LETTERS[b.answer]}　${b.why}`,
+      b.choices.map((c, i) => `${optionLetter(i)}. ${c}`).join("\n"),
+      `答え：${optionLetter(b.answer)}　${b.why}`,
     ].join("\n");
   return `\`\`\`${b.lang ?? ""}\n${b.code}\n\`\`\``;
 }

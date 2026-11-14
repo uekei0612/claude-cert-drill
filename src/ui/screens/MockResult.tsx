@@ -1,6 +1,6 @@
 /* 模擬試験の結果と見直し。分野ごとの正答率、配点で重み付けした正答率と目安線、1 問ずつの見直し */
 import { useState } from "preact/hooks";
-import { idsOnly } from "../../core/engine/practice";
+import { idsOnly, orderFor } from "../../core/engine/practice";
 import type { Exam } from "../../core/exam/types";
 import { useData } from "../../app/store";
 import { Meter, pct } from "../Meter";
@@ -117,7 +117,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                     <QuestionCard
                       exam={exam}
                       q={q}
-                      order={r.orders?.[id] ?? [0, 1, 2, 3]}
+                      order={orderFor(q, r.orders?.[id])}
                       chosen={chosen}
                       reveal={true}
                       scenarioOpen={false}

@@ -5,7 +5,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { questionsOfTask, ratio, tally } from "../../core/engine/progress";
 import type { Exam, Lesson, LessonBlock } from "../../core/exam/types";
-import { PRIMER_ID, domainOfTask, findTask, lessonOrder } from "../../core/exam/types";
+import { PRIMER_ID, domainOfTask, findTask, lessonOrder, optionLetter } from "../../core/exam/types";
 import { readChapters, setRead } from "../../core/store/actions";
 import { itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
@@ -33,8 +33,6 @@ export function inline(text: string): ComponentChildren[] {
       part.length > 2 && part.startsWith("`") && part.endsWith("`") ? <code key={i}>{part.slice(1, -1)}</code> : part,
     );
 }
-
-const LETTERS = ["A", "B", "C", "D"];
 
 function Block({ b }: { b: LessonBlock }) {
   if (typeof b === "string") return <p>{inline(b)}</p>;
@@ -98,7 +96,7 @@ function Block({ b }: { b: LessonBlock }) {
         <details>
           <summary>答えと考え方を見る</summary>
           <p>
-            <strong>答え：{LETTERS[b.answer]}</strong> {inline(b.why)}
+            <strong>答え：{optionLetter(b.answer)}</strong> {inline(b.why)}
           </p>
         </details>
       </div>

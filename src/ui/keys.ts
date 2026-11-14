@@ -1,14 +1,18 @@
 /* PC のキー操作（#40）。入力欄にフォーカスがあるとき・修飾キー付きのときは反応しない。
    ボタンやリンクにフォーカスがあるときの Enter は、ブラウザの「押す」に任せる（二重に進まないように） */
 import { useEffect } from "preact/hooks";
+import { optionLetter } from "../core/exam/types";
 
-/** 押したキーが何番目の選択肢か（1〜4 または A〜D）。選択肢でなければ -1 */
+/** 押したキーが何番目の選択肢か（1〜5 または A〜E。F は模擬試験の旗）。選択肢でなければ -1。問題の選択肢の数は呼ぶ側で見る */
 export function optionIndex(key: string): number {
-  const i = "1234".indexOf(key);
-  if (i >= 0 && key.length === 1) return i;
-  const j = "abcd".indexOf(key.toLowerCase());
-  return j >= 0 && key.length === 1 ? j : -1;
+  if (key.length !== 1) return -1;
+  const i = "12345".indexOf(key);
+  if (i >= 0) return i;
+  return "abcde".indexOf(key.toLowerCase());
 }
+
+/** キー操作の説明の「1〜4（A〜D）」 */
+export const optionKeys = (n: number): string => `1〜${n}（A〜${optionLetter(n - 1)}）`;
 
 /** このキー入力を、画面のキー操作として扱わないか */
 export function ignoreKey(e: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey" | "target">): boolean {

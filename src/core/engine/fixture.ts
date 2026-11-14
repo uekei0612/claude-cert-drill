@@ -9,7 +9,7 @@ const q = (id: string, scenario: string, task: string): Question => ({
   options: [0, 1, 2, 3].map(i => ({
     text: `option ${i}`,
     why: `解説 ${i} の理由をここに書く`,
-  })) as unknown as Question["options"],
+  })),
   answer: 0,
   point: "要点",
 });

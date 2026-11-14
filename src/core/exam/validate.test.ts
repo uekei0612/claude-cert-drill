@@ -10,7 +10,7 @@ const base: Exam = {
   questions: fixture.questions.map(q => ({
     ...q,
     // 正解（0）を一番短くする
-    options: q.options.map((o, i) => ({ ...o, text: i === 0 ? "a" : `option ${i}` })) as unknown as Question["options"],
+    options: q.options.map((o, i) => ({ ...o, text: i === 0 ? "a" : `option ${i}` })),
   })),
 };
 const has = (e: Exam, re: RegExp) => validateExam(e).some(m => re.test(m));
@@ -34,7 +34,7 @@ describe("資格の形の検査（#53）", () => {
     ).toBe(true);
     expect(
       has(
-        withQ(q => ({ ...q, answer: 7 as Question["answer"] })),
+        withQ(q => ({ ...q, answer: 7 })),
         /正解の位置/,
       ),
     ).toBe(true);
@@ -46,15 +46,42 @@ describe("資格の形の検査（#53）", () => {
     ).toBe(true);
     expect(has({ ...base, questions: base.questions.filter(q => q.tasks[0] !== "1.2") }, /1\.2/)).toBe(true);
   });
+  test("選択肢は 2〜5 個。正解は選択肢の中。訳の選択肢は原文と同じ数（#54）", () => {
+    const five = withQ(q => ({
+      ...q,
+      options: [...q.options, { text: "option 4", why: "解説 4 の理由をここに書く" }],
+    }));
+    expect(validateExam(five)).toEqual([]);
+    expect(
+      has(
+        withQ(q => ({ ...q, options: q.options.slice(0, 1) })),
+        /2〜5/,
+      ),
+    ).toBe(true);
+    expect(
+      has(
+        withQ(q => ({ ...q, answer: 4 })),
+        /正解の位置/,
+      ),
+    ).toBe(true);
+    const tr = {
+      scenarios: Object.fromEntries(base.scenarios.map(s => [s.id, "シナリオの訳。二十字を超える長さにしておく。"])),
+      questions: Object.fromEntries(
+        base.questions.map(q => [
+          q.id,
+          { stem: "問題文の訳。二十字を超える長さにしておくための文。", options: ["あ", "い", "う"] },
+        ]),
+      ),
+    };
+    expect(has({ ...base, translations: { ja: tr } }, /訳の数が原文と違う/)).toBe(true);
+  });
   test("要点の無い細目", () => {
     expect(has({ ...base, notes: {} }, /要点/)).toBe(true);
   });
   test("正解が一番長い選択肢に偏ると落とす（数が少ないうちは見ない）", () => {
     const long = withQ(q => ({
       ...q,
-      options: q.options.map((o, i) =>
-        i === q.answer ? { ...o, text: "the longest one" } : o,
-      ) as unknown as Question["options"],
+      options: q.options.map((o, i) => (i === q.answer ? { ...o, text: "the longest one" } : o)),
     }));
     expect(has(long, /一番長い/)).toBe(true);
     expect(has({ ...long, questions: long.questions.slice(0, 9) }, /一番長い/)).toBe(false);
