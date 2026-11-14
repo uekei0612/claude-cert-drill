@@ -1,4 +1,5 @@
 /* 資格を選ぶ画面（#/）。資格が 1 つでも出す */
+import { APP } from "../../app/config";
 import { exams } from "../../exams";
 import { href } from "../route";
 
@@ -6,8 +7,8 @@ export function ExamPicker() {
   return (
     <main class="page">
       <header class="stack">
-        <h1>claude-cert-drill</h1>
-        <p class="muted">Claude の資格の試験勉強。問題はすべて自作の非公式教材です。</p>
+        <h1>{APP.name}</h1>
+        <p class="muted">{APP.tagline}</p>
       </header>
       {exams.map(e => (
         <a key={e.id} class="card" href={href({ name: "home", examId: e.id })}>

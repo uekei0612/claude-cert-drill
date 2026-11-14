@@ -1,5 +1,6 @@
 /* 使い方と用語（#50）。おすすめの進め方と、画面に出るアプリ独自の用語をまとめる。
    用語の文は「?」と同じ glossary から読む */
+import { APP } from "../../app/config";
 import { findExam } from "../../exams";
 import { useData } from "../../app/store";
 import { STEPS, TERMS } from "../glossary";
@@ -36,7 +37,7 @@ export function Help() {
           ))}
         </dl>
       </section>
-      <p class="muted small">問題と教科書はすべて自作の非公式教材です。Anthropic とは関係がありません。</p>
+      <p class="muted small">{APP.disclaimer}</p>
     </main>
   );
 }

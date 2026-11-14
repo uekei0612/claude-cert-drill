@@ -1,5 +1,6 @@
 /* 設定と記録。ホーム画面版は Safari と保存領域が別なので、書き出し／読み込みで移す */
 import { useState } from "preact/hooks";
+import { APP } from "../../app/config";
 import { APP_ENV, APP_VERSION } from "../../app/env";
 import { exams, findExam } from "../../exams";
 import { resetAll, resetExam, setExamDate, setSettings } from "../../core/store/actions";
@@ -31,7 +32,7 @@ export function Settings() {
     const blob = new Blob([exportJson()], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `claude-cert-drill-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `${APP.id}-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   };
@@ -239,7 +240,7 @@ export function Settings() {
       )}
 
       <p class="muted small">
-        claude-cert-drill {APP_VERSION}（{APP_ENV}）・非公式の教材で、Anthropic とは関係がありません。
+        {APP.name} {APP_VERSION}（{APP_ENV}）・{APP.disclaimer}
       </p>
     </main>
   );

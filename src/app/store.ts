@@ -3,11 +3,12 @@
 import { useEffect, useState } from "preact/hooks";
 import type { Data } from "../core/store/schema";
 import { createStore } from "../core/store/store";
+import { APP } from "./config";
 import { APP_ENV } from "./env";
 
-export const STORAGE_KEY = APP_ENV === "prod" ? "claude-cert-drill" : "claude-cert-drill-dev";
+export const STORAGE_KEY = APP_ENV === "prod" ? APP.id : `${APP.id}-dev`;
 
-export const store = createStore({ key: STORAGE_KEY, app: "claude-cert-drill", storage: () => localStorage });
+export const store = createStore({ key: STORAGE_KEY, app: APP.id, storage: () => localStorage });
 
 export const BACKUP_KEY = store.backupKey;
 export const { getData, setData, update, getBackup, replaceData, restoreBackup, exportJson, importJson } = store;
