@@ -1,7 +1,16 @@
 /* 資格の形の検査（#53）。問題と教科書は手で書くので、形の誤りをここで見つける。
    どの資格にも同じ検査をかける（src/exams/exams.test.ts）。資格だけの決まりは、その資格のフォルダのテストに書く。
    返すのは「どこ: 何が」の並び。空なら形は正しい */
-import { MAX_OPTIONS, MIN_OPTIONS, PRIMER_ID, type Exam, type Lesson, type LessonBlock, allTasks } from "./types";
+import {
+  MAX_OPTIONS,
+  MIN_OPTIONS,
+  PRIMER_ID,
+  type Exam,
+  type Lesson,
+  type LessonBlock,
+  allTasks,
+  sourceLang,
+} from "./types";
 
 /** 偏りの検査（正解が一番長い選択肢・正解の位置）は、この数から見る（少ないうちは偏って当たり前） */
 export const MIN_SAMPLE = 10;
@@ -161,7 +170,8 @@ export function validateExam(exam: Exam): string[] {
     bad,
   );
 
-  // 訳
+  // 訳（原文が日本語の資格は訳を持たない。#57）
+  if (sourceLang(exam) === "ja" && exam.translations?.ja) bad("訳（ja）", "原文が日本語の資格に日本語の訳がある");
   for (const [lang, tr] of Object.entries(exam.translations ?? {})) {
     if (!tr) continue;
     const where = `訳（${lang}）`;

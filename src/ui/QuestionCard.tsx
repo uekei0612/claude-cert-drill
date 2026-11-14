@@ -1,19 +1,21 @@
 /* 1 問の表示。シナリオ（畳める）→ 問題文 → 選択肢。
    reveal のときは、選択肢ごとに正誤と解説を出す（誤答の解説がそのまま弱点の地図になる）。
-   lang で問題文の言語を選ぶ（訳が無い問題は英語で出す）。peek は英語だけを出し、「訳を見る」を押すか
-   答えたら併記に変わる（英語を先に読ませるため。訳を開くのはその問題だけで、次の問題ではまた閉じる）。
+   lang で問題文の言語を選ぶ（訳が無い問題は原文で出す）。peek は原文だけを出し、「訳を見る」を押すか
+   答えたら併記に変わる（原文を先に読ませるため。訳を開くのはその問題だけで、次の問題ではまた閉じる）。
+   原文の言語は資格が決める（#57。日本語が原文の資格には訳が無いので、いつも原文で出る）。
    答えを見たあとは、問題・選択肢・解説をまとめて Claude に貼れるようにコピーのボタンを出す。
    答える前は、hintCopy のときだけ、問題と選択肢だけ（答え・解説なし）でヒントを頼む文を写すボタンを出す（#36）。
    learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出す（間違えた直後に読めるように。#26）。
    練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { APP } from "../app/config";
-import type { Exam, Question } from "../core/exam/types";
+import type { Exam, ExamMeta, Question } from "../core/exam/types";
 import { domainOf, findTask, optionLetter } from "../core/exam/types";
 import type { QuestionLang } from "../core/store/schema";
 import { CopyButton } from "./CopyButton";
 import { hintText, questionText } from "./copyText";
 import { href } from "./route";
+import { srcAttrs } from "./src";
 
 export interface QuestionCardProps {
   readonly exam: Exam;
@@ -47,30 +49,39 @@ function keepInPlace(el: HTMLElement, top: number): void {
   if (Math.abs(dy) >= 1) scrollBy(0, dy);
 }
 
-/** 一覧の行の見出しに使う問題文（言語の設定が「日本語」なら訳、ほかは英語の原文）。
+/** 一覧の行の見出しに使う問題文（言語の設定が「日本語」で訳があれば訳、ほかは原文）。
     「覚えること」は答えそのものなので、一覧では見せない（#47） */
 export const stemOf = (exam: Exam, q: Question, lang: QuestionLang): string =>
   (lang === "ja" && exam.translations?.ja?.questions[q.id]?.stem) || q.stem;
 
-/** 英語・日本語・併記のどれかで文を出す */
-function Text({ en, ja, lang }: { en: string; ja?: string; lang: Exclude<QuestionLang, "peek"> }) {
+/** 一覧の行の見出し（stemOf）の言語 */
+export const stemLang = (exam: Exam, lang: QuestionLang): string =>
+  lang === "ja" && exam.translations?.ja ? "ja" : srcAttrs(exam).lang;
+
+/** 原文・訳・併記のどれかで文を出す */
+function Text({
+  exam,
+  src,
+  ja,
+  lang,
+}: {
+  exam: Pick<ExamMeta, "lang">;
+  src: string;
+  ja?: string;
+  lang: Exclude<QuestionLang, "peek">;
+}) {
   if (lang === "ja" && ja) return <span lang="ja">{ja}</span>;
+  const original = <span {...srcAttrs(exam)}>{src}</span>;
   if (lang === "both" && ja)
     return (
       <>
-        <span class="en" lang="en">
-          {en}
-        </span>
+        {original}
         <span class="ja-sub" lang="ja">
           {ja}
         </span>
       </>
     );
-  return (
-    <span class="en" lang="en">
-      {en}
-    </span>
-  );
+  return original;
 }
 
 export function QuestionCard({
@@ -112,17 +123,13 @@ export function QuestionCard({
             <span class="tag">シナリオ {scenario.id.slice(1)}</span> {scenario.ja}
           </summary>
           <p>
-            {shown !== "ja" && (
-              <strong class="en" lang="en">
-                {scenario.title}.{" "}
-              </strong>
-            )}
-            <Text en={scenario.context} ja={ja?.scenarios[scenario.id]} lang={shown} />
+            {shown !== "ja" && <strong {...srcAttrs(exam)}>{scenario.title}. </strong>}
+            <Text exam={exam} src={scenario.context} ja={ja?.scenarios[scenario.id]} lang={shown} />
           </p>
         </details>
       )}
       <p class="stem">
-        <Text en={q.stem} ja={tq?.stem} lang={shown} />
+        <Text exam={exam} src={q.stem} ja={tq?.stem} lang={shown} />
       </p>
       {peeking && tq && shown === "en" && (
         <button class="btn ghost peek" onClick={() => setOpenedId(q.id)}>
@@ -149,7 +156,7 @@ export function QuestionCard({
               >
                 <span class="letter">{optionLetter(i)}</span>
                 <span class="otext">
-                  <Text en={o.text} ja={tq?.options[orig]} lang={shown} />
+                  <Text exam={exam} src={o.text} ja={tq?.options[orig]} lang={shown} />
                 </span>
               </button>
               {reveal && (

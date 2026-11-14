@@ -102,3 +102,105 @@ export const flatFixture: Exam = {
   format: { minutes: 10, secondsPerQuestion: 60, scenariosPerExam: 0, maxQuestions: 4, passing: "70%", target: 0.7 },
   sources: [],
 };
+
+/* 日本語が原文のテスト用の資格（#57〜）。基本情報技術者試験のような形：シナリオ無し・訳なし・分野の公式名が日本語。
+   画面と基盤が「原文は英語」を前提にしていないかを確かめる */
+const jaQ = (id: string, task: string, stem: string, options: readonly string[], answer: number): Question => ({
+  id,
+  tasks: [task],
+  stem,
+  options: options.map((text, i) => ({
+    text,
+    why: i === answer ? `正解。${text} が条件に合う理由の説明` : `${text} は条件に合わない理由の説明`,
+  })),
+  answer,
+  point: `${id} で覚えること`,
+});
+
+export const jaFixture: Exam = {
+  id: "ja-x",
+  code: "JA-X",
+  lang: "ja",
+  title: "日本語のテスト試験",
+  summary: "問題文が日本語の資格",
+  domains: [
+    {
+      id: "d1",
+      title: "テクノロジ系",
+      ja: "テクノロジ系",
+      weight: 0.7,
+      tasks: [
+        { id: "1.1", title: "基礎理論", ja: "基礎理論" },
+        { id: "1.2", title: "アルゴリズムとプログラミング", ja: "アルゴリズムとプログラミング" },
+      ],
+    },
+    {
+      id: "d2",
+      title: "マネジメント系",
+      ja: "マネジメント系",
+      weight: 0.3,
+      tasks: [{ id: "2.1", title: "プロジェクトマネジメント", ja: "プロジェクトマネジメント" }],
+    },
+  ],
+  scenarios: [],
+  questions: [
+    jaQ(
+      "d1-01",
+      "1.1",
+      "10 進数の 13 を 2 進数で表したものはどれか。次の中から正しいものを選べ。",
+      ["1011", "1101", "1110", "0111"],
+      1,
+    ),
+    jaQ(
+      "d1-02",
+      "1.1",
+      "2 進数の 1010 と 0110 の排他的論理和を求めた結果はどれか。次の中から選べ。",
+      ["1100", "0010", "1110", "1000"],
+      0,
+    ),
+    jaQ(
+      "d1-03",
+      "1.2",
+      "要素数 n の配列を二分探索するときの、比較回数の最大値のオーダはどれか。次の中から選べ。",
+      ["n", "log n", "n log n", "n の 2 乗"],
+      1,
+    ),
+    jaQ(
+      "d1-04",
+      "1.2",
+      "後入れ先出し（LIFO）でデータを出し入れするデータ構造はどれか。次の中から最も適切なものを選べ。",
+      ["キュー", "スタック", "ヒープ", "木"],
+      1,
+    ),
+    jaQ(
+      "d2-01",
+      "2.1",
+      "プロジェクトの作業を階層的に分解して、成果物と作業の範囲を明確にした図はどれか。次の中から選べ。",
+      ["WBS", "アローダイアグラム", "ガントチャート", "管理図"],
+      0,
+    ),
+    jaQ(
+      "d2-02",
+      "2.1",
+      "クリティカルパス上の作業が 2 日遅れたとき、プロジェクト全体の完了日はどうなるか。次の中から選べ。",
+      ["変わらない", "1 日遅れる", "2 日遅れる", "1 日早まる"],
+      2,
+    ),
+  ],
+  notes: {
+    "1.1": { points: ["基数の変換"] },
+    "1.2": { points: ["探索と整列"] },
+    "2.1": { points: ["スケジュール管理"] },
+  },
+  outOfScope: [],
+  format: {
+    questions: 60,
+    minutes: 90,
+    secondsPerQuestion: 90,
+    scenariosPerExam: 0,
+    maxQuestions: 5,
+    passing: "600 / 1000",
+    target: 0.6,
+  },
+  sources: [],
+};

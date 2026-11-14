@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { fixture, flatFixture } from "../engine/fixture";
+import { fixture, flatFixture, jaFixture } from "../engine/fixture";
 import type { Exam, Question } from "./types";
 import { validateExam } from "./validate";
 
@@ -100,4 +100,15 @@ describe("資格の形の検査（#53）", () => {
 
 test("形の違う資格（シナリオ無し・5 択と 3 択・教科書と訳なし）も形の検査を通る（#56）", () => {
   expect(validateExam(flatFixture)).toEqual([]);
+});
+
+test("日本語が原文の資格は形の検査を通り、日本語の訳を持たせると落ちる（#57）", () => {
+  expect(validateExam(jaFixture)).toEqual([]);
+  const tr = {
+    scenarios: {},
+    questions: Object.fromEntries(
+      jaFixture.questions.map(q => [q.id, { stem: q.stem, options: q.options.map(o => o.text) }]),
+    ),
+  };
+  expect(validateExam({ ...jaFixture, translations: { ja: tr } }).some(m => /原文が日本語/.test(m))).toBe(true);
 });

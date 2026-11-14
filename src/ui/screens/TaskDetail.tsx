@@ -7,6 +7,7 @@ import { itemKey } from "../../core/store/schema";
 import { useData } from "../../app/store";
 import { HelpTip } from "../HelpTip";
 import { href } from "../route";
+import { showOfficial, srcAttrs } from "../src";
 
 export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; now: number }) {
   const data = useData();
@@ -42,9 +43,7 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
         <h1>
           <span class="tag">{task.id}</span> {task.ja}
         </h1>
-        <p class="muted small en" lang="en">
-          {task.title}
-        </p>
+        {showOfficial(task) && <p {...srcAttrs(exam, "muted small")}>{task.title}</p>}
       </header>
 
       <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: taskId })}>

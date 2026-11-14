@@ -3,6 +3,7 @@ import { useState } from "preact/hooks";
 import { APP } from "../../app/config";
 import { APP_ENV, APP_VERSION } from "../../app/env";
 import { catalog } from "../../exams";
+import { sourceLang } from "../../core/exam/types";
 import { resetAll, resetExam, setExamDate, setSettings } from "../../core/store/actions";
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../core/store/schema";
 import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../app/store";
@@ -27,6 +28,8 @@ export function Settings() {
   const answered = Object.keys(data.items).length;
   // 控えは記録とは別のキーにある。記録が変わるたびに描き直されるので、そのつど読む
   const backup = getBackup();
+  // 問題文の言語の設定は、英語が原文の資格にだけ効く（#57）
+  const englishExams = catalog.list.filter(e => sourceLang(e) === "en");
 
   const download = () => {
     const blob = new Blob([exportJson()], { type: "application/json" });
@@ -113,24 +116,29 @@ export function Settings() {
             ))}
           </select>
         </label>
-        <label class="row between">
-          <span>問題文の言語</span>
-          <select
-            value={data.settings.lang}
-            onChange={e =>
-              update(d => setSettings(d, { lang: e.currentTarget.value as (typeof QUESTION_LANGS)[number] }))
-            }
-          >
-            {QUESTION_LANGS.map(l => (
-              <option key={l} value={l}>
-                {SETTING_LABEL[l]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p class="muted small">
-          本番の試験は英語です。まず「訳はタップ」で英語を先に読み、詰まったときだけ訳を開くのがおすすめです。解説は常に日本語です。
-        </p>
+        {englishExams.length > 0 && (
+          <label class="row between">
+            <span>問題文の言語</span>
+            <select
+              value={data.settings.lang}
+              onChange={e =>
+                update(d => setSettings(d, { lang: e.currentTarget.value as (typeof QUESTION_LANGS)[number] }))
+              }
+            >
+              {QUESTION_LANGS.map(l => (
+                <option key={l} value={l}>
+                  {SETTING_LABEL[l]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {englishExams.length > 0 && (
+          <p class="muted small">
+            {englishExams.map(e => e.code).join("・")}
+            の本番の試験は英語です。まず「訳はタップ」で英語を先に読み、詰まったときだけ訳を開くのがおすすめです。解説は常に日本語です。
+          </p>
+        )}
       </section>
 
       <section class="card">

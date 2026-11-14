@@ -12,7 +12,7 @@ src/exams/ccar-p/
   questions/     問題（シナリオごと、無ければ分野ごとに 1 ファイル）
   notes.ts       細目ごとの要点
   lessons/       教科書（無くてもよい）
-  ja.ts          問題文の訳（無くてもよい）
+  ja.ts          問題文の訳（英語の資格だけ。無くてもよい）
   ccar-p.test.ts この資格だけの決まり（無くてもよい）
 ```
 
@@ -28,6 +28,7 @@ export const meta: ExamMeta = {
   code: "CCAR-P",
   title: "Claude Certified Architect – Professional",
   summary: "日本語の短い説明",
+  // lang: "ja",          // 問題文が日本語で書かれた資格（無ければ英語）。日本語の資格は訳（ja.ts）を持たない
   format: {
     questions: 60, // 本番の問題数（表示用）
     minutes: 120, // 本番の時間（表示用）
@@ -49,7 +50,7 @@ import { notes } from "./notes";
 import { questions } from "./questions";
 
 const domains: Domain[] = [
-  { id: "d1", title: "Official domain name", ja: "日本語名", weight: 0.6, tasks: [{ id: "1.1", title: "…", ja: "…" }] },
+  { id: "d1", title: "公式の名前（原文の言語）", ja: "日本語名", weight: 0.6, tasks: [{ id: "1.1", title: "…", ja: "…" }] },
   { id: "d2", title: "…", ja: "…", weight: 0.4, tasks: [{ id: "2.1", title: "…", ja: "…" }] },
 ];
 
@@ -71,8 +72,8 @@ export const ccarP: Exam = {
 {
   id: "d1-01",              // シナリオがあれば s1-01
   tasks: ["1.1"],           // 先頭が主たる細目
-  stem: "English stem …",
-  options: [                // 2〜5 個。text は英語、why は日本語
+  stem: "問題文（原文の言語）",
+  options: [                // 2〜5 個。text は原文の言語、why は日本語
     { text: "…", why: "正解。…" },
     { text: "…", why: "…" },
     { text: "…", why: "…" },
@@ -113,7 +114,7 @@ docker compose run --rm dev npm run check
 
 - 複数選択の問題（正解は 1 つだけ）
 - 6 択以上（PC のキーの F が模擬試験の旗とぶつかる）
-- 日本語以外の訳・画面の言語（画面は日本語、問題文は英語が正で訳は `ja` だけ）
+- 画面と解説は日本語だけ。問題文の原文は英語か日本語（`lang`）で、訳は英語の資格の日本語訳（`ja`）だけ
 
 ## 別の資格群のアプリにするとき
 
