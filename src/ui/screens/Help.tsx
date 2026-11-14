@@ -1,7 +1,7 @@
 /* 使い方と用語（#50）。おすすめの進め方と、画面に出るアプリ独自の用語をまとめる。
    用語の文は「?」と同じ glossary から読む */
 import { findExam } from "../../exams";
-import { useData } from "../../store/store";
+import { useData } from "../../app/store";
 import { STEPS, TERMS } from "../glossary";
 import { href } from "../route";
 

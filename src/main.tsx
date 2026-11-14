@@ -1,7 +1,7 @@
 import { render } from "preact";
-import { App, startRoute } from "./app";
+import { App, startRoute } from "./app/App";
 import "./style.css";
-import { getData } from "./store/store";
+import { getData } from "./app/store";
 import { keepHistoryFlat } from "./ui/route";
 import { applyTheme } from "./ui/theme";
 

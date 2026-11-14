@@ -1,8 +1,8 @@
 /* 教科書と要点を横断する検索（#41）。データはすべてアプリの中にあるので、その場で探す。
    探す対象は、教科書の節（見出し・本文・例題の問い）、細目（名前・要点・引っかかりやすい考え）、
    問題の「覚えること」。問題文と選択肢、例題の答えと解説は、答えが見えてしまうので対象にしない */
-import type { Exam, LessonBlock } from "../exams/types";
-import { PRIMER_ID, allTasks, lessonOrder } from "../exams/types";
+import type { Exam, LessonBlock } from "../exam/types";
+import { PRIMER_ID, allTasks, lessonOrder } from "../exam/types";
 
 export type Hit =
   /** 教科書の節。chapterId は細目 "1.1" か "intro"、section は節の位置 */

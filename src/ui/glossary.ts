@@ -1,7 +1,7 @@
 /* アプリ独自の用語と、指標の定義（#50）。指標の横の「?」と、使い方のページの両方がここを読む。
    基準を変えたら（#27・#28・#32 など）ここも合わせる */
-import { MAX_INTERVAL, RETRY_MS } from "../engine/schedule";
-import type { Exam } from "../exams/types";
+import { MAX_INTERVAL, RETRY_MS } from "../core/engine/schedule";
+import type { Exam } from "../core/exam/types";
 
 export type TermId =
   | "readiness"

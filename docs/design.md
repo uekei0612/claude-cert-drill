@@ -66,15 +66,20 @@ guitar-drill は「答えが計算で決まる問題を大量に作る」アプ�
 
 ## 構成
 
+層は 4 つ。向きは `app → ui → core ← exams` で、境目は `src/layers.test.ts` が見張る（#51）。
+
 ```
 src/
-  exams/         資格の内容。データだけ
-    types.ts       Exam・Domain・Task・Scenario・Question の型
-    index.ts       載せている資格の一覧
-    ccar-f/        CCAR-F（exam.ts、scenarios.ts、questions/s1.ts…、notes.ts）
-  engine/        出題（間隔反復、練習と模擬試験の組み立て、採点、習熟度）。DOM に触らない
-  store/         記録（スキーマ、移行、検証、書き出し／読み込み）
-  ui/            画面と部品
+  core/          資格に依らない基盤。Preact も画面も、core の外も読まない（将来パッケージに切り出せる単位）
+    exam/          資格の型（types.ts）と図の道具（figure.ts）
+    engine/        出題（間隔反復、練習と模擬試験の組み立て、採点、習熟度、検索、日付）
+    store/         記録の形（schema）・操作（actions）・入れ物（createStore。保存先とキーは外から渡す）
+  ui/            画面と部品（資格の名前を知らない。資格は Exam で受け取る）
+  exams/         資格の中身。データだけ（core/exam だけを読む）
+    index.ts       載せている資格の一覧（資格の中身を読むのはここだけ）
+    ccar-f/        CCAR-F（exam.ts、questions/s1.ts…、lessons/、notes.ts、ja.ts）
+  app/           このアプリの組み立て（環境、記録の実体と useData、App）
+  main.tsx       入口
 ```
 
 ### 問題の形

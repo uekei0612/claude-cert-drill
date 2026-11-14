@@ -1,8 +1,8 @@
 /* 模擬試験の結果と見直し。分野ごとの正答率、配点で重み付けした正答率と目安線、1 問ずつの見直し */
 import { useState } from "preact/hooks";
-import { idsOnly } from "../../engine/practice";
-import type { Exam } from "../../exams/types";
-import { useData } from "../../store/store";
+import { idsOnly } from "../../core/engine/practice";
+import type { Exam } from "../../core/exam/types";
+import { useData } from "../../app/store";
 import { Meter, pct } from "../Meter";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard, stemOf } from "../QuestionCard";

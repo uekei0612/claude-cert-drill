@@ -1,5 +1,5 @@
 /* 教科書 D5：文脈の管理と信頼性。仕様は公式ドキュメントで確かめた（2026-11-06） */
-import type { Lesson } from "../../types";
+import type { Lesson } from "../../../core/exam/types";
 import { contextLayout } from "./figures";
 
 const API = "https://platform.claude.com/docs/en";

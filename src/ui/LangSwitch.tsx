@@ -2,10 +2,10 @@
    問題文を上に出すため、4 つ並べた帯ではなく、今の言語を 1 字で出す小さなボタンにし、押すと選択肢が開く（#31）。
    訳の無い資格では出さない */
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { Exam } from "../exams/types";
-import { setSettings } from "../store/actions";
-import { QUESTION_LANGS, type QuestionLang } from "../store/schema";
-import { update, useData } from "../store/store";
+import type { Exam } from "../core/exam/types";
+import { setSettings } from "../core/store/actions";
+import { QUESTION_LANGS, type QuestionLang } from "../core/store/schema";
+import { update, useData } from "../app/store";
 
 export const LANG_LABEL: Record<QuestionLang, string> = { en: "英語", peek: "訳はタップ", both: "併記", ja: "日本語" };
 

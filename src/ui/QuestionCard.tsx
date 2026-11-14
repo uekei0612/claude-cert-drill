@@ -7,9 +7,9 @@
    learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出す（間違えた直後に読めるように。#26）。
    練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
-import type { Exam, Question } from "../exams/types";
-import { domainOf, findTask } from "../exams/types";
-import type { QuestionLang } from "../store/schema";
+import type { Exam, Question } from "../core/exam/types";
+import { domainOf, findTask } from "../core/exam/types";
+import type { QuestionLang } from "../core/store/schema";
 import { CopyButton } from "./CopyButton";
 import { hintText, questionText } from "./copyText";
 import { href } from "./route";

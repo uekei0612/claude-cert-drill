@@ -3,12 +3,12 @@
    章の終わり（まとめの後）まで読み進めると「読んだ」を自動で付ける。手で外せる（#29） */
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
-import { questionsOfTask, ratio, tally } from "../../engine/progress";
-import type { Exam, Lesson, LessonBlock } from "../../exams/types";
-import { PRIMER_ID, domainOfTask, findTask, lessonOrder } from "../../exams/types";
-import { readChapters, setRead } from "../../store/actions";
-import { itemKey } from "../../store/schema";
-import { update, useData } from "../../store/store";
+import { questionsOfTask, ratio, tally } from "../../core/engine/progress";
+import type { Exam, Lesson, LessonBlock } from "../../core/exam/types";
+import { PRIMER_ID, domainOfTask, findTask, lessonOrder } from "../../core/exam/types";
+import { readChapters, setRead } from "../../core/store/actions";
+import { itemKey } from "../../core/store/schema";
+import { update, useData } from "../../app/store";
 import { CopyButton } from "../CopyButton";
 import { Meter } from "../Meter";
 import { lessonText, sectionText } from "../copyText";

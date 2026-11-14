@@ -1,5 +1,5 @@
 /* 教科書 D1：エージェント設計とオーケストレーション。仕様は公式ドキュメントで確かめた（2026-11-06） */
-import type { Lesson } from "../../types";
+import type { Lesson } from "../../../core/exam/types";
 import {
   agentLoop,
   hookPoints,

@@ -1,8 +1,8 @@
 /* 載せているすべての資格の形を検査する。問題は手で書くので、形の誤りはここで落とす */
 import { describe, expect, test } from "vitest";
-import { exams } from "./index";
-import { overflows } from "./figure";
-import { PRIMER_ID, allTasks, type Lesson } from "./types";
+import { exams } from ".";
+import { overflows } from "../core/exam/figure";
+import { PRIMER_ID, allTasks, type Lesson } from "../core/exam/types";
 
 describe.each(exams.map(e => [e.id, e] as const))("%s", (_id, exam) => {
   const tasks = allTasks(exam);

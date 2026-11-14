@@ -1,24 +1,24 @@
 import { useEffect, useState } from "preact/hooks";
 import { APP_ENV, APP_VERSION } from "./env";
-import { exams, findExam } from "./exams";
-import { setSettings } from "./store/actions";
-import { getData, update, useData } from "./store/store";
-import { go, href, useRoute } from "./ui/route";
-import { ExamPicker } from "./ui/screens/ExamPicker";
-import { Home } from "./ui/screens/Home";
-import { Mock } from "./ui/screens/Mock";
-import { MockResult } from "./ui/screens/MockResult";
-import { Domains } from "./ui/screens/Domains";
-import { Settings } from "./ui/screens/Settings";
-import { TaskDetail } from "./ui/screens/TaskDetail";
-import { Help } from "./ui/screens/Help";
-import { Learn } from "./ui/screens/Learn";
-import { Search } from "./ui/screens/Search";
-import { Practice } from "./ui/screens/Practice";
-import { Saved } from "./ui/screens/Saved";
-import { TabBar } from "./ui/TabBar";
-import { applyTheme } from "./ui/theme";
-import { UpdatePrompt } from "./ui/UpdatePrompt";
+import { exams, findExam } from "../exams";
+import { setSettings } from "../core/store/actions";
+import { getData, update, useData } from "./store";
+import { go, href, useRoute } from "../ui/route";
+import { ExamPicker } from "../ui/screens/ExamPicker";
+import { Home } from "../ui/screens/Home";
+import { Mock } from "../ui/screens/Mock";
+import { MockResult } from "../ui/screens/MockResult";
+import { Domains } from "../ui/screens/Domains";
+import { Settings } from "../ui/screens/Settings";
+import { TaskDetail } from "../ui/screens/TaskDetail";
+import { Help } from "../ui/screens/Help";
+import { Learn } from "../ui/screens/Learn";
+import { Search } from "../ui/screens/Search";
+import { Practice } from "../ui/screens/Practice";
+import { Saved } from "../ui/screens/Saved";
+import { TabBar } from "../ui/TabBar";
+import { applyTheme } from "../ui/theme";
+import { UpdatePrompt } from "../ui/UpdatePrompt";
 
 /** 起動したとき、ハッシュが無ければ前回の資格を開く。初めてでも資格が 1 つだけならそのホームを開く
     （資格一覧から始めると、何から手を付ければよいかが分からない。#50） */

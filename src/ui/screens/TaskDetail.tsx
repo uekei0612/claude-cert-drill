@@ -1,10 +1,10 @@
 /* 細目の要点と、その細目の問題の一覧（覚えた／まだ）。ここからその細目だけを練習できる */
-import { questionsOfTask, tally } from "../../engine/progress";
-import { isKnown, isLearning } from "../../engine/schedule";
-import type { Exam } from "../../exams/types";
-import { domainOfTask, findTask } from "../../exams/types";
-import { itemKey } from "../../store/schema";
-import { useData } from "../../store/store";
+import { questionsOfTask, tally } from "../../core/engine/progress";
+import { isKnown, isLearning } from "../../core/engine/schedule";
+import type { Exam } from "../../core/exam/types";
+import { domainOfTask, findTask } from "../../core/exam/types";
+import { itemKey } from "../../core/store/schema";
+import { useData } from "../../app/store";
 import { HelpTip } from "../HelpTip";
 import { href } from "../route";
 

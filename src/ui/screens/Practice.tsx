@@ -3,14 +3,14 @@
    間違えたときは、押し間違いなら次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44）。
    正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27） */
 import { useMemo, useRef, useState } from "preact/hooks";
-import { idsOnly, optionOrder, parseIdsOnly, planPractice } from "../../engine/practice";
-import { seeded } from "../../engine/rng";
-import type { Exam } from "../../exams/types";
-import { findTask } from "../../exams/types";
-import type { ItemStat } from "../../engine/schedule";
-import { answer, markGuess, savedIds, toggleSaved, undoAnswer } from "../../store/actions";
-import { itemKey } from "../../store/schema";
-import { getData, update, useData } from "../../store/store";
+import { idsOnly, optionOrder, parseIdsOnly, planPractice } from "../../core/engine/practice";
+import { seeded } from "../../core/engine/rng";
+import type { Exam } from "../../core/exam/types";
+import { findTask } from "../../core/exam/types";
+import type { ItemStat } from "../../core/engine/schedule";
+import { answer, markGuess, savedIds, toggleSaved, undoAnswer } from "../../core/store/actions";
+import { itemKey } from "../../core/store/schema";
+import { getData, update, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";

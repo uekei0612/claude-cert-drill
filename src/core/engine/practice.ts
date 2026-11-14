@@ -1,8 +1,8 @@
 /* 練習の 1 回分の組み立て。
    期限切れ（古い順）→ 未出題（配点 ×（1 − その分野の覚えた割合）で重み付けして選ぶ）→ 期限前（近い順）。
    問題が少ない資格なので、同じ回に同じ問題は入れない（足りなければ短い回になる） */
-import type { Exam, Question } from "../exams/types";
-import { domainOf } from "../exams/types";
+import type { Exam, Question } from "../exam/types";
+import { domainOf } from "../exam/types";
 import { type StatOf, questionsOfDomain, ratio, tally } from "./progress";
 import { type Rng, pickWeighted, shuffle } from "./rng";
 

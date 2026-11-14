@@ -2,8 +2,8 @@
    「合格の目安」は、分野ごとの「覚えた問題の割合」を配点で重み付けしたもの。
    覚えたの基準は schedule の isKnown（日をあけて 2 回続けて正解し、期限を大きく過ぎていない）。
    まだ解いていない問題は覚えていない扱い（本番の未回答が誤答なのと同じく、安全側に倒す） */
-import type { Exam, Question } from "../exams/types";
-import { domainOf } from "../exams/types";
+import type { Exam, Question } from "../exam/types";
+import { domainOf } from "../exam/types";
 import { type ItemStat, isDue, isKnown } from "./schedule";
 
 export type StatOf = (questionId: string) => ItemStat | undefined;

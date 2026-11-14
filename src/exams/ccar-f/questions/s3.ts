@@ -1,5 +1,5 @@
 /* シナリオ 3：マルチエージェントの調査システム（自作問題） */
-import type { Question } from "../../types";
+import type { Question } from "../../../core/exam/types";
 
 export const s3: Question[] = [
   {

@@ -19,18 +19,12 @@ import {
   undoAnswer,
 } from "./actions";
 import { emptyData, parseData } from "./schema";
-import {
-  BACKUP_KEY,
-  STORAGE_KEY,
-  exportJson,
-  getBackup,
-  getData,
-  importJson,
-  reloadForTest,
-  replaceData,
-  restoreBackup,
-  setData,
-} from "./store";
+import { createStore } from "./store";
+
+const store = createStore({ key: "test-store", app: "test-app", storage: () => localStorage });
+const { exportJson, getBackup, getData, importJson, replaceData, restoreBackup, setData } = store;
+const reloadForTest = store.reload;
+const BACKUP_KEY = store.backupKey;
 
 const NOW = Date.UTC(2026, 10, 4);
 
@@ -107,8 +101,8 @@ describe("store", () => {
     localStorage.clear();
     reloadForTest();
   });
-  test("develop・開発の保存先は本番と分ける", () => {
-    expect(STORAGE_KEY).toBe("claude-cert-drill-dev");
+  test("控えのキーは保存のキーの後ろに :backup", () => {
+    expect(BACKUP_KEY).toBe("test-store:backup");
   });
   test("保存して読み直せる", () => {
     setData(answer(getData(), "ccar-f", "s1-01", true, NOW));
@@ -121,7 +115,7 @@ describe("store", () => {
     expect(() => importJson('{"items":{}}')).toThrow();
     // 読めないときは、ブラウザの英語のエラーではなく日本語で理由と次にすることを出す（#49）
     expect(() => importJson("not json")).toThrow(/記録の形式ではありません/);
-    expect(() => importJson('{"items":{}}')).toThrow(/このアプリ（claude-cert-drill）で書き出した記録ではありません/);
+    expect(() => importJson('{"items":{}}')).toThrow(/このアプリ（test-app）で書き出した記録ではありません/);
   });
 });
 

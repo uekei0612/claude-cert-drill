@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { exams } from "../exams";
-import { buildIndex, normalize, search } from "./search";
+/* 検索を、載せている資格の中身で確かめる（検索そのものは core/engine/search.ts） */
+import { exams } from "./index";
+import { buildIndex, normalize, search } from "../core/engine/search";
 
 const exam = exams.find(e => e.id === "ccar-f")!;
 const docs = buildIndex(exam);

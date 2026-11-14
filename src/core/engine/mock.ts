@@ -1,8 +1,8 @@
 /* 模擬試験。本番と同じくシナリオをランダムに選び、その問題をシナリオごとにまとめて出す。
    本番の問題数（format.questions）があれば、それをシナリオの数で割った数ずつ選ぶ（本番と同じ長さにする）。
    シナリオの無い資格は、配点に比例して分野から問題を選ぶ。採点はまとめて最後に行う */
-import type { Exam, Question } from "../exams/types";
-import { domainOf } from "../exams/types";
+import type { Exam, Question } from "../exam/types";
+import { domainOf } from "../exam/types";
 import { questionsOfDomain } from "./progress";
 import { type Rng, shuffle } from "./rng";
 
