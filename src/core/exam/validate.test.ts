@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { fixture } from "../engine/fixture";
+import { fixture, flatFixture } from "../engine/fixture";
 import type { Exam, Question } from "./types";
 import { validateExam } from "./validate";
 
@@ -96,4 +96,8 @@ describe("資格の形の検査（#53）", () => {
     expect(has(flat, /maxQuestions/)).toBe(true);
     expect(has({ ...flat, format: { ...flat.format, maxQuestions: 10 } }, /maxQuestions/)).toBe(false);
   });
+});
+
+test("形の違う資格（シナリオ無し・5 択と 3 択・教科書と訳なし）も形の検査を通る（#56）", () => {
+  expect(validateExam(flatFixture)).toEqual([]);
 });

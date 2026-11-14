@@ -52,3 +52,53 @@ export const fixture: Exam = {
   format: { secondsPerQuestion: 120, scenariosPerExam: 2, passing: "", target: 0.75 },
   sources: [],
 };
+
+/* 形の違うテスト用の資格（#56）。シナリオ無し・5 択と 3 択が混ざる・教科書も訳も無い。
+   画面と基盤が CCAR-F の形（シナリオ・4 択・教科書・訳）を前提にしていないかを確かめる */
+const flatQ = (id: string, task: string, n: number, answer: number): Question => ({
+  id,
+  tasks: [task],
+  stem: `Flat question ${id}: which option is the best choice for this situation described here?`,
+  options: Array.from({ length: n }, (_, i) => ({
+    text: i === answer ? `pick ${i}` : `choice number ${i}`,
+    why: `選択肢 ${i} がそうである理由の説明`,
+  })),
+  answer,
+  point: `${id} で覚えること`,
+});
+
+export const flatFixture: Exam = {
+  id: "flat-x",
+  code: "FLAT-X",
+  title: "Flat exam without scenarios",
+  summary: "シナリオの無い 5 択と 3 択の資格",
+  domains: [
+    { id: "d1", title: "First", ja: "一つ目", weight: 0.5, tasks: [{ id: "1.1", title: "f1", ja: "一の一" }] },
+    {
+      id: "d2",
+      title: "Second",
+      ja: "二つ目",
+      weight: 0.5,
+      tasks: [
+        { id: "2.1", title: "s1", ja: "二の一" },
+        { id: "2.2", title: "s2", ja: "二の二" },
+      ],
+    },
+  ],
+  scenarios: [],
+  questions: [
+    flatQ("d1-01", "1.1", 5, 4),
+    flatQ("d1-02", "1.1", 3, 1),
+    flatQ("d2-01", "2.1", 5, 2),
+    flatQ("d2-02", "2.2", 3, 0),
+    flatQ("d2-03", "2.2", 5, 0),
+  ],
+  notes: {
+    "1.1": { points: ["要点 1.1"] },
+    "2.1": { points: ["要点 2.1"] },
+    "2.2": { points: ["要点 2.2"], traps: ["罠"] },
+  },
+  outOfScope: [],
+  format: { minutes: 10, secondsPerQuestion: 60, scenariosPerExam: 0, maxQuestions: 4, passing: "70%", target: 0.7 },
+  sources: [],
+};

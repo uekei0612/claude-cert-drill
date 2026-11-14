@@ -20,9 +20,19 @@ docker compose run --rm dev npm run check  # 型・整形・テスト・ビル�
 
 ## 資格を足す
 
-1. `src/exams/<資格ID>/` を作り、`Exam` を書く（資格 ID は公式の試験コードを小文字・ハイフン、例 `ccar-p`）
-2. `src/exams/index.ts` の一覧に足す
-3. `npm test` の `exams.test.ts` が形（選択肢 4 つ・選択肢ごとの解説・全細目に問題がある…）を検査する
+`src/exams/<資格ID>/` にデータを書き、`src/exams/index.ts` の一覧に 1 行足すだけ（画面や出題の仕組みは変えない）。
+手順と雛形は [docs/adding-an-exam.md](docs/adding-an-exam.md)。
+
+## 構成
+
+| 層 | 場所 | 役目 |
+|---|---|---|
+| 基盤 | `src/core/` | 資格の型・形の検査・出題・採点・記録。Preact も画面も知らない |
+| 画面 | `src/ui/` | 部品と画面。資格は `Exam` で受け取り、資格の名前を知らない |
+| 資格の中身 | `src/exams/` | データだけ。中身は資格を開いたときに読み込む |
+| アプリ | `src/app/` | 名前・保存キー（`config.ts`）、記録の実体、組み立て |
+
+層の向きは `src/layers.test.ts` が見張る。詳しくは [docs/design.md](docs/design.md#構成)。
 
 ## 進め方（Issue とブランチ）
 
