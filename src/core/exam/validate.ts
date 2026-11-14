@@ -10,6 +10,7 @@ import {
   type LessonBlock,
   type Stem,
   allTasks,
+  blanksOf,
   optionText,
   sourceLang,
   stemText,
@@ -165,6 +166,10 @@ export function validateExam(exam: Exam): string[] {
     if (new Set(texts).size !== texts.length) bad(q.id, "選択肢が重複している");
     // 解答群の表（#60）。列があれば選択肢はすべて列と同じ数の cells、無ければすべて text
     if (q.columns && (!q.columns.length || q.columns.some(c => !c.trim()))) bad(q.id, "解答群の列の名前が空");
+    // 空欄（［a］。#62）があって解答群の表もあるなら、空欄の名前と列の名前は同じ組
+    const blanks = blanksOf(q.stem);
+    if (q.columns && blanks.length && [...blanks].sort().join() !== [...q.columns].sort().join())
+      bad(q.id, `問題文の空欄（${blanks.join(" ")}）と解答群の列の名前（${q.columns.join(" ")}）が合わない`);
     for (const o of q.options) {
       if ("cells" in o) {
         if (!q.columns) bad(q.id, "解答群の列（columns）が無いのに、選択肢が cells で書いてある");

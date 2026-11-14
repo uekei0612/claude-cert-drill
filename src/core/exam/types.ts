@@ -255,6 +255,28 @@ export function stemBlockText(b: StemBlock): string {
   return b.list.join(" ");
 }
 
+/** 問題文の空欄（#62）。全角の角かっこに英小文字（またはギリシャ文字の小文字）1〜2 字：［a］ ［β］ */
+export const BLANK = /［([a-zα-ω]{1,2})］/g;
+
+/** 問題文の中の空欄の名前（出てくる順・重複なし） */
+export function blanksOf(stem: Stem): string[] {
+  const texts =
+    typeof stem === "string"
+      ? [stem]
+      : stem.flatMap(b =>
+          typeof b === "string"
+            ? [b]
+            : "code" in b
+              ? [b.code]
+              : "table" in b
+                ? [...(b.head ?? []), ...b.table.flat()]
+                : "list" in b
+                  ? b.list
+                  : [],
+        );
+  return [...new Set(texts.flatMap(t => [...t.matchAll(BLANK)].map(m => m[1]!)))];
+}
+
 /** 問題文を平文にする */
 export const stemText = (stem: Stem): string => (typeof stem === "string" ? stem : stem.map(stemBlockText).join(" "));
 

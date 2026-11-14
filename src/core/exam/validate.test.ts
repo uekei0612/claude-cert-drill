@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { fixture, flatFixture, jaFixture } from "../engine/fixture";
-import { type Exam, type Question, type StemBlock, optionText } from "./types";
+import { type Exam, type Question, type StemBlock, blanksOf, optionText } from "./types";
 import { validateExam } from "./validate";
 
 /** 形の正しい小さな資格（fixture に要点と、長さのそろった選択肢を足す） */
@@ -120,6 +120,8 @@ test("問題文の部品と解答群の表の形（#60）", () => {
   });
   const msgs = (e: Exam) => validateExam(e).join("\n");
   expect(msgs(withB(q => ({ ...q, columns: ["a"] })))).toMatch(/cells の数/);
+  // 空欄 ［a］ ［b］ と列の名前が合わない（#62）
+  expect(msgs(withB(q => ({ ...q, columns: ["a", "c"] })))).toMatch(/空欄（a b）と解答群の列の名前（a c）が合わない/);
   expect(msgs(withB(q => ({ ...q, columns: undefined })))).toMatch(/columns）が無い/);
   expect(
     msgs(withB(q => ({ ...q, options: [...q.options.slice(0, 3), { text: "x ← 0", why: "混ぜた選択肢の解説" }] }))),
@@ -165,4 +167,13 @@ test("日本語が原文の資格は形の検査を通り、日本語の訳を�
     ),
   };
   expect(validateExam({ ...jaFixture, translations: { ja: tr } }).some(m => /原文が日本語/.test(m))).toBe(true);
+});
+
+test("問題文の空欄の名前を、段落・プログラム・表・箇条書きから拾う（#62）", () => {
+  expect(blanksOf("［a］ と ［β］ と ［a］")).toEqual(["a", "β"]);
+  expect(
+    blanksOf(["段落 ［a］", { code: "x ← ［b］" }, { head: ["［c］"], table: [["［d］"]] }, { list: ["［e］"] }]),
+  ).toEqual(["a", "b", "c", "d", "e"]);
+  // 半角の [a] や大文字は空欄ではない
+  expect(blanksOf("arr[a] と ［A］")).toEqual([]);
 });
