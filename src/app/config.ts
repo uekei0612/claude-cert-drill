@@ -4,14 +4,14 @@
 export const APP = {
   /** 保存キー（develop・開発は `<id>-dev`）と、書き出した記録の印 */
   id: "claude-cert-drill",
-  /** 画面・タブ・ホーム画面に出す名前 */
-  name: "claude-cert-drill",
+  /** 画面・タブ・ホーム画面に出す名前（2026-11-14 に資格全般向けへ。#63。id・リポ名・URL は claude-cert-drill のまま） */
+  name: "cert-drill",
   /** ホーム画面のアイコンの下に出す短い名前 */
   shortName: "cert-drill",
   /** manifest と検索結果の説明 */
-  description: "Claude の資格（CCAR-F など）の試験勉強",
+  description: "資格の試験勉強（Claude の資格 CCAR-F・基本情報技術者試験など）",
   /** 資格一覧の見出しの下 */
-  tagline: "Claude の資格の試験勉強。問題はすべて自作の非公式教材です。",
+  tagline: "資格の試験勉強。問題は自作か、公開されている過去問題を出典付きで載せています。",
   /** 使い方・設定の下に出す断り書き（資格によらない文。資格ごとの文は ExamMeta.notice。#61） */
   disclaimer: "試験の勉強のための非公式の教材です。",
   /** 解説を頼む相手（「◯◯に聞く用にコピー」） */
