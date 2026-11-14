@@ -52,6 +52,15 @@ describe("questionText", () => {
     expect(t).toContain("ア. a：s + arr[i]、b：s");
   });
 
+  test("出典のある問題は、自作ではなく出典を書く（#61）", () => {
+    const bq = jaFixture.questions.find(x => x.source)!;
+    const t = questionText({ exam: jaFixture, q: bq, order: [0, 1, 2, 3] });
+    expect(t).toContain("次の練習問題（出典：テスト用の公開問題 問1（一部改変））");
+    expect(t).not.toContain("自作問題");
+    expect(hintText({ exam: jaFixture, q: bq, order: [0, 1, 2, 3] })).toContain("出典：テスト用の公開問題 問1");
+    expect(text).toContain("（非公式の自作問題）");
+  });
+
   test("未回答（振り返りの一覧）なら自分の答えは書かない", () => {
     expect(questionText({ exam, q, order: [0, 1, 2, 3] })).not.toContain("私の答え");
   });

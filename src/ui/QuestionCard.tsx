@@ -4,13 +4,14 @@
    答えたら併記に変わる（原文を先に読ませるため。訳を開くのはその問題だけで、次の問題ではまた閉じる）。
    原文の言語は資格が決める（#57。日本語が原文の資格には訳が無いので、いつも原文で出る）。
    答えを見たあとは、問題・選択肢・解説をまとめて Claude に貼れるようにコピーのボタンを出す。
+   公開問題などを使った問題は、問題文の下に出典を出す（#61）。
    答える前は、hintCopy のときだけ、問題と選択肢だけ（答え・解説なし）でヒントを頼む文を写すボタンを出す（#36）。
    learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出す（間違えた直後に読めるように。#26）。
    練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { APP } from "../app/config";
 import type { Exam, ExamMeta, Question, Stem } from "../core/exam/types";
-import { domainOf, findTask, optionLabel, stemText } from "../core/exam/types";
+import { domainOf, findTask, optionLabel, sourceText, stemText } from "../core/exam/types";
 import type { QuestionLang } from "../core/store/schema";
 import { CopyButton } from "./CopyButton";
 import { hintText, questionText } from "./copyText";
@@ -146,6 +147,17 @@ export function QuestionCard({
       <div class="stem">
         <Text exam={exam} src={q.stem} ja={tq?.stem} lang={shown} />
       </div>
+      {q.source && (
+        <p class="qsource muted small">
+          {q.source.url ? (
+            <a href={q.source.url} target="_blank" rel="noopener noreferrer">
+              {sourceText(q.source)}
+            </a>
+          ) : (
+            sourceText(q.source)
+          )}
+        </p>
+      )}
       {peeking && tq && shown === "en" && (
         <button class="btn ghost peek" onClick={() => setOpenedId(q.id)}>
           訳を見る

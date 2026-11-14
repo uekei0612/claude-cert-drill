@@ -137,6 +137,25 @@ test("問題文の部品と解答群の表の形（#60）", () => {
   ).toMatch(/` の数/);
 });
 
+test("断り書きと出典の形（#61）", () => {
+  expect(has({ ...base, notice: "" }, /断り書き/)).toBe(true);
+  expect(
+    has(
+      withQ(q => ({ ...q, source: { label: " " } })),
+      /出典の名前/,
+    ),
+  ).toBe(true);
+  expect(
+    has(
+      withQ(q => ({ ...q, source: { label: "公開問題 問1", url: "http://example.com" } })),
+      /出典の URL/,
+    ),
+  ).toBe(true);
+  expect(validateExam(withQ(q => ({ ...q, source: { label: "公開問題 問1", url: "https://example.com/a" } })))).toEqual(
+    [],
+  );
+});
+
 test("日本語が原文の資格は形の検査を通り、日本語の訳を持たせると落ちる（#57）", () => {
   expect(validateExam(jaFixture)).toEqual([]);
   const tr = {

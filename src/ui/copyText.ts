@@ -2,7 +2,7 @@
    原文に訳があれば「（訳）」として添える（Claude には原文、自分には訳）。
    選択肢の記号は画面に出ている並びに合わせる（「C を選んだ」が画面と食い違わないように） */
 import type { Exam, Lesson, LessonBlock, LessonSection, Question, Stem, StemBlock } from "../core/exam/types";
-import { domainOf, findTask, optionLabel, optionText } from "../core/exam/types";
+import { domainOf, findTask, optionLabel, optionText, sourceText } from "../core/exam/types";
 
 /** 資格の名前（「CCAR-F（Claude Certified Architect – Foundations）」） */
 const examName = (exam: Exam) => `${exam.code}（${exam.title}）`;
@@ -44,7 +44,9 @@ function questionHead({ exam, q, order }: QuestionCopy, ask: string): string[] {
   const scenario = exam.scenarios.find(s => s.id === q.scenario);
   const domain = domainOf(exam, q);
   const task = findTask(exam, q.tasks[0]);
-  const out: string[] = [`${examName(exam)}の試験勉強をしています。次の練習問題（非公式の自作問題）${ask}`];
+  // 出典のある問題は出典を、無ければ自作と書く（#61）
+  const origin = q.source ? sourceText(q.source) : "非公式の自作問題";
+  const out: string[] = [`${examName(exam)}の試験勉強をしています。次の練習問題（${origin}）${ask}`];
   if (domain && task) out.push(`分野：${domain.id.toUpperCase()} ${domain.ja} ／ 細目：${task.id} ${task.ja}`);
   if (scenario)
     out.push(

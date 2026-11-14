@@ -61,6 +61,7 @@ export function validateExam(exam: Exam): string[] {
   // 資格・分野・細目・シナリオの ID（命名規則は docs/design.md）
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(exam.id)) bad(exam.id, "資格の ID は小文字・数字・ハイフン");
   if (exam.id !== exam.code.toLowerCase()) bad(exam.id, `資格の ID は試験コード（${exam.code}）の小文字`);
+  if (exam.notice.trim().length <= 10) bad(exam.id, "断り書き（notice）が短い");
   if (!exam.domains.length) bad(exam.id, "分野が無い");
   exam.domains.forEach((d, i) => {
     if (d.id !== `d${i + 1}`) bad(d.id, `分野の ID は並びの順に d${i + 1}`);
@@ -155,6 +156,11 @@ export function validateExam(exam: Exam): string[] {
     if (stemText(q.stem).trim().length <= 40) bad(q.id, "問題文が短い");
     checkStem(q.id, q.stem, bad);
     if (!q.point.trim()) bad(q.id, "覚えること（point）が無い");
+    if (q.source) {
+      if (!q.source.label.trim()) bad(q.id, "出典の名前が空");
+      if (q.source.url !== undefined && !/^https:\/\/\S+$/.test(q.source.url))
+        bad(q.id, "出典の URL が https:// でない");
+    }
     const texts = q.options.map(o => optionText(q, o).trim());
     if (new Set(texts).size !== texts.length) bad(q.id, "選択肢が重複している");
     // 解答群の表（#60）。列があれば選択肢はすべて列と同じ数の cells、無ければすべて text

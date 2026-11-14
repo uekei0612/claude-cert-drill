@@ -154,6 +154,15 @@ test("プログラムと表を含む問題文と、解答群の表を出す（#6
   expect(rows[0]!.querySelectorAll(".ocell").length).toBe(2);
   expect(rows[0]!.textContent).toContain("a");
   expect(rows[0]!.textContent).toContain("s + arr[i]");
+  // 出典（#61）
+  const src = root.querySelector<HTMLAnchorElement>(".qsource a")!;
+  expect(src.textContent).toBe("出典：テスト用の公開問題 問1（一部改変）");
+  expect(src.getAttribute("href")).toBe("https://example.com/q1");
+});
+
+test("出典の無い問題には出典を出さない（#61）", () => {
+  mount(<Practice exam={jaFixture} only={idsOnly(["d1-01"])} now={NOW} />);
+  expect(root.querySelector(".qsource")).toBeNull();
 });
 
 test("英語が原文の資格は、問題文を lang=en で出す", () => {
@@ -165,5 +174,14 @@ test("資格の外の画面（資格一覧・設定・使い方）が描ける",
   for (const node of [<ExamPicker />, <Settings />, <Help />]) {
     mount(node);
     expect(root.querySelector("main")).not.toBeNull();
+  }
+});
+
+test("使い方と設定の下に、資格ごとの断り書きを出す（#61）", () => {
+  for (const node of [<Settings />, <Help />]) {
+    mount(node);
+    const text = root.querySelector(".notices")!.textContent!;
+    expect(text).toContain("非公式の教材");
+    expect(text).toContain("CCAR-F：問題と教科書はすべて自作の非公式教材です。Anthropic とは関係がありません。");
   }
 });

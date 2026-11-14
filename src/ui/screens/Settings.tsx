@@ -8,6 +8,7 @@ import { resetAll, resetExam, setExamDate, setSettings } from "../../core/store/
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../core/store/schema";
 import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../app/store";
 import { ManualCopy, copyToClipboard } from "../CopyButton";
+import { Notices } from "../Notices";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";
 
@@ -248,8 +249,9 @@ export function Settings() {
       )}
 
       <p class="muted small">
-        {APP.name} {APP_VERSION}（{APP_ENV}）・{APP.disclaimer}
+        {APP.name} {APP_VERSION}（{APP_ENV}）
       </p>
+      <Notices />
     </main>
   );
 }
