@@ -1,11 +1,11 @@
 /* 資格のホーム。いちばん上に合格の目安、次に「今日の練習」、伸ばすと効く細目、分野ごとの習熟 */
-import { dailyPlan, parseDate } from "../../engine/plan";
-import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../engine/progress";
-import type { Exam } from "../../exams/types";
-import { PRIMER_ID, findTask, lessonOrder } from "../../exams/types";
-import { daysOf, readChapters, savedIds, setSettings } from "../../store/actions";
-import { PRACTICE_SIZES, itemKey } from "../../store/schema";
-import { update, useData } from "../../store/store";
+import { dailyPlan, parseDate } from "../../core/engine/plan";
+import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../core/engine/progress";
+import type { Exam } from "../../core/exam/types";
+import { PRIMER_ID, findTask, lessonOrder } from "../../core/exam/types";
+import { daysOf, readChapters, savedIds, setSettings } from "../../core/store/actions";
+import { PRACTICE_SIZES, itemKey } from "../../core/store/schema";
+import { update, useData } from "../../app/store";
 import { Activity } from "../Activity";
 import { HelpTip } from "../HelpTip";
 import { Meter, pct } from "../Meter";

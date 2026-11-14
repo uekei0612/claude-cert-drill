@@ -2,12 +2,12 @@
    時間はこの画面を開いている間だけ進む（閉じる・中断する・アプリを裏に回すと止まる）。
    時間切れになったらその時点で採点する（本番と同じく未回答は誤答） */
 import { useEffect, useRef, useState } from "preact/hooks";
-import { addUsed, mockLeft, planMock, scoreMock } from "../../engine/mock";
-import { optionOrder } from "../../engine/practice";
-import { seeded } from "../../engine/rng";
-import type { Exam } from "../../exams/types";
-import { abandonMock, finishMock, patchMock, startMock } from "../../store/actions";
-import { getData, update, useData } from "../../store/store";
+import { addUsed, mockLeft, planMock, scoreMock } from "../../core/engine/mock";
+import { optionOrder } from "../../core/engine/practice";
+import { seeded } from "../../core/engine/rng";
+import type { Exam } from "../../core/exam/types";
+import { abandonMock, finishMock, patchMock, startMock } from "../../core/store/actions";
+import { getData, update, useData } from "../../app/store";
 import { HelpTip } from "../HelpTip";
 import { LangSwitch } from "../LangSwitch";
 import { pct } from "../Meter";

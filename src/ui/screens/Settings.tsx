@@ -1,10 +1,10 @@
 /* 設定と記録。ホーム画面版は Safari と保存領域が別なので、書き出し／読み込みで移す */
 import { useState } from "preact/hooks";
-import { APP_ENV, APP_VERSION } from "../../env";
+import { APP_ENV, APP_VERSION } from "../../app/env";
 import { exams, findExam } from "../../exams";
-import { resetAll, resetExam, setExamDate, setSettings } from "../../store/actions";
-import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
-import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../store/store";
+import { resetAll, resetExam, setExamDate, setSettings } from "../../core/store/actions";
+import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../core/store/schema";
+import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../app/store";
 import { ManualCopy, copyToClipboard } from "../CopyButton";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";

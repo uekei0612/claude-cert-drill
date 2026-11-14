@@ -1,5 +1,5 @@
 /* シナリオ 2：Claude Code での開発（自作問題） */
-import type { Question } from "../../types";
+import type { Question } from "../../../core/exam/types";
 
 export const s2: Question[] = [
   {

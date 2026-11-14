@@ -1,8 +1,8 @@
 /* 後で振り返る印を付けた問題の一覧。開くと答えと解説が読め、印を外せる。印を付けた問題だけで練習もできる */
 import { useState } from "preact/hooks";
-import type { Exam } from "../../exams/types";
-import { savedIds } from "../../store/actions";
-import { getData, useData } from "../../store/store";
+import type { Exam } from "../../core/exam/types";
+import { savedIds } from "../../core/store/actions";
+import { getData, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";

@@ -1,7 +1,7 @@
 /* 続けた日数と、直近 12 週の日ごとの回答のカレンダー（#38）。
    列が週（左が古い）、行が曜日（日〜土）。色の濃さは答えた数（1 色の濃淡。0 は地の色）。
    セルに触れると日付・答えた数・正解の数が出る。読み上げには全体の要約を渡す */
-import { dayKey, streak } from "../engine/plan";
+import { dayKey, streak } from "../core/engine/plan";
 import { HelpTip } from "./HelpTip";
 
 const WEEKS = 12;

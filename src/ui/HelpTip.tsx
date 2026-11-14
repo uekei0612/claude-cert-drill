@@ -1,7 +1,7 @@
 /* 指標や用語の横の「?」。押すと定義が開き、もう一度押すか外を押すと閉じる（#50）。
    定義の箱は画面からはみ出さないよう、ボタンの位置から画面の中に収めて置く */
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { Exam } from "../exams/types";
+import type { Exam } from "../core/exam/types";
 import { type TermId, termOf } from "./glossary";
 import { href } from "./route";
 

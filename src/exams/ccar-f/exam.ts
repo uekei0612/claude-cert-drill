@@ -1,7 +1,7 @@
 /* Claude Certified Architect – Foundations（CCAR-F）。
    分野・細目の名前と配点は Anthropic の試験ガイド（Version 0.1）に合わせる。
    シナリオの文・要点・問題はすべて自分の言葉で書く（ガイドの本文やサンプル問題は載せない）。 */
-import type { Domain, Exam, Scenario } from "../types";
+import type { Domain, Exam, Scenario } from "../../core/exam/types";
 import { ja } from "./ja";
 import { lessons, primer } from "./lessons";
 import { notes } from "./notes";

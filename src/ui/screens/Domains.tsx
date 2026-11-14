@@ -1,9 +1,9 @@
 /* 分野 → 細目の一覧（習熟度）と、この試験について（出どころ・範囲外） */
 import { useEffect } from "preact/hooks";
-import { questionsOfTask, ratio, tally } from "../../engine/progress";
-import type { Exam } from "../../exams/types";
-import { itemKey } from "../../store/schema";
-import { useData } from "../../store/store";
+import { questionsOfTask, ratio, tally } from "../../core/engine/progress";
+import type { Exam } from "../../core/exam/types";
+import { itemKey } from "../../core/store/schema";
+import { useData } from "../../app/store";
 import { Meter, pct } from "../Meter";
 import { href } from "../route";
 

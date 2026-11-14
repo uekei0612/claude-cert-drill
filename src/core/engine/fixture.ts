@@ -1,5 +1,5 @@
 /* テスト用の小さな資格。2 分野（配点 0.6 / 0.4）、3 シナリオ、問題 12 問 */
-import type { Exam, Question } from "../exams/types";
+import type { Exam, Question } from "../exam/types";
 
 const q = (id: string, scenario: string, task: string): Question => ({
   id,

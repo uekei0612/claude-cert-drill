@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { exams } from "../exams";
-import { PRIMER_ID } from "../exams/types";
+import { PRIMER_ID } from "../core/exam/types";
 import { hintText, lessonText, questionText, sectionText } from "./copyText";
 
 const exam = exams.find(e => e.id === "ccar-f")!;
