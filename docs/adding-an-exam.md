@@ -28,6 +28,8 @@ export const meta: ExamMeta = {
   code: "CCAR-P",
   title: "Claude Certified Architect – Professional",
   summary: "日本語の短い説明",
+  // 断り書き（必須）。問題の出どころ（自作か公開問題か）と、試験を実施する団体との関係。使い方と設定の下に出る
+  notice: "問題と教科書はすべて自作の非公式教材です。Anthropic とは関係がありません。",
   // lang: "ja",          // 問題文が日本語で書かれた資格（無ければ英語）。日本語の資格は訳（ja.ts）を持たない
   // options: { labels: "kana", shuffle: false }, // 記号をア〜にし、選択肢を混ぜない（無ければ A〜・混ぜる）
   format: {
@@ -83,8 +85,13 @@ export const ccarP: Exam = {
   answer: 0,                // 正解の位置（1 つだけ）
   // keepOrder: true,       // 混ぜる資格でも、この問題は混ぜない（並びに意味のある選択肢）
   point: "この問題で覚えること（日本語 1 行）",
+  // source: { label: "令和5年度 基本情報技術者試験 科目B 問3", modified: true, url: "https://…" },
 }
 ```
+
+公開問題などを使った問題には `source`（出典）を付ける。問題文の下に「出典：…（一部改変）」と出て、
+Claude に聞く用のコピーにも入る（#61）。手を加えたら `modified: true`。付けない問題は自作として扱う。
+使うときは、元の問題を公開している団体の利用条件を確かめ、資格の `notice` にも出どころを書く。
 
 文の中の `` `…` `` はコードとして出る。プログラムや表を含む問題は、問題文を部品の並びで書く。
 「a と b の組合せ」のような解答群は、`columns` に列の名前を書き、選択肢を `cells` で書くと表の形で出る（#60）。
@@ -146,5 +153,5 @@ docker compose run --rm dev npm run check
 
 ## 別の資格群のアプリにするとき
 
-`src/app/config.ts`（名前・説明・免責・保存キー・解説を頼む相手）と `src/exams/index.ts`、
+`src/app/config.ts`（名前・説明・資格によらない断り書き・保存キー・解説を頼む相手）と `src/exams/index.ts`、
 `vite.config.ts` の `base`（Pages のパス）、`public/` のアイコンを替える。`src/core` と `src/ui` はそのまま使える。

@@ -12,8 +12,8 @@ export const APP = {
   description: "Claude の資格（CCAR-F など）の試験勉強",
   /** 資格一覧の見出しの下 */
   tagline: "Claude の資格の試験勉強。問題はすべて自作の非公式教材です。",
-  /** 使い方・設定の下に出す断り書き */
-  disclaimer: "問題と教科書はすべて自作の非公式教材です。Anthropic とは関係がありません。",
+  /** 使い方・設定の下に出す断り書き（資格によらない文。資格ごとの文は ExamMeta.notice。#61） */
+  disclaimer: "試験の勉強のための非公式の教材です。",
   /** 解説を頼む相手（「◯◯に聞く用にコピー」） */
   assistant: "Claude",
   /** ブラウザの帯の色（manifest と index.html） */

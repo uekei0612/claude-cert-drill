@@ -7,6 +7,7 @@ const meta = {
   code: fixture.code,
   title: fixture.title,
   summary: fixture.summary,
+  notice: fixture.notice,
   format: fixture.format,
 };
 

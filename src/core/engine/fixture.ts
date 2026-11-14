@@ -19,6 +19,7 @@ export const fixture: Exam = {
   code: "TEST-X",
   title: "Test",
   summary: "テスト",
+  notice: "テスト用の資格の断り書き（自作）",
   domains: [
     {
       id: "d1",
@@ -72,6 +73,7 @@ export const flatFixture: Exam = {
   code: "FLAT-X",
   title: "Flat exam without scenarios",
   summary: "シナリオの無い 5 択と 3 択の資格",
+  notice: "テスト用の資格の断り書き（自作）",
   domains: [
     { id: "d1", title: "First", ja: "一つ目", weight: 0.5, tasks: [{ id: "1.1", title: "f1", ja: "一の一" }] },
     {
@@ -125,6 +127,7 @@ export const jaFixture: Exam = {
   options: { labels: "kana", shuffle: false },
   title: "日本語のテスト試験",
   summary: "問題文が日本語の資格",
+  notice: "テスト用の資格の断り書き（自作）",
   domains: [
     {
       id: "d1",
@@ -217,6 +220,7 @@ export const jaFixture: Exam = {
       ],
       answer: 0,
       point: "合計は「s ← s + 要素」で、ループの外で返す",
+      source: { label: "テスト用の公開問題 問1", modified: true, url: "https://example.com/q1" },
     },
     jaQ(
       "d2-01",

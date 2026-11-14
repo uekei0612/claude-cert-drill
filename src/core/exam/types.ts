@@ -17,6 +17,9 @@ export interface ExamMeta {
   readonly lang?: SourceLang;
   /** 選択肢の記号と、混ぜるか（#58）。無ければ A〜 で、表示のたびに混ぜる */
   readonly options?: OptionStyle;
+  /** この資格の断り書き（#61）。問題の出どころ（自作か、公開問題か）と、試験を実施する団体との関係。
+      使い方と設定の下に、資格の試験コードを添えて出す */
+  readonly notice: string;
 }
 
 /** 選択肢の出し方（#58） */
@@ -166,7 +169,22 @@ export interface Question {
   readonly keepOrder?: boolean;
   /** この問題で覚えること 1 行（日本語） */
   readonly point: string;
+  /** 出典（#61）。公式の公開問題などを使った問題に付ける。無ければ自作の問題 */
+  readonly source?: QuestionSource;
 }
+
+/** 問題の出典（#61） */
+export interface QuestionSource {
+  /** 出典の名前（「令和5年度 基本情報技術者試験 科目B 問3」） */
+  readonly label: string;
+  /** 元の問題に手を加えたか（「一部改変」を添える） */
+  readonly modified?: boolean;
+  /** 元の問題を公開している場所（https://…） */
+  readonly url?: string;
+}
+
+/** 出典の 1 行（「出典：… （一部改変）」） */
+export const sourceText = (s: QuestionSource): string => `出典：${s.label}${s.modified ? "（一部改変）" : ""}`;
 
 export interface Note {
   /** 要点（日本語、1 行ずつ） */
