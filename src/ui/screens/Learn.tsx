@@ -1,7 +1,6 @@
 /* 教科書。目次（はじめに → 分野 → 細目）と章。章は前後の章へ順に読み進められる。
    章と節は、Claude に解説を頼めるようにまとめてコピーできる。
    章の終わり（まとめの後）まで読み進めると「読んだ」を自動で付ける。手で外せる（#29） */
-import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import { questionsOfTask, ratio, tally } from "../../core/engine/progress";
 import type { Exam, Lesson, LessonBlock } from "../../core/exam/types";
@@ -13,6 +12,7 @@ import { CopyButton } from "../CopyButton";
 import { Meter } from "../Meter";
 import { lessonText, sectionText } from "../copyText";
 import { href } from "../route";
+import { inline } from "../Rich";
 import { showOfficial, srcAttrs } from "../src";
 
 /** 章の名前（「はじめに」の章は教科書の題、ほかは細目の名前） */
@@ -25,15 +25,6 @@ export const chapterTag = (id: string): string => (id === PRIMER_ID ? "0" : id);
 /** 次に読む章（読んでいない最初の章）。全部読んだら無し */
 export const nextChapter = (exam: Exam, read: ReadonlySet<string>): string | undefined =>
   lessonOrder(exam).find(id => !read.has(id));
-
-/** 文の中の `…` をコードとして出す */
-export function inline(text: string): ComponentChildren[] {
-  return text
-    .split(/(`[^`]+`)/)
-    .map((part, i) =>
-      part.length > 2 && part.startsWith("`") && part.endsWith("`") ? <code key={i}>{part.slice(1, -1)}</code> : part,
-    );
-}
 
 function Block({ exam, b }: { exam: Exam; b: LessonBlock }) {
   if (typeof b === "string") return <p>{inline(b)}</p>;

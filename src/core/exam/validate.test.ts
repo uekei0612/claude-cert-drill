@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { fixture, flatFixture, jaFixture } from "../engine/fixture";
-import type { Exam, Question } from "./types";
+import { type Exam, type Question, type StemBlock, optionText } from "./types";
 import { validateExam } from "./validate";
 
 /** 形の正しい小さな資格（fixture に要点と、長さのそろった選択肢を足す） */
@@ -112,12 +112,37 @@ test("形の違う資格（シナリオ無し・5 択と 3 択・教科書と訳
   expect(validateExam(flatFixture)).toEqual([]);
 });
 
+test("問題文の部品と解答群の表の形（#60）", () => {
+  const bq = jaFixture.questions.find(x => x.columns)!;
+  const withB = (f: (q: Question) => Question): Exam => ({
+    ...jaFixture,
+    questions: jaFixture.questions.map(q => (q.id === bq.id ? f(q) : q)),
+  });
+  const msgs = (e: Exam) => validateExam(e).join("\n");
+  expect(msgs(withB(q => ({ ...q, columns: ["a"] })))).toMatch(/cells の数/);
+  expect(msgs(withB(q => ({ ...q, columns: undefined })))).toMatch(/columns）が無い/);
+  expect(
+    msgs(withB(q => ({ ...q, options: [...q.options.slice(0, 3), { text: "x ← 0", why: "混ぜた選択肢の解説" }] }))),
+  ).toMatch(/text で書いてある/);
+  expect(
+    msgs(withB(q => ({ ...q, stem: [...(q.stem as readonly StemBlock[]), { table: [["1", "2"], ["3"]] }] }))),
+  ).toMatch(/列の数がそろっていない/);
+  expect(
+    msgs(
+      withB(q => ({ ...q, stem: [{ code: "x" }, "あとから段落を書いた問題文の例で、四十字を超えるようにしてある。"] })),
+    ),
+  ).toMatch(/文（段落）で始める/);
+  expect(
+    msgs(withB(q => ({ ...q, stem: ["`sum の閉じていない問題文の例で、四十字を超えるようにしてある文。"] }))),
+  ).toMatch(/` の数/);
+});
+
 test("日本語が原文の資格は形の検査を通り、日本語の訳を持たせると落ちる（#57）", () => {
   expect(validateExam(jaFixture)).toEqual([]);
   const tr = {
     scenarios: {},
     questions: Object.fromEntries(
-      jaFixture.questions.map(q => [q.id, { stem: q.stem, options: q.options.map(o => o.text) }]),
+      jaFixture.questions.map(q => [q.id, { stem: q.stem, options: q.options.map(o => optionText(q, o)) }]),
     ),
   };
   expect(validateExam({ ...jaFixture, translations: { ja: tr } }).some(m => /原文が日本語/.test(m))).toBe(true);
