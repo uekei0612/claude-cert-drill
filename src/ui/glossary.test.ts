@@ -22,3 +22,9 @@ test("定義は今の基準と合っている（#27・#28・#32）", () => {
   expect(def("guess")).toContain("翌日もう一度出します");
   expect(def("gain")).toContain("全部覚えたときに");
 });
+
+test("分野の数・細目の例は資格から作る（#53）", () => {
+  const def = (id: string) => TERMS.find(t => t.id === id)!.def(exam);
+  expect(def("domain")).toContain(`D1〜D${exam.domains.length}`);
+  expect(def("task")).toContain(`例：${exam.domains[0]!.tasks[0]!.id}`);
+});
