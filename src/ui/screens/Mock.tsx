@@ -222,7 +222,7 @@ export function Mock({ exam }: { exam: Exam }) {
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={data.settings.lang}
       />
-      <p class="kbd-hint muted small">キー：{optionKeys(order.length)} で選ぶ・← → で前後・F で旗</p>
+      <p class="kbd-hint muted small">キー：{optionKeys(order.length)}で選ぶ・← → で前後・F で旗</p>
       <div class="sticky-next">
         <button class="btn" disabled={cursor === 0} onClick={() => setCursor(cursor - 1)}>
           ← 前へ

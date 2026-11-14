@@ -284,7 +284,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={lang}
       />
-      <p class="kbd-hint muted small">キー：{optionKeys(order.length)} で選ぶ・Enter で次へ・S で振り返りに入れる</p>
+      <p class="kbd-hint muted small">キー：{optionKeys(order.length)}で選ぶ・Enter で次へ・S で振り返りに入れる</p>
       {revealed && (
         <div class="sticky-next">
           <div class="verdict">
