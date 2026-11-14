@@ -175,5 +175,22 @@ test("問題文の空欄の名前を、段落・プログラム・表・箇条�
     blanksOf(["段落 ［a］", { code: "x ← ［b］" }, { head: ["［c］"], table: [["［d］"]] }, { list: ["［e］"] }]),
   ).toEqual(["a", "b", "c", "d", "e"]);
   // 半角の [a] や大文字は空欄ではない
-  expect(blanksOf("arr[a] と ［A］")).toEqual([]);
+  expect(blanksOf("arr[a] と ［A］ と ［1］")).toEqual([]);
+  expect(blanksOf("［a1］ ～ ［a3］")).toEqual(["a1", "a3"]);
+  // 記号の無い空欄（空欄が 1 つだけの問題。#64）は名前として数えない
+  expect(blanksOf(["次の ［］ に入れる", { code: "x ← ［］" }])).toEqual([]);
+});
+
+test("出典のある問題は、正解が一番長い選択肢の偏りの検査から外す（#64）", () => {
+  // どの問題も正解（0）を一番長くする
+  const longest = withQ(q => ({
+    ...q,
+    options: q.options.map((o, i) => ({ ...o, text: i === 0 ? "the longest option text" : `option ${i}` })),
+  }));
+  expect(has(longest, /正解が一番長い/)).toBe(true);
+  const sourced: Exam = {
+    ...longest,
+    questions: longest.questions.map(q => ({ ...q, source: { label: "公開問題" } })),
+  };
+  expect(has(sourced, /正解が一番長い/)).toBe(false);
 });
