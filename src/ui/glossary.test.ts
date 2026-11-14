@@ -1,8 +1,6 @@
 import { expect, test } from "vitest";
-import { exams } from "../exams";
+import { ccarF as exam } from "../exams/ccar-f/exam";
 import { STEPS, TERMS } from "./glossary";
-
-const exam = exams.find(e => e.id === "ccar-f")!;
 
 test("用語の定義は、資格があってもなくても組める（undefined や空が出ない）", () => {
   for (const t of TERMS)

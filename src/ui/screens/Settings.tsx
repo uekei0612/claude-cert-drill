@@ -2,7 +2,7 @@
 import { useState } from "preact/hooks";
 import { APP } from "../../app/config";
 import { APP_ENV, APP_VERSION } from "../../app/env";
-import { exams, findExam } from "../../exams";
+import { catalog } from "../../exams";
 import { resetAll, resetExam, setExamDate, setSettings } from "../../core/store/actions";
 import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../core/store/schema";
 import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../app/store";
@@ -23,7 +23,7 @@ export function Settings() {
   const [paste, setPaste] = useState("");
   // 自動で写せなかった記録（手で写すための欄に出す。#49）
   const [manual, setManual] = useState<string | undefined>();
-  const last = data.settings.lastExam && findExam(data.settings.lastExam);
+  const last = data.settings.lastExam ? catalog.find(data.settings.lastExam) : undefined;
   const answered = Object.keys(data.items).length;
   // 控えは記録とは別のキーにある。記録が変わるたびに描き直されるので、そのつど読む
   const backup = getBackup();
@@ -76,7 +76,7 @@ export function Settings() {
 
       <section class="card">
         <h2>試験日</h2>
-        {exams.map(e => (
+        {catalog.list.map(e => (
           <label key={e.id} class="row between">
             <span>{e.code}</span>
             <span class="row">
@@ -193,7 +193,7 @@ export function Settings() {
 
       <section class="card">
         <h2>記録を消す</h2>
-        {exams.map(e => (
+        {catalog.list.map(e => (
           <button
             key={e.id}
             class="btn"

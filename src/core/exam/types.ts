@@ -1,7 +1,8 @@
 /* 資格の内容の型。資格ごとの違い（問題数・時間・シナリオの有無・合格の目安）はここに持ち、
    出題・記録・画面はこの型だけを読む。命名規則は docs/design.md。 */
 
-export interface Exam {
+/** 資格の一覧に出す軽い情報（#55）。中身（問題・教科書・訳）を読み込まなくても分かること */
+export interface ExamMeta {
   /** 公式の試験コードを小文字・ハイフン（"ccar-f"）。記録のキーになるので変えない */
   readonly id: string;
   /** 公式の試験コード（"CCAR-F"） */
@@ -11,6 +12,11 @@ export interface Exam {
   readonly title: string;
   /** 日本語の短い説明 */
   readonly summary: string;
+  readonly format: ExamFormat;
+}
+
+/** 資格の中身。一覧の情報（ExamMeta）に、分野・問題・教科書などを足したもの */
+export interface Exam extends ExamMeta {
   readonly domains: readonly Domain[];
   readonly scenarios: readonly Scenario[];
   readonly questions: readonly Question[];
@@ -22,7 +28,6 @@ export interface Exam {
   readonly primer?: Primer;
   /** 出題範囲外（日本語） */
   readonly outOfScope: readonly string[];
-  readonly format: ExamFormat;
   /** 出どころと、数字の確からしさ（画面の「この試験について」に出す） */
   readonly sources: readonly { readonly label: string; readonly note: string }[];
   /** 問題文・選択肢・シナリオの訳。キーは言語（"ja"）。原文（英語）が正で、訳は読むための補助 */

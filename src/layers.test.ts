@@ -16,15 +16,20 @@ function walk(dir: string): string[] {
   });
 }
 
-/** ファイルの import（src からの相対パス、またはパッケージ名） */
-function importsOf(file: string): string[] {
+/** ファイルの import（src からの相対パス、またはパッケージ名）。dynamic は import() で読むもの */
+function importsOf(file: string, dynamic: boolean): string[] {
   const text = readFileSync(file, "utf8");
-  return [...text.matchAll(/(?:from|import)\s*\(?\s*"([^"]+)"/g)].map(([, spec]) =>
+  const re = dynamic ? /import\(\s*"([^"]+)"/g : /(?:from|^import)\s+"([^"]+)"/gm;
+  return [...text.matchAll(re)].map(([, spec]) =>
     spec!.startsWith(".") ? relative(SRC, normalize(join(dirname(file), spec!))) : `pkg:${spec}`,
   );
 }
 
-const files = walk(SRC).map(f => ({ path: relative(SRC, f), imports: importsOf(f) }));
+const files = walk(SRC).map(f => ({
+  path: relative(SRC, f),
+  statics: importsOf(f, false),
+  imports: [...importsOf(f, false), ...importsOf(f, true)],
+}));
 const under = (p: string, dir: string) => p === dir || p.startsWith(`${dir}/`);
 
 describe("層の境目", () => {
@@ -50,6 +55,13 @@ describe("層の境目", () => {
       .filter(f => !/^exams\/[^/]+\//.test(f.path) && f.path !== "exams/index.ts")
       .flatMap(f => f.imports.filter(i => /^exams\/[^/]+\//.test(i)).map(i => `${f.path} → ${i}`));
     expect(bad).toEqual([]);
+  });
+
+  test("一覧は、資格の一覧の情報（meta）だけを先に読み、中身は import() で読む（#55）", () => {
+    const index = files.find(f => f.path === "exams/index.ts")!;
+    const bad = index.statics.filter(i => /^exams\/[^/]+\//.test(i) && !/\/meta$/.test(i));
+    expect(bad).toEqual([]);
+    expect(index.imports.filter(i => /^exams\/[^/]+\/exam$/.test(i)).length).toBeGreaterThan(0);
   });
 
   test("画面はアプリの組み立て（app/App）を読まない", () => {

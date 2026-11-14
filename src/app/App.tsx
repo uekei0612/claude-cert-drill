@@ -1,9 +1,10 @@
 import { useEffect, useState } from "preact/hooks";
 import { APP_ENV, APP_VERSION } from "./env";
-import { exams, findExam } from "../exams";
+import { catalog } from "../exams";
 import { setSettings } from "../core/store/actions";
 import { getData, update, useData } from "./store";
-import { go, href, useRoute } from "../ui/route";
+import { go, href, parseRoute, useRoute } from "../ui/route";
+import { ExamLoading } from "../ui/screens/ExamLoading";
 import { ExamPicker } from "../ui/screens/ExamPicker";
 import { Home } from "../ui/screens/Home";
 import { Mock } from "../ui/screens/Mock";
@@ -19,14 +20,20 @@ import { Saved } from "../ui/screens/Saved";
 import { TabBar } from "../ui/TabBar";
 import { applyTheme } from "../ui/theme";
 import { UpdatePrompt } from "../ui/UpdatePrompt";
+import { useExam } from "../ui/useExam";
 
 /** 起動したとき、ハッシュが無ければ前回の資格を開く。初めてでも資格が 1 つだけならそのホームを開く
-    （資格一覧から始めると、何から手を付ければよいかが分からない。#50） */
-export function startRoute(): void {
-  if (location.hash) return;
-  const last = getData().settings.lastExam;
-  const target = last && findExam(last) ? last : exams.length === 1 ? exams[0]!.id : undefined;
-  if (target) location.replace(href({ name: "home", examId: target }));
+    （資格一覧から始めると、何から手を付ければよいかが分からない。#50）。
+    返すのは、最初に開く画面の資格（中身を先に読み込んでおく。#55） */
+export function startRoute(): string | undefined {
+  if (!location.hash) {
+    const last = getData().settings.lastExam;
+    const list = catalog.list;
+    const target = last && catalog.find(last) ? last : list.length === 1 ? list[0]!.id : undefined;
+    if (target) location.replace(href({ name: "home", examId: target }));
+  }
+  const route = parseRoute(location.hash);
+  return "examId" in route ? route.examId : undefined;
 }
 
 /** 表に戻ったときに「今」を進める（期限の来た問題の数が変わる） */
@@ -44,12 +51,15 @@ export function App() {
   const route = useRoute();
   const now = useNow();
   const examId = "examId" in route ? route.examId : undefined;
-  const exam = examId ? findExam(examId) : undefined;
+  // 一覧の情報（すぐ分かる）と、中身（開いたときに読み込む。#55）
+  const meta = examId ? catalog.find(examId) : undefined;
+  const loading = useExam(examId);
+  const exam = loading.status === "ready" ? loading.exam : undefined;
 
   useEffect(() => {
-    if (examId && !exam) go({ name: "picker" });
-    if (exam && getData().settings.lastExam !== exam.id) update(d => setSettings(d, { lastExam: exam.id }));
-  }, [examId, exam]);
+    if (examId && !meta) go({ name: "picker" });
+    if (meta && getData().settings.lastExam !== meta.id) update(d => setSettings(d, { lastExam: meta.id }));
+  }, [examId, meta]);
 
   // 画面を移ったら先頭から見せる（ハッシュの移動ではブラウザが位置を戻さず、前の画面の位置が残る）
   const here = href(route);
@@ -65,13 +75,14 @@ export function App() {
   // 練習中と、模擬試験を解いている間は、下のタブを出さず、新しい版への切り替えも待つ
   // 設定は資格の外の画面だが、前回の資格のタブを出して戻れるようにする
   const tabExam =
-    exam ??
-    (route.name === "settings" || route.name === "help" ? findExam(getData().settings.lastExam ?? "") : undefined);
+    meta ??
+    (route.name === "settings" || route.name === "help" ? catalog.find(getData().settings.lastExam ?? "") : undefined);
   const busy = route.name === "practice" || (route.name === "mock" && activeHere);
   let screen;
   if (route.name === "settings") screen = <Settings />;
   else if (route.name === "help") screen = <Help />;
-  else if (route.name === "picker" || !exam) screen = <ExamPicker />;
+  else if (route.name === "picker" || !meta) screen = <ExamPicker />;
+  else if (!exam) screen = <ExamLoading failed={loading.status === "error"} />;
   else if (route.name === "practice") screen = <Practice key={href(route)} exam={exam} only={route.only} now={now} />;
   else if (route.name === "mock") screen = <Mock exam={exam} />;
   else if (route.name === "domains")
