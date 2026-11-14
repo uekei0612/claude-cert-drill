@@ -2,7 +2,7 @@
 import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { APP } from "./src/app/config";
+import { APP } from "./src/app/config.ts";
 
 /* develop 版（vite build --mode develop）は本番と同じ Pages の /claude-cert-drill/dev/ に置く。
    記録の保存先は src/store/store.ts で分ける（同じドメインなので localStorage は共有される） */
