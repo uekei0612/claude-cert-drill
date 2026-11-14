@@ -1,8 +1,9 @@
 /* 後で振り返る印を付けた問題の一覧。開くと答えと解説が読め、印を外せる。印を付けた問題だけで練習もできる */
 import { useState } from "preact/hooks";
-import type { Exam } from "../../exams/types";
-import { savedIds } from "../../store/actions";
-import { getData, useData } from "../../store/store";
+import { naturalOrder } from "../../core/engine/practice";
+import type { Exam } from "../../core/exam/types";
+import { savedIds } from "../../core/store/actions";
+import { getData, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
@@ -32,8 +33,8 @@ export function Saved({ exam }: { exam: Exam }) {
       ) : (
         <>
           <p class="muted small">
-            印を付けた問題 {count}{" "}
-            問（新しく付けた順）。開くと答えと解説が読めます。選択肢は元の並び（A〜D）で出すので、練習のときと記号が違うことがあります。
+            印を付けた問題 {count} 問（新しく付けた順）。開くと答えと解説が読めます。選択肢は元の並び（A
+            から順）で出すので、練習のときと記号が違うことがあります。
           </p>
           {count > 0 && (
             <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: "saved" })}>
@@ -65,7 +66,7 @@ export function Saved({ exam }: { exam: Exam }) {
                     <QuestionCard
                       exam={exam}
                       q={q}
-                      order={[0, 1, 2, 3]}
+                      order={naturalOrder(q.options.length)}
                       reveal={true}
                       scenarioOpen={false}
                       lang={data.settings.lang}

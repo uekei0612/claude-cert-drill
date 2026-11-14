@@ -10,14 +10,14 @@ Anthropic の Claude の資格の試験勉強用アプリ。iPhone のホーム�
 |---|---|---|---|
 | アプリ | `claude-cert-drill` | — | 対象は Claude の資格。ホーム画面の表示名は `cert-drill` |
 | 資格 | 公式の試験コードを小文字・ハイフン | `ccar-f`、`ccar-p` | 旧称（CCA-F）は表示名にだけ残す。**ID は変えない**（記録のキーになる） |
-| 置き場所 | `src/exams/<資格ID>/` | `src/exams/ccar-f/` | 資格の内容はここにだけ置く。仕組み（engine・store・ui）は資格名を知らない |
+| 置き場所 | `src/exams/<資格ID>/` | `src/exams/ccar-f/` | 資格の内容はここにだけ置く。仕組み（core・ui）は資格名を知らない。足し方は [adding-an-exam.md](adding-an-exam.md) |
 | 分野 | `d<番号>` | `d1` | 公式の Domain 番号 |
 | 細目 | 公式の番号 | `1.1` | 公式の Task Statement 番号 |
 | シナリオ | `s<番号>` | `s1` | 公式のシナリオ番号。シナリオの無い資格は持たなくてよい |
 | 問題 | `<シナリオ>-<2 桁の連番>` | `s1-03` | 資格の中で一意。シナリオの無い資格は `d1-03` |
 | 記録のキー | `<資格ID>:<問題ID>` | `ccar-f:s1-03` | 資格をまたいで衝突しない |
 | URL | `#/<資格ID>/<画面>` | `#/ccar-f/practice` | 資格を選ぶ画面は `#/` |
-| 保存先 | `claude-cert-drill`（develop 版は `claude-cert-drill-dev`） | — | localStorage のキー |
+| 保存先 | `claude-cert-drill`（develop 版は `claude-cert-drill-dev`） | — | localStorage のキー。値は `src/app/config.ts` の `id` |
 
 ## CCAR-F の試験の形（このアプリが合わせる相手）
 
@@ -66,15 +66,20 @@ guitar-drill は「答えが計算で決まる問題を大量に作る」アプ�
 
 ## 構成
 
+層は 4 つ。向きは `app → ui → core ← exams` で、境目は `src/layers.test.ts` が見張る（#51）。
+
 ```
 src/
-  exams/         資格の内容。データだけ
-    types.ts       Exam・Domain・Task・Scenario・Question の型
-    index.ts       載せている資格の一覧
-    ccar-f/        CCAR-F（exam.ts、scenarios.ts、questions/s1.ts…、notes.ts）
-  engine/        出題（間隔反復、練習と模擬試験の組み立て、採点、習熟度）。DOM に触らない
-  store/         記録（スキーマ、移行、検証、書き出し／読み込み）
-  ui/            画面と部品
+  core/          資格に依らない基盤。Preact も画面も、core の外も読まない（将来パッケージに切り出せる単位）
+    exam/          資格の型（types.ts）と図の道具（figure.ts）
+    engine/        出題（間隔反復、練習と模擬試験の組み立て、採点、習熟度、検索、日付）
+    store/         記録の形（schema）・操作（actions）・入れ物（createStore。保存先とキーは外から渡す）
+  ui/            画面と部品（資格の名前を知らない。資格は Exam で受け取る）
+  exams/         資格の中身。データだけ（core/exam だけを読む）
+    index.ts       載せている資格の一覧（資格の中身を読むのはここだけ）
+    ccar-f/        CCAR-F（exam.ts、questions/s1.ts…、lessons/、notes.ts、ja.ts）
+  app/           このアプリの組み立て（環境、記録の実体と useData、App）
+  main.tsx       入口
 ```
 
 ### 問題の形
@@ -85,14 +90,14 @@ interface Question {
   scenario?: string;       // "s1"。シナリオの無い資格では無し
   tasks: string[];         // ["1.1", "5.2"]。先頭が主たる細目（集計はこれで行う）
   stem: string;            // 英語
-  options: [Option, Option, Option, Option];
-  answer: 0 | 1 | 2 | 3;
+  options: Option[];        // 2〜5 個（MIN_OPTIONS〜MAX_OPTIONS。#54）。CCAR-F はすべて 4 択
+  answer: number;          // 正解の位置（0 始まり）。正解は 1 つだけ（複数選択はまだ無い）
   point: string;           // 日本語。この問題で覚えること 1 行
 }
 interface Option { text: string; why: string }   // text は英語、why は日本語
 ```
 
-表示のときに選択肢の順番を混ぜる（位置で覚えないように）。
+表示のときに選択肢の順番を混ぜる（位置で覚えないように）。記号は A〜E、PC のキーは 1〜5／A〜E（F は模擬試験の旗なので、選択肢は 5 つまで）。
 
 ### 画面
 

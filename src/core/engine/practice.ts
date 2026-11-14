@@ -1,8 +1,8 @@
 /* 練習の 1 回分の組み立て。
    期限切れ（古い順）→ 未出題（配点 ×（1 − その分野の覚えた割合）で重み付けして選ぶ）→ 期限前（近い順）。
    問題が少ない資格なので、同じ回に同じ問題は入れない（足りなければ短い回になる） */
-import type { Exam, Question } from "../exams/types";
-import { domainOf } from "../exams/types";
+import type { Exam, Question } from "../exam/types";
+import { domainOf } from "../exam/types";
 import { type StatOf, questionsOfDomain, ratio, tally } from "./progress";
 import { type Rng, pickWeighted, shuffle } from "./rng";
 
@@ -69,5 +69,16 @@ export function planPractice(
   return shuffle(rng, picked).map(q => q.id);
 }
 
+/** 元の並び（0, 1, …, n−1） */
+export const naturalOrder = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
+
 /** 表示する選択肢の順番（位置で覚えないように混ぜる）。返すのは元の添字の並び */
-export const optionOrder = (rng: Rng): number[] => shuffle(rng, [0, 1, 2, 3]);
+export const optionOrder = (rng: Rng, n: number): number[] => shuffle(rng, naturalOrder(n));
+
+/** 0〜n−1 の並べ替えか */
+export const isPermutation = (order: readonly number[], n: number): boolean =>
+  order.length === n && naturalOrder(n).every(i => order.includes(i));
+
+/** 記録にある選択肢の並びを使う。この問題の並べ替えになっていなければ（選択肢の数が変わったなど）元の並び */
+export const orderFor = (q: Question, saved?: readonly number[]): readonly number[] =>
+  saved && isPermutation(saved, q.options.length) ? saved : naturalOrder(q.options.length);

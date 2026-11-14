@@ -1,17 +1,22 @@
 /* 使い方と用語（#50）。おすすめの進め方と、画面に出るアプリ独自の用語をまとめる。
    用語の文は「?」と同じ glossary から読む */
-import { findExam } from "../../exams";
-import { useData } from "../../store/store";
+import { APP } from "../../app/config";
+import { useData } from "../../app/store";
 import { STEPS, TERMS } from "../glossary";
 import { href } from "../route";
+import { useExam } from "../useExam";
+import { catalog } from "../../exams";
 
 export function Help() {
   const last = useData().settings.lastExam;
-  const exam = last ? findExam(last) : undefined;
+  // 用語の説明に資格の数字（目安・本番の問題数）を入れる。読み込むまでは資格なしの文で出す
+  const loading = useExam(last);
+  const exam = loading.status === "ready" ? loading.exam : undefined;
+  const meta = last ? catalog.find(last) : undefined;
   return (
-    <main class={`page ${exam ? "with-tabs" : ""}`}>
-      <a class="btn ghost" href={exam ? href({ name: "home", examId: exam.id }) : href({ name: "picker" })}>
-        ← {exam ? "ホーム" : "資格一覧"}
+    <main class={`page ${meta ? "with-tabs" : ""}`}>
+      <a class="btn ghost" href={meta ? href({ name: "home", examId: meta.id }) : href({ name: "picker" })}>
+        ← {meta ? "ホーム" : "資格一覧"}
       </a>
       <h1>使い方</h1>
       <section class="card stack" aria-labelledby="steps-h">
@@ -36,7 +41,7 @@ export function Help() {
           ))}
         </dl>
       </section>
-      <p class="muted small">問題と教科書はすべて自作の非公式教材です。Anthropic とは関係がありません。</p>
+      <p class="muted small">{APP.disclaimer}</p>
     </main>
   );
 }

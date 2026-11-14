@@ -1,10 +1,11 @@
 /* 設定と記録。ホーム画面版は Safari と保存領域が別なので、書き出し／読み込みで移す */
 import { useState } from "preact/hooks";
-import { APP_ENV, APP_VERSION } from "../../env";
-import { exams, findExam } from "../../exams";
-import { resetAll, resetExam, setExamDate, setSettings } from "../../store/actions";
-import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../store/schema";
-import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../store/store";
+import { APP } from "../../app/config";
+import { APP_ENV, APP_VERSION } from "../../app/env";
+import { catalog } from "../../exams";
+import { resetAll, resetExam, setExamDate, setSettings } from "../../core/store/actions";
+import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../core/store/schema";
+import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../app/store";
 import { ManualCopy, copyToClipboard } from "../CopyButton";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";
@@ -22,7 +23,7 @@ export function Settings() {
   const [paste, setPaste] = useState("");
   // 自動で写せなかった記録（手で写すための欄に出す。#49）
   const [manual, setManual] = useState<string | undefined>();
-  const last = data.settings.lastExam && findExam(data.settings.lastExam);
+  const last = data.settings.lastExam ? catalog.find(data.settings.lastExam) : undefined;
   const answered = Object.keys(data.items).length;
   // 控えは記録とは別のキーにある。記録が変わるたびに描き直されるので、そのつど読む
   const backup = getBackup();
@@ -31,7 +32,7 @@ export function Settings() {
     const blob = new Blob([exportJson()], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `claude-cert-drill-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `${APP.id}-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   };
@@ -75,7 +76,7 @@ export function Settings() {
 
       <section class="card">
         <h2>試験日</h2>
-        {exams.map(e => (
+        {catalog.list.map(e => (
           <label key={e.id} class="row between">
             <span>{e.code}</span>
             <span class="row">
@@ -192,7 +193,7 @@ export function Settings() {
 
       <section class="card">
         <h2>記録を消す</h2>
-        {exams.map(e => (
+        {catalog.list.map(e => (
           <button
             key={e.id}
             class="btn"
@@ -239,7 +240,7 @@ export function Settings() {
       )}
 
       <p class="muted small">
-        claude-cert-drill {APP_VERSION}（{APP_ENV}）・非公式の教材で、Anthropic とは関係がありません。
+        {APP.name} {APP_VERSION}（{APP_ENV}）・{APP.disclaimer}
       </p>
     </main>
   );

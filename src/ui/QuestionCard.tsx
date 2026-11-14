@@ -7,14 +7,13 @@
    learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出す（間違えた直後に読めるように。#26）。
    練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
-import type { Exam, Question } from "../exams/types";
-import { domainOf, findTask } from "../exams/types";
-import type { QuestionLang } from "../store/schema";
+import { APP } from "../app/config";
+import type { Exam, Question } from "../core/exam/types";
+import { domainOf, findTask, optionLetter } from "../core/exam/types";
+import type { QuestionLang } from "../core/store/schema";
 import { CopyButton } from "./CopyButton";
 import { hintText, questionText } from "./copyText";
 import { href } from "./route";
-
-const LETTERS = ["A", "B", "C", "D"];
 
 export interface QuestionCardProps {
   readonly exam: Exam;
@@ -148,7 +147,7 @@ export function QuestionCard({
                   onChoose?.(orig);
                 }}
               >
-                <span class="letter">{LETTERS[i]}</span>
+                <span class="letter">{optionLetter(i)}</span>
                 <span class="otext">
                   <Text en={o.text} ja={tq?.options[orig]} lang={shown} />
                 </span>
@@ -179,7 +178,10 @@ export function QuestionCard({
       )}
       {reveal && (
         <div class="row end">
-          <CopyButton label="Claude に聞く用にコピー" text={() => questionText({ exam, q, order, chosen })} />
+          <CopyButton
+            label={`${APP.assistant} に聞く用にコピー`}
+            text={() => questionText({ exam, q, order, chosen })}
+          />
         </div>
       )}
       {!reveal && hintCopy && (

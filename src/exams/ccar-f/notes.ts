@@ -1,5 +1,5 @@
 /* 細目ごとの要点。試験ガイドの細目の範囲を、自分の言葉でまとめたもの */
-import type { Note } from "../types";
+import type { Note } from "../../core/exam/types";
 
 export const notes: Record<string, Note> = {
   "1.1": {

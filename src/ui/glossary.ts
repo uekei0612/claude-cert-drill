@@ -1,7 +1,7 @@
 /* アプリ独自の用語と、指標の定義（#50）。指標の横の「?」と、使い方のページの両方がここを読む。
    基準を変えたら（#27・#28・#32 など）ここも合わせる */
-import { MAX_INTERVAL, RETRY_MS } from "../engine/schedule";
-import type { Exam } from "../exams/types";
+import { MAX_INTERVAL, RETRY_MS } from "../core/engine/schedule";
+import type { Exam } from "../core/exam/types";
 
 export type TermId =
   | "readiness"
@@ -72,12 +72,14 @@ export const TERMS: readonly Term[] = [
   {
     id: "task",
     term: "細目",
-    def: () => "試験ガイドの出題範囲の項目（例：1.1）。分野の下にあります。問題と教科書の章は細目ごとに作っています。",
+    def: e =>
+      `試験ガイドの出題範囲の項目（例：${e?.domains[0]?.tasks[0]?.id ?? "1.1"}）。分野の下にあります。問題と教科書の章は細目ごとに作っています。`,
   },
   {
     id: "domain",
     term: "分野・配点",
-    def: () => "出題範囲の大きな区分（D1〜D5）と、本番でその分野から出る割合。",
+    def: e =>
+      `出題範囲の大きな区分（${e && e.domains.length > 1 ? `D1〜D${e.domains.length}` : "D1 など"}）と、本番でその分野から出る割合。`,
   },
   {
     id: "saved",

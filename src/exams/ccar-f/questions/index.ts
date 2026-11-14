@@ -1,4 +1,4 @@
-import type { Question } from "../../types";
+import type { Question } from "../../../core/exam/types";
 import { s1 } from "./s1";
 import { s2 } from "./s2";
 import { s3 } from "./s3";

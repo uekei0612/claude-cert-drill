@@ -1,8 +1,9 @@
 /* Claude Certified Architect – Foundations（CCAR-F）。
    分野・細目の名前と配点は Anthropic の試験ガイド（Version 0.1）に合わせる。
    シナリオの文・要点・問題はすべて自分の言葉で書く（ガイドの本文やサンプル問題は載せない）。 */
-import type { Domain, Exam, Scenario } from "../types";
+import type { Domain, Exam, Scenario } from "../../core/exam/types";
 import { ja } from "./ja";
+import { meta } from "./meta";
 import { lessons, primer } from "./lessons";
 import { notes } from "./notes";
 import { questions } from "./questions";
@@ -224,12 +225,7 @@ const scenarios: Scenario[] = [
 ];
 
 export const ccarF: Exam = {
-  id: "ccar-f",
-  code: "CCAR-F",
-  aliases: ["CCA-F"],
-  title: "Claude Certified Architect – Foundations",
-  summary:
-    "Claude Code・Claude Agent SDK・Claude API・MCP を使った本番システムの設計判断を問う、Anthropic の基礎の技術資格。",
+  ...meta,
   domains,
   scenarios,
   questions,
@@ -252,14 +248,6 @@ export const ccarF: Exam = {
     "プロンプトキャッシュの実装の詳細（存在を知っている程度は範囲内）",
     "トークンの数え方、トークン化の仕組み",
   ],
-  format: {
-    questions: 60,
-    minutes: 120,
-    secondsPerQuestion: 120,
-    scenariosPerExam: 4,
-    passing: "スケールスコア 720 / 1000",
-    target: 0.75,
-  },
   sources: [
     {
       label: "分野・配点・細目・シナリオ・合格点・範囲外",

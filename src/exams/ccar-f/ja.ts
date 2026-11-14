@@ -1,6 +1,6 @@
 /* CCAR-F の日本語訳（問題文・選択肢・シナリオ）。原文（英語）が正で、これは読むための補助。
    技術用語・ツール名・フラグ名は英語のまま残す。選択肢は原文と同じ並び */
-import type { Translation } from "../types";
+import type { Translation } from "../../core/exam/types";
 
 export const ja: Translation = {
   scenarios: {

@@ -1,9 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { exams } from "../exams";
-import { PRIMER_ID } from "../exams/types";
+import { ccarF as exam } from "../exams/ccar-f/exam";
+import { PRIMER_ID } from "../core/exam/types";
 import { hintText, lessonText, questionText, sectionText } from "./copyText";
 
-const exam = exams.find(e => e.id === "ccar-f")!;
 const q = exam.questions.find(x => x.id === "s1-01")!;
 const ja = exam.translations!.ja!;
 

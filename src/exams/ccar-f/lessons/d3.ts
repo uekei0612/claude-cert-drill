@@ -1,5 +1,5 @@
 /* 教科書 D3：Claude Code の設定とワークフロー。仕様は公式ドキュメントで確かめた（2026-11-06） */
-import type { Lesson } from "../../types";
+import type { Lesson } from "../../../core/exam/types";
 import { claudeMdLoading } from "./figures";
 
 const CC = "https://code.claude.com/docs/en";

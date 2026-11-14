@@ -1,5 +1,5 @@
 /* 教科書「はじめに」：細目に入る前の基礎と用語。仕様は公式ドキュメントで確かめた（2026-11-06） */
-import type { Primer } from "../../types";
+import type { Primer } from "../../../core/exam/types";
 import { mcpBridge, toolRoundTrip } from "./figures";
 
 const API = "https://platform.claude.com/docs/en";

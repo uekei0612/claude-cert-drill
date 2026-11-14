@@ -1,5 +1,5 @@
 /* シナリオ 6：構造化データの抽出（自作問題）。正解の文は短く言い切り、誤答の長さと揃える */
-import type { Question } from "../../types";
+import type { Question } from "../../../core/exam/types";
 
 export const s6: Question[] = [
   {

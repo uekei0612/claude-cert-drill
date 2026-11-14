@@ -19,18 +19,12 @@ import {
   undoAnswer,
 } from "./actions";
 import { emptyData, parseData } from "./schema";
-import {
-  BACKUP_KEY,
-  STORAGE_KEY,
-  exportJson,
-  getBackup,
-  getData,
-  importJson,
-  reloadForTest,
-  replaceData,
-  restoreBackup,
-  setData,
-} from "./store";
+import { createStore } from "./store";
+
+const store = createStore({ key: "test-store", app: "test-app", storage: () => localStorage });
+const { exportJson, getBackup, getData, importJson, replaceData, restoreBackup, setData } = store;
+const reloadForTest = store.reload;
+const BACKUP_KEY = store.backupKey;
 
 const NOW = Date.UTC(2026, 10, 4);
 
@@ -73,14 +67,15 @@ describe("parseData", () => {
         scenarioIds: ["s1"],
         startedAt: NOW,
         limitMs: 1000,
-        answers: { "s1-01": 2, "s1-02": 9 },
+        answers: { "s1-01": 2, "s1-02": 9, "s1-03": 4 },
         flags: [],
-        orders: { "s1-01": [3, 2, 1, 0], "s1-02": [0, 0, 1, 2] },
+        orders: { "s1-01": [3, 2, 1, 0], "s1-02": [0, 0, 1, 2], "s1-03": [4, 0, 3, 1, 2], "s1-04": [0, 1, 2, 3, 4, 5] },
         cursor: 5,
       },
     });
-    expect(d.activeMock?.answers).toEqual({ "s1-01": 2 });
-    expect(Object.keys(d.activeMock!.orders)).toEqual(["s1-01"]);
+    // 5 択まで読む（#54）。6 個以上の並びと、範囲の外の答えは捨てる
+    expect(d.activeMock?.answers).toEqual({ "s1-01": 2, "s1-03": 4 });
+    expect(Object.keys(d.activeMock!.orders)).toEqual(["s1-01", "s1-03"]);
     expect(d.activeMock?.cursor).toBe(1);
   });
   test("途中の模擬試験：使った時間を持たない記録（#42 より前）は、時間を使っていない扱い", () => {
@@ -107,8 +102,8 @@ describe("store", () => {
     localStorage.clear();
     reloadForTest();
   });
-  test("develop・開発の保存先は本番と分ける", () => {
-    expect(STORAGE_KEY).toBe("claude-cert-drill-dev");
+  test("控えのキーは保存のキーの後ろに :backup", () => {
+    expect(BACKUP_KEY).toBe("test-store:backup");
   });
   test("保存して読み直せる", () => {
     setData(answer(getData(), "ccar-f", "s1-01", true, NOW));
@@ -121,7 +116,7 @@ describe("store", () => {
     expect(() => importJson('{"items":{}}')).toThrow();
     // 読めないときは、ブラウザの英語のエラーではなく日本語で理由と次にすることを出す（#49）
     expect(() => importJson("not json")).toThrow(/記録の形式ではありません/);
-    expect(() => importJson('{"items":{}}')).toThrow(/このアプリ（claude-cert-drill）で書き出した記録ではありません/);
+    expect(() => importJson('{"items":{}}')).toThrow(/このアプリ（test-app）で書き出した記録ではありません/);
   });
 });
 

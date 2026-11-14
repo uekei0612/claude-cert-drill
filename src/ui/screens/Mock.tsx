@@ -2,17 +2,17 @@
    時間はこの画面を開いている間だけ進む（閉じる・中断する・アプリを裏に回すと止まる）。
    時間切れになったらその時点で採点する（本番と同じく未回答は誤答） */
 import { useEffect, useRef, useState } from "preact/hooks";
-import { addUsed, mockLeft, planMock, scoreMock } from "../../engine/mock";
-import { optionOrder } from "../../engine/practice";
-import { seeded } from "../../engine/rng";
-import type { Exam } from "../../exams/types";
-import { abandonMock, finishMock, patchMock, startMock } from "../../store/actions";
-import { getData, update, useData } from "../../store/store";
+import { addUsed, mockLeft, planMock, scoreMock } from "../../core/engine/mock";
+import { optionOrder, orderFor } from "../../core/engine/practice";
+import { seeded } from "../../core/engine/rng";
+import type { Exam } from "../../core/exam/types";
+import { abandonMock, finishMock, patchMock, startMock } from "../../core/store/actions";
+import { getData, update, useData } from "../../app/store";
 import { HelpTip } from "../HelpTip";
 import { LangSwitch } from "../LangSwitch";
 import { pct } from "../Meter";
 import { QuestionCard } from "../QuestionCard";
-import { optionIndex, useKeys } from "../keys";
+import { optionIndex, optionKeys, useKeys } from "../keys";
 import { go, href } from "../route";
 
 /** 残り時間の表示（「1:02:03」「12:34」） */
@@ -36,7 +36,8 @@ function submit(exam: Exam): void {
 function begin(exam: Exam): void {
   const rng = seeded(Math.floor(Math.random() * 2 ** 31));
   const p = planMock(exam, rng);
-  const orders = Object.fromEntries(p.questionIds.map(id => [id, optionOrder(rng)]));
+  const count = new Map(exam.questions.map(q => [q.id, q.options.length]));
+  const orders = Object.fromEntries(p.questionIds.map(id => [id, optionOrder(rng, count.get(id) ?? 4)]));
   update(d =>
     startMock(d, {
       examId: exam.id,
@@ -178,7 +179,7 @@ export function Mock({ exam }: { exam: Exam }) {
       </main>
     );
 
-  const order = m.orders[id] ?? [0, 1, 2, 3];
+  const order = orderFor(q, m.orders[id]);
   const choose = (orig: number) => update(d => patchMock(d, x => ({ ...x, answers: { ...x.answers, [id]: orig } })));
   const toggleFlag = () =>
     update(d => patchMock(d, x => ({ ...x, flags: flagged ? x.flags.filter(f => f !== id) : [...x.flags, id] })));
@@ -221,7 +222,7 @@ export function Mock({ exam }: { exam: Exam }) {
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={data.settings.lang}
       />
-      <p class="kbd-hint muted small">キー：1〜4（A〜D）で選ぶ・← → で前後・F で旗</p>
+      <p class="kbd-hint muted small">キー：{optionKeys(order.length)}で選ぶ・← → で前後・F で旗</p>
       <div class="sticky-next">
         <button class="btn" disabled={cursor === 0} onClick={() => setCursor(cursor - 1)}>
           ← 前へ

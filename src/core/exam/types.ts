@@ -1,7 +1,8 @@
 /* 資格の内容の型。資格ごとの違い（問題数・時間・シナリオの有無・合格の目安）はここに持ち、
    出題・記録・画面はこの型だけを読む。命名規則は docs/design.md。 */
 
-export interface Exam {
+/** 資格の一覧に出す軽い情報（#55）。中身（問題・教科書・訳）を読み込まなくても分かること */
+export interface ExamMeta {
   /** 公式の試験コードを小文字・ハイフン（"ccar-f"）。記録のキーになるので変えない */
   readonly id: string;
   /** 公式の試験コード（"CCAR-F"） */
@@ -11,6 +12,11 @@ export interface Exam {
   readonly title: string;
   /** 日本語の短い説明 */
   readonly summary: string;
+  readonly format: ExamFormat;
+}
+
+/** 資格の中身。一覧の情報（ExamMeta）に、分野・問題・教科書などを足したもの */
+export interface Exam extends ExamMeta {
   readonly domains: readonly Domain[];
   readonly scenarios: readonly Scenario[];
   readonly questions: readonly Question[];
@@ -22,7 +28,6 @@ export interface Exam {
   readonly primer?: Primer;
   /** 出題範囲外（日本語） */
   readonly outOfScope: readonly string[];
-  readonly format: ExamFormat;
   /** 出どころと、数字の確からしさ（画面の「この試験について」に出す） */
   readonly sources: readonly { readonly label: string; readonly note: string }[];
   /** 問題文・選択肢・シナリオの訳。キーは言語（"ja"）。原文（英語）が正で、訳は読むための補助 */
@@ -40,7 +45,8 @@ export interface Translation {
 
 export interface QuestionTranslation {
   readonly stem: string;
-  readonly options: readonly [string, string, string, string];
+  /** 原文と同じ並び・同じ数 */
+  readonly options: readonly string[];
 }
 
 export interface ExamFormat {
@@ -107,8 +113,10 @@ export interface Question {
   readonly tasks: readonly [string, ...string[]];
   /** 英語 */
   readonly stem: string;
-  readonly options: readonly [Option, Option, Option, Option];
-  readonly answer: 0 | 1 | 2 | 3;
+  /** MIN_OPTIONS〜MAX_OPTIONS 個。資格の中でそろっていなくてもよい（#54） */
+  readonly options: readonly Option[];
+  /** 正解の位置（0 始まり）。正解は 1 つだけ */
+  readonly answer: number;
   /** この問題で覚えること 1 行（日本語） */
   readonly point: string;
 }
@@ -155,6 +163,13 @@ export type LessonBlock =
   /** 例題。選択肢は 3〜4 個、answer は正解の位置（0 始まり）、why は答えの理由と他の選択肢が誤りの理由 */
   | { readonly quiz: string; readonly choices: readonly string[]; readonly answer: number; readonly why: string }
   | { readonly code: string; readonly lang?: string };
+
+/** 1 問の選択肢の数（#54）。PC のキー操作で 1〜5／A〜E を選択肢に使い、F は模擬試験の旗なので 5 までにする */
+export const MIN_OPTIONS = 2;
+export const MAX_OPTIONS = 5;
+
+/** 選択肢の記号（0 → "A"） */
+export const optionLetter = (i: number): string => "ABCDE"[i] ?? "?";
 
 /** 教科書の「はじめに」の ID（URL の #/<資格>/learn/intro） */
 export const PRIMER_ID = "intro";

@@ -1,8 +1,8 @@
 /* 教科書と要点の検索（#41）。語を入れると、教科書の節と細目（要点・覚えること）が並ぶ。
    入れた語は URL に残す（戻ってきても同じ結果が出る）。問題文と選択肢は答えが見えるので探さない */
 import { useMemo, useState } from "preact/hooks";
-import { type Hit, buildIndex, normalize, search } from "../../engine/search";
-import type { Exam } from "../../exams/types";
+import { type Hit, buildIndex, normalize, search } from "../../core/engine/search";
+import type { Exam } from "../../core/exam/types";
 import { href } from "../route";
 
 /** 見つかった語を強調する */

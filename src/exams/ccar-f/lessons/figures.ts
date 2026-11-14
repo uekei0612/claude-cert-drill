@@ -1,5 +1,5 @@
 /* 教科書 CCAR-F の図。座標は幅 340 の図の中の位置。文字が枠に収まるかはテストで確かめる */
-import { arrow, box, line, svg, text } from "../../figure";
+import { arrow, box, line, svg, text } from "../../../core/exam/figure";
 
 const S = { fs: 12, tone: "muted" } as const;
 
