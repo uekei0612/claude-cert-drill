@@ -1,6 +1,6 @@
 # claude-cert-drill 設計
 
-Anthropic の Claude の資格の試験勉強用アプリ。iPhone のホーム画面アプリ（PWA）として GitHub Pages から配る。
+資格の試験勉強用アプリ（最初は Claude の資格だけ。2026-11-14 に基本情報技術者試験を入れると決め、資格全般向けにした。#63）。iPhone のホーム画面アプリ（PWA）として GitHub Pages から配る。
 最初に載せるのは **Claude Certified Architect – Foundations（CCAR-F、旧称 CCA-F）**。
 同じ仕組みで CCAR-P・CCAO-F・CCDV-F などを足せるようにする。
 
@@ -8,7 +8,7 @@ Anthropic の Claude の資格の試験勉強用アプリ。iPhone のホーム�
 
 | もの | 形 | 例 | 決まり |
 |---|---|---|---|
-| アプリ | `claude-cert-drill` | — | 対象は Claude の資格。ホーム画面の表示名は `cert-drill` |
+| アプリ | `claude-cert-drill` | — | リポ名・URL・保存キーは最初の名前のまま。画面での名前とホーム画面の表示名は `cert-drill`（#63） |
 | 資格 | 公式の試験コードを小文字・ハイフン | `ccar-f`、`ccar-p` | 旧称（CCA-F）は表示名にだけ残す。**ID は変えない**（記録のキーになる） |
 | 置き場所 | `src/exams/<資格ID>/` | `src/exams/ccar-f/` | 資格の内容はここにだけ置く。仕組み（core・ui）は資格名を知らない。足し方は [adding-an-exam.md](adding-an-exam.md) |
 | 分野 | `d<番号>` | `d1` | 公式の Domain 番号 |
