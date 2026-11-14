@@ -1110,6 +1110,9 @@ code {
   text-align: center;
   font-weight: 700;
 }
+.blank.anon {
+  min-width: 4em;
+}
 .qsource {
   margin: 6px 0 0;
 }

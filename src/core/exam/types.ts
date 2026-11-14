@@ -255,10 +255,11 @@ export function stemBlockText(b: StemBlock): string {
   return b.list.join(" ");
 }
 
-/** 問題文の空欄（#62）。全角の角かっこに英小文字（またはギリシャ文字の小文字）1〜2 字：［a］ ［β］ */
-export const BLANK = /［([a-zα-ω]{1,2})］/g;
+/** 問題文の空欄（#62）。全角の角かっこに英小文字（またはギリシャ文字の小文字）1〜2 字：［a］ ［β］。
+    記号の無い空欄（空欄が 1 つだけの問題）は ［］（#64） */
+export const BLANK = /［([a-zα-ω]{0,2})］/g;
 
-/** 問題文の中の空欄の名前（出てくる順・重複なし） */
+/** 問題文の中の空欄の名前（出てくる順・重複なし。記号の無い空欄は数えない） */
 export function blanksOf(stem: Stem): string[] {
   const texts =
     typeof stem === "string"
@@ -274,7 +275,7 @@ export function blanksOf(stem: Stem): string[] {
                   ? b.list
                   : [],
         );
-  return [...new Set(texts.flatMap(t => [...t.matchAll(BLANK)].map(m => m[1]!)))];
+  return [...new Set(texts.flatMap(t => [...t.matchAll(BLANK)].map(m => m[1]!)))].filter(Boolean);
 }
 
 /** 問題文を平文にする */
