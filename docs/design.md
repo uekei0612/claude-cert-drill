@@ -10,14 +10,14 @@ Anthropic の Claude の資格の試験勉強用アプリ。iPhone のホーム�
 |---|---|---|---|
 | アプリ | `claude-cert-drill` | — | 対象は Claude の資格。ホーム画面の表示名は `cert-drill` |
 | 資格 | 公式の試験コードを小文字・ハイフン | `ccar-f`、`ccar-p` | 旧称（CCA-F）は表示名にだけ残す。**ID は変えない**（記録のキーになる） |
-| 置き場所 | `src/exams/<資格ID>/` | `src/exams/ccar-f/` | 資格の内容はここにだけ置く。仕組み（engine・store・ui）は資格名を知らない |
+| 置き場所 | `src/exams/<資格ID>/` | `src/exams/ccar-f/` | 資格の内容はここにだけ置く。仕組み（core・ui）は資格名を知らない。足し方は [adding-an-exam.md](adding-an-exam.md) |
 | 分野 | `d<番号>` | `d1` | 公式の Domain 番号 |
 | 細目 | 公式の番号 | `1.1` | 公式の Task Statement 番号 |
 | シナリオ | `s<番号>` | `s1` | 公式のシナリオ番号。シナリオの無い資格は持たなくてよい |
 | 問題 | `<シナリオ>-<2 桁の連番>` | `s1-03` | 資格の中で一意。シナリオの無い資格は `d1-03` |
 | 記録のキー | `<資格ID>:<問題ID>` | `ccar-f:s1-03` | 資格をまたいで衝突しない |
 | URL | `#/<資格ID>/<画面>` | `#/ccar-f/practice` | 資格を選ぶ画面は `#/` |
-| 保存先 | `claude-cert-drill`（develop 版は `claude-cert-drill-dev`） | — | localStorage のキー |
+| 保存先 | `claude-cert-drill`（develop 版は `claude-cert-drill-dev`） | — | localStorage のキー。値は `src/app/config.ts` の `id` |
 
 ## CCAR-F の試験の形（このアプリが合わせる相手）
 
