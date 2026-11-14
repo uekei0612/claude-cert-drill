@@ -9,13 +9,11 @@
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { APP } from "../app/config";
 import type { Exam, Question } from "../core/exam/types";
-import { domainOf, findTask } from "../core/exam/types";
+import { domainOf, findTask, optionLetter } from "../core/exam/types";
 import type { QuestionLang } from "../core/store/schema";
 import { CopyButton } from "./CopyButton";
 import { hintText, questionText } from "./copyText";
 import { href } from "./route";
-
-const LETTERS = ["A", "B", "C", "D"];
 
 export interface QuestionCardProps {
   readonly exam: Exam;
@@ -149,7 +147,7 @@ export function QuestionCard({
                   onChoose?.(orig);
                 }}
               >
-                <span class="letter">{LETTERS[i]}</span>
+                <span class="letter">{optionLetter(i)}</span>
                 <span class="otext">
                   <Text en={o.text} ja={tq?.options[orig]} lang={shown} />
                 </span>

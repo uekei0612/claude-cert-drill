@@ -90,14 +90,14 @@ interface Question {
   scenario?: string;       // "s1"。シナリオの無い資格では無し
   tasks: string[];         // ["1.1", "5.2"]。先頭が主たる細目（集計はこれで行う）
   stem: string;            // 英語
-  options: [Option, Option, Option, Option];
-  answer: 0 | 1 | 2 | 3;
+  options: Option[];        // 2〜5 個（MIN_OPTIONS〜MAX_OPTIONS。#54）。CCAR-F はすべて 4 択
+  answer: number;          // 正解の位置（0 始まり）。正解は 1 つだけ（複数選択はまだ無い）
   point: string;           // 日本語。この問題で覚えること 1 行
 }
 interface Option { text: string; why: string }   // text は英語、why は日本語
 ```
 
-表示のときに選択肢の順番を混ぜる（位置で覚えないように）。
+表示のときに選択肢の順番を混ぜる（位置で覚えないように）。記号は A〜E、PC のキーは 1〜5／A〜E（F は模擬試験の旗なので、選択肢は 5 つまで）。
 
 ### 画面
 

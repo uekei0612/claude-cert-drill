@@ -1,7 +1,7 @@
 /* 資格の形の検査（#53）。問題と教科書は手で書くので、形の誤りをここで見つける。
    どの資格にも同じ検査をかける（src/exams/exams.test.ts）。資格だけの決まりは、その資格のフォルダのテストに書く。
    返すのは「どこ: 何が」の並び。空なら形は正しい */
-import { PRIMER_ID, type Exam, type Lesson, type LessonBlock, allTasks } from "./types";
+import { MAX_OPTIONS, MIN_OPTIONS, PRIMER_ID, type Exam, type Lesson, type LessonBlock, allTasks } from "./types";
 
 /** 偏りの検査（正解が一番長い選択肢・正解の位置）は、この数から見る（少ないうちは偏って当たり前） */
 export const MIN_SAMPLE = 10;
@@ -119,6 +119,7 @@ export function validateExam(exam: Exam): string[] {
   );
   if (quizzes.length >= MIN_SAMPLE) {
     const positions = [0, 1, 2, 3].map(i => quizzes.filter(q => q.answer === i).length);
+    // 例題は 3〜4 択。どの位置も 4 割まで
     if (positions.some(n => n / quizzes.length > 0.4))
       bad("例題", `正解の位置が偏っている（位置ごとの数 ${positions.join(" ")}。どれも 4 割まで）`);
     const longest = quizzes.filter(q => answerIsLongest(q.choices, q.answer)).length;
@@ -135,8 +136,10 @@ export function validateExam(exam: Exam): string[] {
     if (exam.scenarios.length && !scenarioIds.has(q.scenario ?? "")) bad(q.id, `シナリオ ${q.scenario} が無い`);
     for (const t of q.tasks) if (!taskIds.has(t)) bad(q.id, `細目 ${t} が無い`);
     if (new Set(q.tasks).size !== q.tasks.length) bad(q.id, "細目が重なっている");
-    if (q.options.length !== 4) bad(q.id, "選択肢は 4 つ");
-    if (![0, 1, 2, 3].includes(q.answer)) bad(q.id, "正解の位置が選択肢の外");
+    if (q.options.length < MIN_OPTIONS || q.options.length > MAX_OPTIONS)
+      bad(q.id, `選択肢は ${MIN_OPTIONS}〜${MAX_OPTIONS} 個`);
+    if (!(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length))
+      bad(q.id, "正解の位置が選択肢の外");
     if (q.stem.trim().length <= 40) bad(q.id, "問題文が短い");
     if (!q.point.trim()) bad(q.id, "覚えること（point）が無い");
     const texts = q.options.map(o => o.text.trim());
@@ -166,9 +169,10 @@ export function validateExam(exam: Exam): string[] {
     if (!same(Object.keys(tr.scenarios), [...scenarioIds])) bad(where, "シナリオの訳が、シナリオと 1 対 1 でない");
     if (!same(Object.keys(tr.questions), ids)) bad(where, "問題の訳が、問題と 1 対 1 でない");
     for (const [id, v] of Object.entries(tr.scenarios)) if (v.trim().length <= 20) bad(`${where} ${id}`, "訳が短い");
+    const optionCount = new Map(exam.questions.map(q => [q.id, q.options.length]));
     for (const [id, t] of Object.entries(tr.questions)) {
       if (t.stem.trim().length <= 20) bad(`${where} ${id}`, "問題文の訳が短い");
-      if (t.options.length !== 4) bad(`${where} ${id}`, "選択肢の訳は 4 つ");
+      if (t.options.length !== optionCount.get(id)) bad(`${where} ${id}`, "選択肢の訳の数が原文と違う");
       if (new Set(t.options.map(o => o.trim())).size !== t.options.length) bad(`${where} ${id}`, "選択肢の訳が重複");
       if (t.options.some(o => !o.trim())) bad(`${where} ${id}`, "空の選択肢の訳がある");
     }

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { fixture } from "./fixture";
 import { addUsed, mockLeft, planMock, scoreMock } from "./mock";
-import { filterQuestions, idsOnly, optionOrder, parseIdsOnly, planPractice } from "./practice";
+import { filterQuestions, idsOnly, isPermutation, optionOrder, orderFor, parseIdsOnly, planPractice } from "./practice";
 import { questionsOfDomain, questionsOfTask, readiness, tally, weakestTasks } from "./progress";
 import { dailyPlan, dayKey, daysUntil, parseDate, streak } from "./plan";
 import { seeded } from "./rng";
@@ -131,8 +131,17 @@ describe("planPractice", () => {
     });
     expect([...ids].sort()).toEqual(["s2-02", "s3-04"]);
   });
-  test("選択肢の順番は 0〜3 の並べ替え", () => {
-    expect([...optionOrder(seeded(5))].sort()).toEqual([0, 1, 2, 3]);
+  test("選択肢の順番は 0〜n−1 の並べ替え（#54）", () => {
+    expect([...optionOrder(seeded(5), 4)].sort()).toEqual([0, 1, 2, 3]);
+    expect([...optionOrder(seeded(5), 5)].sort()).toEqual([0, 1, 2, 3, 4]);
+  });
+  test("記録にある並びは、その問題の並べ替えのときだけ使う（選択肢の数が変わったら元の並び）", () => {
+    const q = fixture.questions[0]!;
+    expect(orderFor(q, [3, 1, 0, 2])).toEqual([3, 1, 0, 2]);
+    expect(orderFor(q, [4, 1, 0, 2, 3])).toEqual([0, 1, 2, 3]);
+    expect(orderFor(q, [0, 0, 1, 2])).toEqual([0, 1, 2, 3]);
+    expect(orderFor(q)).toEqual([0, 1, 2, 3]);
+    expect(isPermutation([1, 0], 2)).toBe(true);
   });
 });
 

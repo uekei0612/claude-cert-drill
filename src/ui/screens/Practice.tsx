@@ -3,7 +3,7 @@
    間違えたときは、押し間違いなら次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44）。
    正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27） */
 import { useMemo, useRef, useState } from "preact/hooks";
-import { idsOnly, optionOrder, parseIdsOnly, planPractice } from "../../core/engine/practice";
+import { idsOnly, optionOrder, orderFor, parseIdsOnly, planPractice } from "../../core/engine/practice";
 import { seeded } from "../../core/engine/rng";
 import type { Exam } from "../../core/exam/types";
 import { findTask } from "../../core/exam/types";
@@ -14,7 +14,7 @@ import { getData, update, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
-import { optionIndex, useKeys } from "../keys";
+import { optionIndex, optionKeys, useKeys } from "../keys";
 import { href } from "../route";
 
 interface Done {
@@ -101,7 +101,8 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   const [guess, setGuess] = useState(false);
   const orders = useMemo(() => {
     const rng = seeded(seed + round + 7);
-    return new Map(initial.map(id => [id, optionOrder(rng)]));
+    const count = new Map(exam.questions.map(q => [q.id, q.options.length]));
+    return new Map(initial.map(id => [id, optionOrder(rng, count.get(id) ?? 4)]));
   }, [initial]);
 
   const restart = () => {
@@ -237,7 +238,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     scrollTo(0, 0);
   };
 
-  const order = orders.get(id) ?? [0, 1, 2, 3];
+  const order = orderFor(q, orders.get(id));
   onKey.current = key => {
     const i = optionIndex(key);
     if (!revealed && i >= 0 && i < order.length) {
@@ -283,7 +284,7 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={lang}
       />
-      <p class="kbd-hint muted small">キー：1〜4（A〜D）で選ぶ・Enter で次へ・S で振り返りに入れる</p>
+      <p class="kbd-hint muted small">キー：{optionKeys(order.length)} で選ぶ・Enter で次へ・S で振り返りに入れる</p>
       {revealed && (
         <div class="sticky-next">
           <div class="verdict">

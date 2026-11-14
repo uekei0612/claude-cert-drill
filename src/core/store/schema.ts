@@ -1,6 +1,8 @@
 /* 記録の形。localStorage のキーは 1 つ。読み込むときに版を見て移行し、値は 1 つずつ検証する
    （壊れた値は捨てて既定値に戻す。1 つの壊れた値で記録全体を失わないため） */
+import { MAX_OPTIONS, MIN_OPTIONS } from "../exam/types";
 import { parseDate } from "../engine/plan";
+import { isPermutation } from "../engine/practice";
 import type { ItemStat } from "../engine/schedule";
 
 export const VERSION = 1;
@@ -144,7 +146,7 @@ const strArr = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => t
 
 function answersOf(x: Obj): Record<string, number> {
   const out: Record<string, number> = {};
-  for (const [k, v] of Object.entries(x)) if (num(v) && Number.isInteger(v) && v >= 0 && v <= 3) out[k] = v;
+  for (const [k, v] of Object.entries(x)) if (num(v) && Number.isInteger(v) && v >= 0 && v < MAX_OPTIONS) out[k] = v;
   return out;
 }
 
@@ -170,11 +172,18 @@ function mockResult(x: unknown): MockResult | undefined {
   return isObj(x.orders) ? { ...withAnswers, orders: ordersOf(x.orders) } : withAnswers;
 }
 
-/** 選択肢の並び（0〜3 の並べ替えだけを残す） */
+/** 選択肢の並び（0〜n−1 の並べ替えだけを残す。n は MIN_OPTIONS〜MAX_OPTIONS） */
 function ordersOf(x: Obj): Record<string, number[]> {
   const ord: Record<string, number[]> = {};
   for (const [k, v] of Object.entries(x))
-    if (Array.isArray(v) && v.length === 4 && [...v].sort().join() === "0,1,2,3") ord[k] = v as number[];
+    if (
+      Array.isArray(v) &&
+      v.length >= MIN_OPTIONS &&
+      v.length <= MAX_OPTIONS &&
+      v.every(num) &&
+      isPermutation(v as number[], v.length)
+    )
+      ord[k] = v as number[];
   return ord;
 }
 
