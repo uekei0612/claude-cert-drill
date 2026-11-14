@@ -48,6 +48,7 @@ describe("questionText", () => {
     const bq = jaFixture.questions.find(x => x.columns)!;
     const t = questionText({ exam: jaFixture, q: bq, order: [0, 1, 2, 3] });
     expect(t).toContain("```\n○整数型: sum");
+    expect(t).toContain("return ［b］"); // 空欄は文字のまま（#62）
     expect(t).toContain("| 引数 | 戻り値 |\n| --- | --- |\n| {1, 2, 3} | 6 |");
     expect(t).toContain("ア. a：s + arr[i]、b：s");
   });

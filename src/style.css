@@ -1100,6 +1100,16 @@ code {
   padding: 0.05em 0.3em;
   overflow-wrap: anywhere;
 }
+.blank {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.3em;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  line-height: 1.25;
+  text-align: center;
+  font-weight: 700;
+}
 .qsource {
   margin: 6px 0 0;
 }

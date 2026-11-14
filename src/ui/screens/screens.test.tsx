@@ -146,7 +146,10 @@ test("10 択の問題は ア〜コ を出し、0 キーで 10 個目を選べる
 test("プログラムと表を含む問題文と、解答群の表を出す（#60）", () => {
   const q = jaFixture.questions.find(x => x.columns)!;
   mount(<Practice exam={jaFixture} only={idsOnly([q.id])} now={NOW} />);
-  expect(root.querySelector(".stem pre.code")!.textContent).toContain("return [ b ]");
+  expect(root.querySelector(".stem pre.code")!.textContent).toContain("return 空欄b");
+  // 空欄は枠付きの記号（#62）。段落とプログラムの両方
+  expect([...root.querySelectorAll(".stem p .blank")].map(b => b.textContent)).toEqual(["空欄a", "空欄b"]);
+  expect([...root.querySelectorAll(".stem pre.code .blank")].map(b => b.textContent)).toEqual(["空欄a", "空欄b"]);
   expect(root.querySelector(".stem .qtable th")!.textContent).toBe("引数");
   expect(root.querySelector(".stem code")!.textContent).toBe("sum");
   const rows = [...root.querySelectorAll("button.option .cells")];
