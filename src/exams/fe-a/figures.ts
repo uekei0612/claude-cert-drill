@@ -1475,3 +1475,83 @@ export const h29hQ22 = svg(340, 100, [
   text(210, 28, "z（和の 1 桁目）", { fs: 12, anchor: "start" }),
   text(210, 78, "c（桁上げ）", { fs: 12, anchor: "start" }),
 ]);
+
+/* ---- 平成29年度 秋期 午前（#74） ---- */
+
+/** 平成29年度 秋期 問11：選択肢ア〜エのコネクタの断面（縮尺は同一ではない） */
+export const h29aQ11 = (() => {
+  const contacts = (x1: number, x2: number, y: number, n: number) => {
+    const out: string[] = [
+      line([
+        [x1, y],
+        [x2, y],
+      ]),
+    ];
+    for (let i = 0; i < n; i++) {
+      const cx = x1 + ((x2 - x1) * (i + 0.5)) / n;
+      out.push(shape(`M${cx - 4} ${y - 2} H${cx + 4} V${y + 2} H${cx - 4} Z`));
+    }
+    return out;
+  };
+  const cell = (x: number, y: number, label: string, parts: string[]) => [text(x, y + 17, label, { fs: 13 }), ...parts];
+  const a = (x: number, y: number) => [
+    shape(`M${x} ${y} H${x + 110} V${y + 34} H${x} Z`),
+    shape(`M${x + 4} ${y + 4} H${x + 106} V${y + 30} H${x + 4} Z`),
+    ...contacts(x + 4, x + 106, y + 17, 4),
+  ];
+  const c = (x: number, y: number) => [
+    shape(`M${x + 17} ${y} H${x + 93} A17 17 0 0 1 ${x + 93} ${y + 34} H${x + 17} A17 17 0 0 1 ${x + 17} ${y} Z`),
+    shape(`M${x + 24} ${y + 10} H${x + 86} A7 7 0 0 1 ${x + 86} ${y + 24} H${x + 24} A7 7 0 0 1 ${x + 24} ${y + 10} Z`),
+    ...contacts(x + 26, x + 84, y + 14, 8),
+    ...contacts(x + 26, x + 84, y + 20, 8),
+  ];
+  const hdmi = (x: number, y: number) => [
+    shape(`M${x} ${y} H${x + 110} V${y + 20} L${x + 100} ${y + 34} H${x + 10} L${x} ${y + 20} Z`),
+    shape(`M${x + 14} ${y + 8} H${x + 96} V${y + 22} H${x + 14} Z`),
+    ...contacts(x + 14, x + 96, y + 15, 5),
+  ];
+  const micro = (x: number, y: number) => [
+    shape(`M${x + 24} ${y} H${x + 30} V${y + 7} H${x + 24} Z`),
+    shape(`M${x + 80} ${y} H${x + 86} V${y + 7} H${x + 80} Z`),
+    shape(`M${x} ${y + 6} H${x + 110} V${y + 24} L${x + 100} ${y + 34} H${x + 10} L${x} ${y + 24} Z`),
+    shape(`M${x + 14} ${y + 12} H${x + 96} V${y + 22} H${x + 14} Z`),
+    ...contacts(x + 14, x + 96, y + 17, 5),
+  ];
+  return svg(340, 120, [
+    ...cell(12, 10, "ア", a(30, 10)),
+    ...cell(178, 10, "イ", c(196, 10)),
+    ...cell(12, 70, "ウ", hdmi(30, 70)),
+    ...cell(178, 70, "エ", micro(196, 70)),
+  ]);
+})();
+
+/** 平成29年度 秋期 問53：アローダイアグラム（作業 A〜L） */
+export const h29aQ53 = arrowNet(
+  340,
+  168,
+  {
+    n1: [12, 94],
+    n2: [66, 94],
+    n3: [124, 30],
+    n4: [124, 94],
+    n5: [192, 94],
+    n6: [192, 154],
+    n7: [258, 30],
+    n8: [258, 94],
+    n9: [326, 94],
+  },
+  [
+    { from: "n1", to: "n2", name: "A", days: "2" },
+    { from: "n2", to: "n3", name: "B", days: "3" },
+    { from: "n2", to: "n4", name: "C", days: "3" },
+    { from: "n4", to: "n3", name: "D", days: "1" },
+    { from: "n3", to: "n5", name: "E", days: "1" },
+    { from: "n4", to: "n5", name: "F", days: "3" },
+    { from: "n4", to: "n6", name: "G", days: "4" },
+    { from: "n5", to: "n7", name: "H", days: "3" },
+    { from: "n5", to: "n8", name: "I", days: "2" },
+    { from: "n6", to: "n8", name: "J", days: "2" },
+    { from: "n7", to: "n9", name: "K", days: "2" },
+    { from: "n8", to: "n9", name: "L", days: "3" },
+  ],
+);
