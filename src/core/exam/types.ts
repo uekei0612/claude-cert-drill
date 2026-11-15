@@ -152,7 +152,7 @@ export type StemBlock =
 export type Stem = string | readonly StemBlock[];
 
 export interface Question {
-  /** "<シナリオ>-<2 桁>"（"s1-03"）。記録のキーなので変えない */
+  /** "<シナリオ>-<2 桁>"（"s1-03"）。100 以上は 3 桁（"d1-100"。#71）。記録のキーなので変えない */
   readonly id: string;
   readonly scenario?: string;
   /** 細目の ID。先頭が主たる細目（集計はこれで行う） */

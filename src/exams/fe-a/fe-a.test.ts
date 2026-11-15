@@ -18,8 +18,18 @@ const SAMPLE_KEY =
   "エアウウイアエイイイウエウエイ" +
   "エエイアアエアエエイエウイイウ";
 
+/** IPA の解答例（令和元年度 秋期 午前 問1〜問80。#71） */
+const R01A_KEY =
+  "エウウアアウエウエイウエアイアウエウウエ" +
+  "イイウエイウイイウエイイイイイイエウアウ" +
+  "イウイエエイアエイウイウウイイアエアエイ" +
+  "イアイウイアエアエウアアウエウウウイウア";
+/** 令和元年度 秋期 午前のうち、サンプル問題セットと同じ問題（載せない） */
+const R01A_DUP = [1, 9, 10, 11, 17, 20, 25, 36, 44, 46, 53, 76, 78];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
-const publicQs = exam.questions.filter(q => !sampleQs.includes(q));
+const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
+const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
 
 test("どの問題にも出典があり、答えが IPA の解答例と同じ", () => {
   const seen: string[] = [];
@@ -66,4 +76,23 @@ test("教科書：はじめにと、どの細目にも章がある（#69）", ()
   expect(exam.primer?.title).toBeTruthy();
   const tasks = exam.domains.flatMap(d => d.tasks.map(t => t.id));
   expect(Object.keys(exam.lessons ?? {}).sort()).toEqual(tasks.sort());
+});
+
+test("令和元年度 秋期 午前：サンプル問題と重ならない 67 問があり、答えが IPA の解答例と同じ（#71）", () => {
+  expect(R01A_KEY.length).toBe(80);
+  const seen = new Set<number>();
+  for (const q of gozenQs) {
+    const m = q.source?.label.match(/^令和元年度 秋期 基本情報技術者試験 午前 問(\d+)$/);
+    expect(m, q.id).toBeTruthy();
+    const no = Number(m![1]);
+    expect(R01A_DUP, `${q.id}（問${no}）はサンプル問題と同じ`).not.toContain(no);
+    expect(optionLabel(exam, q.answer), `${q.id}（令和元年度 秋期 午前 問${no}）`).toBe(R01A_KEY[no - 1]);
+    expect(q.source?.url).toMatch(/2019r01a_fe_am_qs\.pdf$/);
+    // 解答例の分野：問1〜50 がテクノロジ系、問51〜60 がマネジメント系、問61〜80 がストラテジ系
+    const area = no <= 50 ? "1." : no <= 60 ? "2." : "3.";
+    expect(q.tasks[0].startsWith(area), `${q.id}（問${no}）の分野`).toBe(true);
+    seen.add(no);
+  }
+  expect(seen.size).toBe(80 - R01A_DUP.length);
+  expect(gozenQs.length).toBe(80 - R01A_DUP.length);
 });
