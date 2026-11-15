@@ -15,3 +15,13 @@ export const koukai = (year: 5 | 6 | 7 | 8, no: number, modified = false): Quest
   url: PDF[year],
   ...(modified ? { modified } : {}),
 });
+
+const SAMPLE_PDF =
+  "https://www.ipa.go.jp/shiken/syllabus/henkou/2022/ssf7ph000000h5tb-att/fe_kamoku_a_set_sample_qs.pdf";
+
+/** 科目A サンプル問題（60 問）セット（2022 年 12 月公開）の問 no（#68） */
+export const sample = (no: number, modified = false): QuestionSource => ({
+  label: `基本情報技術者試験 科目A サンプル問題セット 問${no}`,
+  url: SAMPLE_PDF,
+  ...(modified ? { modified } : {}),
+});
