@@ -23,6 +23,8 @@ import { h27aMgmtStrat } from "./h27a-ms";
 import { h27aTech } from "./h27a-t";
 import { h27hMgmtStrat } from "./h27h-ms";
 import { h27hTech } from "./h27h-t";
+import { h26aMgmtStrat } from "./h26a-ms";
+import { h26aTech } from "./h26a-t";
 import { samples } from "./sample";
 
 /** 年度ごとのファイルを古い順に並べ、サンプル問題セット（#68）、新形式の前の午前（#71・#73〜。新しい回から）の順。問題の ID は記録のキーなので、足すときは分野ごとに続きの番号にする */
@@ -52,4 +54,6 @@ export const questions: Question[] = [
   ...h27aMgmtStrat,
   ...h27hTech,
   ...h27hMgmtStrat,
+  ...h26aTech,
+  ...h26aMgmtStrat,
 ];

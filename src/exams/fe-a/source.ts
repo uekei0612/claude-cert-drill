@@ -37,6 +37,7 @@ const AM_PDF: Record<string, string> = {
   h28h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000gn5o-att/2016h28h_fe_am_qs.pdf",
   h27a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000gxj0-att/2015h27a_fe_am_qs.pdf",
   h27h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000000f52-att/2015h27h_fe_am_qs.pdf",
+  h26a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000000ye5-att/2014h26a_fe_am_qs.pdf",
 };
 const AM_LABEL: Record<string, string> = {
   r01a: "令和元年度 秋期",
@@ -49,11 +50,12 @@ const AM_LABEL: Record<string, string> = {
   h28h: "平成28年度 春期",
   h27a: "平成27年度 秋期",
   h27h: "平成27年度 春期",
+  h26a: "平成26年度 秋期",
 };
 
 /** 新形式（科目A）になる前の午前試験の問 no（#71・#73〜）。冊子は画像なので、文は読み取って書き起こした */
 export const gozen = (
-  exam: "r01a" | "h31h" | "h30a" | "h30h" | "h29h" | "h29a" | "h28a" | "h28h" | "h27a" | "h27h",
+  exam: "r01a" | "h31h" | "h30a" | "h30h" | "h29h" | "h29a" | "h28a" | "h28h" | "h27a" | "h27h" | "h26a",
   no: number,
   modified = false,
 ): QuestionSource => ({
