@@ -78,6 +78,14 @@ const H28A_KEY =
   "ウエアイウウエエアイエウエエウイイエアア";
 const H28A_DUP = [6, 22, 23, 24, 25, 38, 42, 49, 59, 73, 75];
 
+/* 平成28年度 春期 午前の解答例（#75） */
+const H28H_KEY =
+  "ウウエウアエウイアウイアウエウウイアウウ" +
+  "アエウイイアアイアエエイウウアイアウイイ" +
+  "ウエイウウイウウアイエイイエウウアアイウ" +
+  "エウイウエエイイイエアエウイウアアエエア";
+const H28H_DUP = [14, 20, 25, 27, 28, 35, 36, 46, 51, 58, 59, 66, 78];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
 const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
 const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
@@ -130,7 +138,8 @@ test("教科書：はじめにと、どの細目にも章がある（#69）", ()
 });
 
 /** 新形式の前の午前（#71）。回ごとの解答例と、サンプル問題セットと重なるので載せない問題 */
-const GOZEN = [
+/** area：解答例の分野の欄（T・M・S）。問61 がマネジメント系の回など、既定の区切りと違う回だけ書く */
+const GOZEN: { name: string; file: string; key: string; dup: number[]; area?: string }[] = [
   { name: "令和元年度 秋期", file: "2019r01a_fe_am_qs.pdf", key: R01A_KEY, dup: R01A_DUP },
   { name: "平成31年度 春期", file: "2019h31h_fe_am_qs.pdf", key: H31H_KEY, dup: H31H_DUP },
   { name: "平成30年度 秋期", file: "2018h30a_fe_am_qs.pdf", key: H30A_KEY, dup: H30A_DUP },
@@ -138,6 +147,13 @@ const GOZEN = [
   { name: "平成29年度 秋期", file: "2017h29a_fe_am_qs.pdf", key: H29A_KEY, dup: H29A_DUP },
   { name: "平成29年度 春期", file: "2017h29h_fe_am_qs.pdf", key: H29H_KEY, dup: H29H_DUP },
   { name: "平成28年度 秋期", file: "2016h28a_fe_am_qs.pdf", key: H28A_KEY, dup: H28A_DUP },
+  {
+    name: "平成28年度 春期",
+    file: "2016h28h_fe_am_qs.pdf",
+    key: H28H_KEY,
+    dup: H28H_DUP,
+    area: "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTMMMMMMMMMMMSSSSSSSSSSSSSSSSSSS",
+  },
 ];
 
 test.each(GOZEN)("$name 午前：すでに載せている問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
@@ -151,8 +167,14 @@ test.each(GOZEN)("$name 午前：すでに載せている問題と重ならな�
     expect(g.dup, `${q.id}（問${no}）はすでに載せている問題と同じ`).not.toContain(no);
     expect(optionLabel(exam, q.answer), `${q.id}（${g.name} 午前 問${no}）`).toBe(g.key[no - 1]);
     expect(q.source?.url?.endsWith(`/${g.file}`), q.id).toBe(true);
-    // 解答例の分野：問1〜50 がテクノロジ系、問51〜60 がマネジメント系、問61〜80 がストラテジ系
-    const area = no <= 50 ? "1." : no <= 60 ? "2." : "3.";
+    // 解答例の分野：既定は問1〜50 がテクノロジ系、問51〜60 がマネジメント系、問61〜80 がストラテジ系
+    const area = g.area
+      ? { T: "1.", M: "2.", S: "3." }[g.area[no - 1] as "T" | "M" | "S"]
+      : no <= 50
+        ? "1."
+        : no <= 60
+          ? "2."
+          : "3.";
     expect(q.tasks[0].startsWith(area), `${q.id}（問${no}）の分野`).toBe(true);
     seen.add(no);
   }
