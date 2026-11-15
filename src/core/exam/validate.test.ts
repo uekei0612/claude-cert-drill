@@ -25,6 +25,15 @@ describe("資格の形の検査（#53）", () => {
     expect(has({ ...base, domains: base.domains.map(d => ({ ...d, weight: 0.3 })) }, /配点の合計/)).toBe(true);
     expect(has({ ...base, domains: [{ ...base.domains[0]!, id: "x" }, base.domains[1]!] }, /d1/)).toBe(true);
   });
+  test("問題の ID の連番は 2 桁、100 以上は 3 桁（#71）", () => {
+    const first = base.questions[0]!.id;
+    const prefix = first.split("-")[0];
+    const renamed = (id: string) => withQ(q => (q.id === first ? { ...q, id } : q));
+    expect(has(renamed(`${prefix}-100`), /ID は/)).toBe(false);
+    expect(has(renamed(`${prefix}-1`), /ID は/)).toBe(true);
+    expect(has(renamed(`${prefix}-099`), /ID は/)).toBe(true);
+    expect(has(renamed(`${prefix}-1000`), /ID は/)).toBe(true);
+  });
   test("問題：ID・正解・選択肢・細目", () => {
     expect(
       has(

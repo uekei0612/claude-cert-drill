@@ -25,3 +25,15 @@ export const sample = (no: number, modified = false): QuestionSource => ({
   url: SAMPLE_PDF,
   ...(modified ? { modified } : {}),
 });
+
+const AM_PDF: Record<string, string> = {
+  r01a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000dict-att/2019r01a_fe_am_qs.pdf",
+};
+const AM_LABEL: Record<string, string> = { r01a: "令和元年度 秋期" };
+
+/** 新形式（科目A）になる前の午前試験の問 no（#71）。冊子は画像なので、文は読み取って書き起こした */
+export const gozen = (exam: "r01a", no: number, modified = false): QuestionSource => ({
+  label: `${AM_LABEL[exam]} 基本情報技術者試験 午前 問${no}`,
+  url: AM_PDF[exam],
+  ...(modified ? { modified } : {}),
+});

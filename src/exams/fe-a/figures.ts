@@ -725,3 +725,361 @@ export const sampleAQ60 = svg(340, 140, [
   box(216, 54, 100, 28, "派遣先企業", { fs: 12 }),
   box(54, 102, 100, 28, "労働者", { fs: 12 }),
 ]);
+
+/* ---- 令和元年度 秋期 午前（#71） ---- */
+
+/** 曲線（2 次ベジェ）の濃い線 */
+const curve = (x1: number, y1: number, cx: number, cy: number, x2: number, y2: number) =>
+  `<path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" class="fw"/>`;
+
+/** 令和元年度 秋期 問3：選択肢ア〜エの無向グラフ */
+export const r01aQ3 = (() => {
+  const names = ["a", "b", "c", "d", "e", "f"];
+  const graphs: [string, string[]][] = [
+    ["ア", ["ab", "cd", "de", "ef"]],
+    ["イ", ["ab", "bc", "de", "ef"]],
+    ["ウ", ["ab", "bc", "cd", "ef"]],
+    ["エ", ["ab", "bc", "cd", "de", "ef"]],
+  ];
+  const r = 11;
+  const parts: string[] = [];
+  graphs.forEach(([label, straight], k) => {
+    const y = 34 + k * 66;
+    const x = (n: string) => 60 + names.indexOf(n) * 48;
+    parts.push(text(16, y, label, { fs: 13, bold: true }));
+    for (const [p, q] of straight.map(s => [s[0]!, s[1]!] as const))
+      parts.push(
+        wire([
+          [x(p) + r, y],
+          [x(q) - r, y],
+        ]),
+      );
+    // どの選択肢にも c–e（上の弧）と b–d（下の弧）がある
+    parts.push(curve(x("c") + 4, y - r + 1, x("d"), y - 34, x("e") - 4, y - r + 1));
+    parts.push(curve(x("b") + 4, y + r - 1, x("c"), y + 34, x("d") - 4, y + r - 1));
+    for (const n of names) parts.push(circle(x(n), y, r, n, { fs: 12 }));
+  });
+  return svg(340, 268, parts);
+})();
+
+/** 令和元年度 秋期 問5：選択肢ア〜エの分布のグラフ */
+export const r01aQ5 = (() => {
+  const parts: string[] = [];
+  const W = 170;
+  const H = 104;
+  /** 曲線の点を折れ線で。f は 0〜1 の高さ */
+  const plot = (ox: number, oy: number, f: (x: number) => number) => {
+    const pts: Pt[] = [];
+    for (let x = 0; x <= 140; x += 2) pts.push([ox + 18 + x, oy + 78 - 62 * f(x)]);
+    return wire(pts);
+  };
+  const g = (x: number, m: number, s: number) => Math.exp(-((x - m) ** 2) / (2 * s * s));
+  const mark = (ox: number, oy: number, x: number, h: number, label: string) =>
+    line(
+      [
+        [ox + 18 + x, oy + 78 - 62 * h],
+        [ox + 18 + x, oy + 82],
+      ],
+      { dashed: true },
+    ) + text(ox + 18 + x, oy + 92, label, { fs: 10 });
+  const cell = (k: number) => [(k % 2) * W, Math.floor(k / 2) * H] as const;
+  const axis = (ox: number, oy: number) =>
+    line([
+      [ox + 10, oy + 82],
+      [ox + 164, oy + 82],
+    ]);
+  // ア：平均 60・標準偏差 10（山の中心 60、中心から 1 目盛りの 70 まで 10）
+  {
+    const [ox, oy] = cell(0);
+    parts.push(text(ox + 10, oy + 10, "ア", { fs: 13, bold: true }), axis(ox, oy));
+    parts.push(
+      plot(ox, oy, x => g(x, 70, 20)),
+      mark(ox, oy, 70, 1, "60"),
+      mark(ox, oy, 90, g(90, 70, 20), "70"),
+    );
+    parts.push(text(ox + 18 + 80, oy + 72, "10", { fs: 9, tone: "muted" }));
+  }
+  // イ：とがった山（55・60・65、55〜65 の幅が 10）。目盛りの数字が重ならないよう 60 だけ 1 段下げる
+  {
+    const [ox, oy] = cell(1);
+    parts.push(text(ox + 10, oy + 10, "イ", { fs: 13, bold: true }), axis(ox, oy));
+    parts.push(plot(ox, oy, x => g(x, 70, 11)));
+    parts.push(mark(ox, oy, 56, g(56, 70, 11), "55"), mark(ox, oy, 84, g(84, 70, 11), "65"));
+    parts.push(
+      line(
+        [
+          [ox + 18 + 70, oy + 16],
+          [ox + 18 + 70, oy + 82],
+        ],
+        { dashed: true },
+      ),
+      text(ox + 18 + 70, oy + 100, "60", { fs: 10 }),
+    );
+    parts.push(text(ox + 18 + 77, oy + 72, "10", { fs: 9, tone: "muted" }));
+  }
+  // ウ：山が 2 つ（10 と 60）
+  {
+    const [ox, oy] = cell(2);
+    parts.push(text(ox + 10, oy + 10, "ウ", { fs: 13, bold: true }), axis(ox, oy));
+    parts.push(plot(ox, oy, x => 0.42 * g(x, 14, 7) + 0.18 * g(x, 50, 30) + g(x, 100, 10)));
+    parts.push(mark(ox, oy, 14, 0.45, "10"), mark(ox, oy, 100, 1, "60"));
+  }
+  // エ：左にすそを引くゆがんだ山（50 と 60、その間が 10）
+  {
+    const [ox, oy] = cell(3);
+    parts.push(text(ox + 10, oy + 10, "エ", { fs: 13, bold: true }), axis(ox, oy));
+    const f = (x: number) => (x < 92 ? 0.25 + 0.75 * (x / 92) ** 2.2 : g(x, 92, 12));
+    parts.push(plot(ox, oy, f), mark(ox, oy, 70, f(70), "50"), mark(ox, oy, 92, 1, "60"));
+    parts.push(text(ox + 18 + 81, oy + 72, "10", { fs: 9, tone: "muted" }));
+  }
+  return svg(340, 2 * H, parts);
+})();
+
+/** 令和元年度 秋期 問13：割込み A・B の発生のタイミング（0〜5 ミリ秒） */
+export const r01aQ13 = (() => {
+  const x0 = 96;
+  const unit = 44;
+  const X = (ms: number) => x0 + ms * unit;
+  const parts: string[] = [];
+  for (let i = 0; i <= 10; i++)
+    parts.push(
+      line(
+        [
+          [X(i / 2), 10],
+          [X(i / 2), 92],
+        ],
+        { dashed: true },
+      ),
+    );
+  const row = (y: number, label: string, at: number[]) => {
+    parts.push(text(8, y, label, { anchor: "start", fs: 11 }));
+    parts.push(
+      arrow([
+        [X(0), y],
+        [X(5) + 18, y],
+      ]),
+    );
+    for (const t of at)
+      parts.push(
+        arrow(
+          [
+            [X(t), y - 22],
+            [X(t), y - 1],
+          ],
+          { tone: "accent" },
+        ),
+      );
+  };
+  row(40, "割込み A の発生", [1, 2.5, 3.5]);
+  row(84, "割込み B の発生", [0, 5]);
+  for (let i = 0; i <= 5; i++) parts.push(text(X(i), 104, String(i), { fs: 11 }));
+  parts.push(text(X(5) + 4, 120, "時間（ミリ秒）", { anchor: "end", fs: 10, tone: "muted" }));
+  return svg(340, 126, parts);
+})();
+
+/** 令和元年度 秋期 問21：データ・ストローブ・クロックの波形。1 目盛りはクロックの 1/4 周期 */
+export const r01aQ21 = (() => {
+  const slots = 42;
+  const x0 = 64;
+  const sw = 270 / slots;
+  const clock = [0, 0, ...Array.from({ length: 40 }, (_, i) => (i % 4 < 2 ? 1 : 0))];
+  // データ：0〜6 が 1、7〜18 が 0、19〜27 が 1、28〜32 が 0、33〜41 が 1
+  const data = Array.from({ length: slots }, (_, i) => (i <= 6 || (i >= 19 && i <= 27) || i >= 33 ? 1 : 0));
+  const strobe = Array.from({ length: slots }, (_, i) => (i === 36 || i === 37 ? 1 : 0));
+  const rows: [string, number[]][] = [
+    ["データ", data],
+    ["ストローブ", strobe],
+    ["クロック", clock],
+  ];
+  const parts: string[] = [];
+  // クロックの立上りエッジ（10 回）に点線
+  for (let k = 0; k < 10; k++) {
+    const x = x0 + (2 + 4 * k) * sw;
+    parts.push(
+      line(
+        [
+          [x, 6],
+          [x, 104],
+        ],
+        { dashed: true },
+      ),
+    );
+  }
+  rows.forEach(([name, lv], r) => {
+    const hi = 12 + r * 34;
+    const lo = hi + 16;
+    parts.push(text(4, (hi + lo) / 2, name, { anchor: "start", fs: 11 }));
+    const pts: Pt[] = [];
+    lv.forEach((v, i) => pts.push([x0 + i * sw, v ? hi : lo], [x0 + (i + 1) * sw, v ? hi : lo]));
+    parts.push(wire(pts));
+  });
+  parts.push(
+    arrow([
+      [x0, 112],
+      [x0 + 274, 112],
+    ]),
+    text(x0 + 274, 124, "時間", { anchor: "end", fs: 10, tone: "muted" }),
+  );
+  return svg(340, 130, parts);
+})();
+
+/** NOT 素子（入力の左端 x、高さの中心 y）。出力は x ＋ 22 */
+const notGate = (x: number, y: number) =>
+  shape(`M${x} ${y - 8} L${x + 16} ${y} L${x} ${y + 8} Z`) + `<circle cx="${x + 19}" cy="${y}" r="3" class="fg"/>`;
+/** AND 素子（左上 x, y、高さ 30）。出力は x ＋ 33, y ＋ 15 */
+const andGate = (x: number, y: number) => shape(`M${x} ${y} H${x + 18} A15 15 0 0 1 ${x + 18} ${y + 30} H${x} Z`);
+/** OR 素子（左上 x, y、高さ 30）。出力は x ＋ 40, y ＋ 15 */
+const orGate = (x: number, y: number) =>
+  shape(
+    `M${x} ${y} Q${x + 12} ${y + 15} ${x} ${y + 30} Q${x + 28} ${y + 30} ${x + 40} ${y + 15} Q${x + 28} ${y} ${x} ${y} Z`,
+  );
+
+/** 令和元年度 秋期 問22：NOT・AND・OR の回路 */
+export const r01aQ22 = svg(340, 124, [
+  text(26, 22, "A", { fs: 12 }),
+  text(26, 38, "B", { fs: 12 }),
+  // A → NOT → 上の AND
+  wire([
+    [34, 22],
+    [100, 22],
+  ]),
+  notGate(100, 22),
+  wire([
+    [122, 22],
+    [150, 22],
+  ]),
+  // B → 上の AND
+  wire([
+    [34, 38],
+    [150, 38],
+  ]),
+  andGate(150, 15),
+  // A の分岐 → 下の AND
+  wire([
+    [70, 22],
+    [70, 94],
+    [150, 94],
+  ]),
+  dot(70, 22),
+  // B の分岐 → NOT → 下の AND
+  wire([
+    [54, 38],
+    [54, 108],
+    [100, 108],
+  ]),
+  dot(54, 38),
+  notGate(100, 108),
+  wire([
+    [122, 108],
+    [150, 108],
+  ]),
+  andGate(150, 86),
+  // 2 つの AND → OR
+  wire([
+    [183, 30],
+    [206, 30],
+    [206, 57],
+    [234, 57],
+  ]),
+  wire([
+    [183, 101],
+    [206, 101],
+    [206, 73],
+    [234, 73],
+  ]),
+  orGate(230, 50),
+  wire([
+    [270, 65],
+    [294, 65],
+  ]),
+  text(304, 65, "X", { fs: 12 }),
+]);
+
+/** 令和元年度 秋期 問33：利用者宅内の LAN とインターネットの接続 */
+export const r01aQ33 = svg(340, 116, [
+  box(4, 18, 240, 92, "", { kind: "muted", dashed: true }),
+  text(244, 10, "利用者宅内", { anchor: "end", fs: 10, tone: "muted" }),
+  box(12, 28, 40, 22, "PC", { fs: 11 }),
+  text(32, 64, "⋮", { fs: 11 }),
+  box(12, 78, 40, 22, "PC", { fs: 11 }),
+  line([
+    [52, 39],
+    [66, 62],
+  ]),
+  line([
+    [52, 89],
+    [66, 66],
+  ]),
+  box(66, 52, 44, 24, "ハブ", { fs: 11 }),
+  line([
+    [110, 64],
+    [122, 64],
+  ]),
+  box(122, 52, 58, 24, "装置A", { fs: 11 }),
+  line([
+    [180, 64],
+    [192, 64],
+  ]),
+  box(192, 52, 46, 24, "ONU", { fs: 11 }),
+  wire([
+    [238, 64],
+    [266, 64],
+  ]),
+  text(270, 44, ["光ファイバ", "ケーブル"], { fs: 9, tone: "muted" }),
+  `<ellipse cx="300" cy="72" rx="34" ry="18" class="fb"/>`,
+  text(300, 72, ["インター", "ネット"], { fs: 9 }),
+]);
+
+/** 令和元年度 秋期 問45：DFD の例 */
+export const r01aQ45 = svg(340, 132, [
+  box(14, 14, 56, 30, "", {}),
+  arrow([
+    [70, 29],
+    [98, 29],
+  ]),
+  circle(114, 29, 15),
+  arrow([
+    [124, 41],
+    [146, 62],
+  ]),
+  wire([
+    [128, 64],
+    [176, 64],
+  ]),
+  wire([
+    [128, 76],
+    [176, 76],
+  ]),
+  arrow([
+    [158, 78],
+    [178, 100],
+  ]),
+  circle(190, 108, 15),
+  arrow([
+    [201, 97],
+    [222, 78],
+  ]),
+  circle(234, 66, 15),
+  arrow([
+    [249, 66],
+    [272, 66],
+  ]),
+  box(274, 51, 56, 30, "", {}),
+]);
+
+/** 令和元年度 秋期 問52：アローダイアグラム（ダミー作業あり） */
+export const r01aQ52 = arrowNet(
+  340,
+  150,
+  { s: [16, 78], n1: [78, 26], n2: [124, 128], n3: [232, 128], n4: [262, 26], e: [324, 78] },
+  [
+    { from: "s", to: "n1", name: "A", days: "1" },
+    { from: "s", to: "n2", name: "B", days: "5" },
+    { from: "n1", to: "n2", name: "C", days: "3" },
+    { from: "n1", to: "n4", name: "D", days: "3" },
+    { from: "n2", to: "n3", name: "E", days: "4" },
+    { from: "n3", to: "n4", dummy: true },
+    { from: "n3", to: "e", name: "F", days: "5" },
+    { from: "n4", to: "e", name: "G", days: "4" },
+  ],
+);
