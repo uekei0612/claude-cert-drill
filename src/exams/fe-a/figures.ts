@@ -431,3 +431,297 @@ export function timing(rows: readonly (readonly [string, readonly (0 | 1)[]])[])
   });
   return svg(340, rows.length * rh + 4, parts);
 }
+
+/* ---- 科目A サンプル問題セット（#68） ---- */
+
+const FS_FLOW = 12;
+/** 流れ図の端子（開始・終了）。cx は中心、y は上端（高さ 22） */
+const terminal = (cx: number, y: number, label: string) =>
+  shape(`M${cx - 22} ${y} H${cx + 22} A11 11 0 0 1 ${cx + 22} ${y + 22} H${cx - 22} A11 11 0 0 1 ${cx - 22} ${y} Z`) +
+  text(cx, y + 11, label, { fs: FS_FLOW });
+/** ループ端（始まり）：上の角を落とした六角形 */
+const loopStart = (x: number, y: number, w: number, h: number, label: string | readonly string[]) =>
+  shape(`M${x + 9} ${y} H${x + w - 9} L${x + w} ${y + 9} V${y + h} H${x} V${y + 9} Z`) +
+  text(x + w / 2, y + h / 2 + 2, label, { fs: FS_FLOW });
+/** ループ端（終わり）：下の角を落とした六角形 */
+const loopEnd = (x: number, y: number, w: number, h: number, label: string) =>
+  shape(`M${x} ${y} H${x + w} V${y + h - 9} L${x + w - 9} ${y + h} H${x + 9} L${x} ${y + h - 9} Z`) +
+  text(x + w / 2, y + h / 2 - 2, label, { fs: FS_FLOW });
+/** 処理の箱（角の丸くない四角） */
+const proc = (x: number, y: number, w: number, h: number, label: string) =>
+  shape(`M${x} ${y} H${x + w} V${y + h} H${x} Z`) + text(x + w / 2, y + h / 2, label, { fs: FS_FLOW });
+/** 上下の部品をつなぐ矢印 */
+const down = (x: number, y1: number, y2: number) =>
+  arrow([
+    [x, y1],
+    [x, y2],
+  ]);
+
+/** 縦に並べた流れ図。部品は [種類, 高さ, 文字] */
+function flow(parts: readonly (readonly ["term" | "proc" | "start" | "end", number, string | readonly string[]])[]) {
+  const cx = 170;
+  const w = 150;
+  const out: string[] = [];
+  let y = 4;
+  parts.forEach(([kind, h, label], i) => {
+    if (i > 0) {
+      out.push(down(cx, y, y + 12));
+      y += 12;
+    }
+    const x = cx - w / 2;
+    if (kind === "term") out.push(terminal(cx, y, label as string));
+    else if (kind === "proc") out.push(proc(x, y, w, h, label as string));
+    else if (kind === "start") out.push(loopStart(x, y, w, h, label));
+    else out.push(loopEnd(x, y, w, h, label as string));
+    y += h;
+  });
+  return svg(340, y + 4, out);
+}
+
+/** サンプル 問2：10 進数を 2 進数に変換する流れ図 */
+export const sampleAQ2 = flow([
+  ["term", 22, "開始"],
+  ["proc", 26, "j を入力"],
+  ["start", 40, ["変換", "k：1，1，8（注）"]],
+  ["proc", 26, "a"],
+  ["proc", 26, "b"],
+  ["end", 30, "変換"],
+  ["term", 22, "終了"],
+]);
+
+/** サンプル 問6：二重ループの流れ図 */
+export const sampleAQ6 = flow([
+  ["term", 22, "開始"],
+  ["start", 40, ["ループ 1", "i：0，1，7（注）"]],
+  ["start", 40, ["ループ 2", "j：0，1，7（注）"]],
+  ["proc", 26, "a"],
+  ["end", 30, "ループ 2"],
+  ["end", 30, "ループ 1"],
+  ["term", 22, "終了"],
+]);
+
+/** サンプル 問4：オートマトンの状態遷移図（矢印のラベルは 入力／出力） */
+export const sampleAQ4 = (() => {
+  const r = 18;
+  const s1: Pt = [96, 74];
+  const s2: Pt = [180, 74];
+  const s3: Pt = [264, 74];
+  const lbl = (x: number, y: number, s: string) => text(x, y, s, { fs: 12 });
+  return svg(340, 140, [
+    // 初期状態を指す矢印
+    arrow(
+      [
+        [42, s1[1]],
+        [s1[0] - r - 2, s1[1]],
+      ],
+      { tone: "accent" },
+    ),
+    // S1 の自己ループ 0／0、S3 の自己ループ 1／1
+    arrow([
+      [s1[0] - 9, s1[1] - r + 2],
+      [s1[0] - 16, 30],
+      [s1[0] + 16, 30],
+      [s1[0] + 9, s1[1] - r + 2],
+    ]),
+    lbl(s1[0], 18, "0／0"),
+    arrow([
+      [s3[0] - 9, s3[1] - r + 2],
+      [s3[0] - 16, 30],
+      [s3[0] + 16, 30],
+      [s3[0] + 9, s3[1] - r + 2],
+    ]),
+    lbl(s3[0], 18, "1／1"),
+    // S1 → S2（1／0）と S2 → S1（0／0）
+    arrow([
+      [s1[0] + r, s1[1] - 6],
+      [s2[0] - r - 1, s2[1] - 6],
+    ]),
+    lbl(138, 56, "1／0"),
+    arrow([
+      [s2[0] - r, s2[1] + 6],
+      [s1[0] + r + 1, s1[1] + 6],
+    ]),
+    lbl(138, 92, "0／0"),
+    // S2 → S3（1／1）
+    arrow([
+      [s2[0] + r, s2[1]],
+      [s3[0] - r - 1, s3[1]],
+    ]),
+    lbl(222, 62, "1／1"),
+    // S3 → S1（0／0）：下を回る
+    arrow([
+      [s3[0], s3[1] + r],
+      [s3[0], 120],
+      [s1[0], 120],
+      [s1[0], s1[1] + r + 1],
+    ]),
+    lbl(222, 130, "0／0"),
+    circle(s1[0], s1[1], r, "S₁", { fs: 12 }),
+    circle(s2[0], s2[1], r, "S₂", { fs: 12 }),
+    circle(s3[0], s3[1], r, "S₃", { fs: 12 }),
+  ]);
+})();
+
+/** サンプル 問5：選択肢ア〜エの 2 分木。null は節が無い所 */
+export const sampleAQ5 = (() => {
+  // 根・左・右・左の左・左の右・右の左・右の右
+  const trees: [string, (number | null)[]][] = [
+    ["ア", [16, 15, 19, 10, 14, null, null]],
+    ["イ", [17, 14, 19, 10, 16, 18, null]],
+    ["ウ", [18, 16, 19, 15, 14, null, 20]],
+    ["エ", [20, 18, 19, 10, 14, 15, 16]],
+  ];
+  const r = 11;
+  const parts: string[] = [];
+  trees.forEach(([name, v], k) => {
+    const ox = (k % 2) * 170;
+    const oy = Math.floor(k / 2) * 104;
+    const at: Pt[] = [
+      [ox + 92, oy + 16],
+      [ox + 54, oy + 50],
+      [ox + 130, oy + 50],
+      [ox + 32, oy + 86],
+      [ox + 76, oy + 86],
+      [ox + 108, oy + 86],
+      [ox + 152, oy + 86],
+    ];
+    parts.push(text(ox + 12, oy + 14, name, { fs: 13, bold: true }));
+    const edges: [number, number][] = [
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [1, 4],
+      [2, 5],
+      [2, 6],
+    ];
+    for (const [p, c] of edges) if (v[c] !== null) parts.push(line([at[p]!, at[c]!]));
+    v.forEach((n, i) => {
+      if (n !== null) parts.push(circle(at[i]![0], at[i]![1], r, String(n), { fs: 11 }));
+    });
+  });
+  return svg(340, 204, parts);
+})();
+
+/** サンプル 問14：サーバ・クライアント・プリンタを LAN でつないだ構成（並びは描き直した） */
+export const sampleAQ14 = (() => {
+  const bus = 60;
+  const parts: string[] = [
+    wire([
+      [8, bus],
+      [332, bus],
+    ]),
+  ];
+  const top: [number, string][] = [
+    [35, "サーバ"],
+    [135, "プリンタ"],
+    [235, "プリンタ"],
+  ];
+  for (const [x, s] of top) {
+    parts.push(
+      line([
+        [x + 35, 38],
+        [x + 35, bus],
+      ]),
+    );
+    parts.push(box(x, 10, 70, 28, s, { fs: 12 }));
+  }
+  for (const x of [20, 127, 234]) {
+    parts.push(
+      line([
+        [x + 43, bus],
+        [x + 43, 82],
+      ]),
+    );
+    parts.push(box(x, 82, 86, 28, "クライアント", { fs: 12 }));
+  }
+  parts.push(text(318, bus - 9, "LAN", { fs: 11, tone: "muted" }));
+  return svg(340, 116, parts);
+})();
+
+/** サンプル 問15：送信タスク → バッファ → 受信タスク */
+export const sampleAQ15 = svg(340, 60, [
+  box(4, 10, 84, 34, "送信タスク", { fs: 12 }),
+  arrow([
+    [88, 27],
+    [126, 27],
+  ]),
+  text(107, 38, "S", { fs: 12 }),
+  box(128, 6, 84, 42, ["バッファ", "サイズ：L"], { fs: 12 }),
+  arrow([
+    [212, 27],
+    [250, 27],
+  ]),
+  text(231, 38, "R", { fs: 12 }),
+  box(252, 10, 84, 34, "受信タスク", { fs: 12 }),
+]);
+
+/** サンプル 問22：UML のクラス図（部署と従業員の関連「所属する」） */
+export const sampleAQ22 = svg(340, 64, [
+  line([
+    [110, 38],
+    [226, 38],
+  ]),
+  box(40, 24, 70, 28, "部署", { fs: 12 }),
+  box(226, 24, 76, 28, "従業員", { fs: 12 }),
+  text(168, 14, "◀ 所属する", { fs: 12 }),
+  text(132, 52, "1..＊", { fs: 11 }),
+  text(204, 52, "0..＊", { fs: 11 }),
+]);
+
+/** サンプル 問44：アローダイアグラム */
+export const sampleAQ44 = arrowNet(
+  340,
+  162,
+  {
+    s: [16, 80],
+    a: [70, 80],
+    t1: [148, 18],
+    t2: [210, 18],
+    m1: [148, 80],
+    m2: [210, 80],
+    j: [276, 80],
+    lo: [148, 144],
+    e: [324, 144],
+  },
+  [
+    { from: "s", to: "a", name: "A", days: "2" },
+    { from: "a", to: "t1", name: "B", days: "2" },
+    { from: "t1", to: "t2", name: "E", days: "2" },
+    { from: "t2", to: "j", name: "H", days: "2" },
+    { from: "a", to: "m1", name: "C", days: "1" },
+    { from: "m1", to: "m2", name: "F", days: "3" },
+    { from: "m2", to: "j", name: "I", days: "1" },
+    { from: "a", to: "lo", name: "D", days: "4" },
+    { from: "lo", to: "e", name: "G", days: "3" },
+    { from: "j", to: "e", name: "J", days: "4" },
+  ],
+);
+
+/** サンプル 問60：派遣元企業・派遣先企業・労働者の関係（太線が問われている関係） */
+export const sampleAQ60 = svg(340, 140, [
+  arrow(
+    [
+      [158, 26],
+      [212, 58],
+    ],
+    { both: true },
+  ),
+  arrow(
+    [
+      [104, 38],
+      [104, 102],
+    ],
+    { both: true },
+  ),
+  // 太線：同じ矢印の線を太くする（矢じりも線の太さに合わせて大きくなる）
+  arrow(
+    [
+      [210, 79],
+      [160, 111],
+    ],
+    { both: true, tone: "accent" },
+  ).replace("<path ", '<path style="stroke-width:3" '),
+  box(54, 10, 100, 28, "派遣元企業", { fs: 12 }),
+  box(216, 54, 100, 28, "派遣先企業", { fs: 12 }),
+  box(54, 102, 100, 28, "労働者", { fs: 12 }),
+]);
