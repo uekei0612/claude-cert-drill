@@ -173,6 +173,17 @@ const H23A_DUP = [
   58, 64, 68, 70, 71, 72, 75, 77, 78, 79,
 ];
 
+/* 平成23年度 特別試験 午前の解答例（#80） */
+const H23TOKU_KEY =
+  "アエイウエイアアエイエエウエウアアウアア" +
+  "アイエエアウエイアエアウエアイエイウアイ" +
+  "エエウウイアアエウイアウアエウエウアアイ" +
+  "ウアイアアイエウエイウウイイウエアイアエ";
+const H23TOKU_DUP = [
+  4, 6, 8, 11, 20, 21, 25, 26, 27, 31, 33, 34, 37, 38, 42, 44, 50, 52, 54, 55, 56, 57, 59, 60, 61, 62, 66, 67, 70, 71,
+  72, 76,
+];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
 const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
 const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
@@ -256,6 +267,7 @@ const GOZEN: { name: string; file: string; key: string; dup: number[]; area?: st
   { name: "平成24年度 秋期", file: "2012h24a_fe_am_qs.pdf", key: H24A_KEY, dup: H24A_DUP },
   { name: "平成24年度 春期", file: "2012h24h_fe_am_qs.pdf", key: H24H_KEY, dup: H24H_DUP },
   { name: "平成23年度 秋期", file: "2011h23a_fe_am_qs.pdf", key: H23A_KEY, dup: H23A_DUP },
+  { name: "平成23年度 特別試験", file: "2011h23tokubetsu_fe_am_qs.pdf", key: H23TOKU_KEY, dup: H23TOKU_DUP },
 ];
 
 test.each(GOZEN)("$name 午前：すでに載せている問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
