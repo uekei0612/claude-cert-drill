@@ -7,16 +7,16 @@ import { meta } from "./meta";
 import { notes } from "./notes";
 import { questions } from "./questions";
 
-/* 配点（weight）は公式には公表されていないので、載せている 552 問（公開問題 80 問 ＋ サンプル問題 60 問 ＋
-   令和元年度 秋期 午前 67 問 ＋ 平成31年度 春期 午前 64 問 ＋ 平成30年度 秋期 午前 72 問 ＋ 平成30年度 春期 午前 71 問 ＋ 平成29年度 秋期 午前 75 問 ＋ 平成29年度 春期 午前 63 問）の分野の比（345・67・140）から置いた目安。
+/* 配点（weight）は公式には公表されていないので、載せている 621 問（公開問題 80 問 ＋ サンプル問題 60 問 ＋
+   新形式の前の午前 7 回分 481 問）の分野の比（387・76・158）から置いた目安。
    模擬試験はこの比で 60 問を選ぶ */
-const N = 552;
+const N = 621;
 const domains: Domain[] = [
   {
     id: "d1",
     title: "テクノロジ系",
     ja: "テクノロジ系",
-    weight: 345 / N,
+    weight: 387 / N,
     tasks: [
       { id: "1.1", title: "基礎理論", ja: "基礎理論" },
       { id: "1.2", title: "コンピュータシステム", ja: "コンピュータシステム" },
@@ -28,7 +28,7 @@ const domains: Domain[] = [
     id: "d2",
     title: "マネジメント系",
     ja: "マネジメント系",
-    weight: 67 / N,
+    weight: 76 / N,
     tasks: [
       { id: "2.1", title: "プロジェクトマネジメント", ja: "プロジェクトマネジメント" },
       { id: "2.2", title: "サービスマネジメント", ja: "サービスマネジメント（システム監査を含む）" },
@@ -38,7 +38,7 @@ const domains: Domain[] = [
     id: "d3",
     title: "ストラテジ系",
     ja: "ストラテジ系",
-    weight: 140 / N,
+    weight: 158 / N,
     tasks: [
       { id: "3.1", title: "システム戦略", ja: "システム戦略" },
       { id: "3.2", title: "経営戦略", ja: "経営戦略" },
@@ -57,7 +57,7 @@ export const feA: Exam = {
   primer,
   outOfScope: [
     "公開されていない問題（各年度とも本番 60 問のうち 40 問）は載せていない",
-    "新形式の前の午前は令和元年度 秋期〜平成29年度 春期の 6 回だけ。それより前の回（平成28年度 秋期以前）はまだ載せていない",
+    "新形式の前の午前は令和元年度 秋期〜平成28年度 秋期の 7 回だけ。それより前の回（平成28年度 春期以前）はまだ載せていない",
   ],
   sources: [
     {
@@ -69,8 +69,8 @@ export const feA: Exam = {
       note: "2022 年 12 月公開の問題と解答例。https://www.ipa.go.jp/shiken/syllabus/henkou/2022/20221226.html 。使用許諾・使用料は不要",
     },
     {
-      label: "IPA 基本情報技術者試験 令和元年度 秋期〜平成29年度 春期 午前（#71・#73・#74）",
-      note: "新形式（科目A）の前の午前試験。範囲は科目A とほぼ同じ。冊子は画像なので文を読み取って書き起こし、すでに載せている問題と同じもの（令和元年度 秋期 13 問・平成31年度 春期 16 問・平成30年度 秋期 8 問・平成30年度 春期 9 問・平成29年度 秋期 5 問・平成29年度 春期 17 問）は除いた。https://www.ipa.go.jp/shiken/mondai-kaiotu/2019h31.html ・ https://www.ipa.go.jp/shiken/mondai-kaiotu/2018h30.html ・ https://www.ipa.go.jp/shiken/mondai-kaiotu/2017h29.html",
+      label: "IPA 基本情報技術者試験 令和元年度 秋期〜平成28年度 秋期 午前（#71・#73〜#75）",
+      note: "新形式（科目A）の前の午前試験。範囲は科目A とほぼ同じ。冊子は画像なので文を読み取って書き起こし、すでに載せている問題と同じもの（令和元年度 秋期 13 問・平成31年度 春期 16 問・平成30年度 秋期 8 問・平成30年度 春期 9 問・平成29年度 秋期 5 問・平成29年度 春期 17 問・平成28年度 秋期 11 問）は除いた。https://www.ipa.go.jp/shiken/mondai-kaiotu/2019h31.html ・ https://www.ipa.go.jp/shiken/mondai-kaiotu/2018h30.html ・ https://www.ipa.go.jp/shiken/mondai-kaiotu/2017h29.html ・ https://www.ipa.go.jp/shiken/mondai-kaiotu/2016h28.html",
     },
     {
       label: "IPA よくある質問（過去問題の使用）",
@@ -78,7 +78,7 @@ export const feA: Exam = {
     },
     {
       label: "分野の配点",
-      note: "分野ごとの出題数は公表されていないので、載せている問題の分野の比（テクノロジ系 345・マネジメント系 67・ストラテジ系 140）から置いた目安",
+      note: "分野ごとの出題数は公表されていないので、載せている問題の分野の比（テクノロジ系 387・マネジメント系 76・ストラテジ系 158）から置いた目安",
     },
   ],
 };
