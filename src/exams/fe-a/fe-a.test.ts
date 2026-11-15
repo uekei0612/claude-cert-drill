@@ -61,3 +61,9 @@ test("配点は公開問題の分野の比と同じ", () => {
     expect(d.weight, d.id).toBeCloseTo(k / n, 6);
   }
 });
+
+test("教科書：はじめにと、どの細目にも章がある（#69）", () => {
+  expect(exam.primer?.title).toBeTruthy();
+  const tasks = exam.domains.flatMap(d => d.tasks.map(t => t.id));
+  expect(Object.keys(exam.lessons ?? {}).sort()).toEqual(tasks.sort());
+});

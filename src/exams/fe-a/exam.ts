@@ -2,6 +2,7 @@
    分野と細目は IPA の出題範囲（テクノロジ系・マネジメント系・ストラテジ系と、その大分類）に合わせる。
    問題は IPA の公開問題を出典付きで載せ、解説と要点は自作 */
 import type { Domain, Exam } from "../../core/exam/types";
+import { lessons, primer } from "./lessons";
 import { meta } from "./meta";
 import { notes } from "./notes";
 import { questions } from "./questions";
@@ -51,6 +52,8 @@ export const feA: Exam = {
   scenarios: [],
   questions,
   notes,
+  lessons,
+  primer,
   outOfScope: ["公開されていない問題（各年度とも本番 60 問のうち 40 問）は載せていない"],
   sources: [
     {
