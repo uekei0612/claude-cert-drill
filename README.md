@@ -55,3 +55,14 @@ docker run --rm --network host -v "$PWD":/work:ro -v /tmp/shots:/shots -w /work 
   -e NODE_PATH=/usr/src/app/node_modules --user root zenika/alpine-chrome:with-puppeteer \
   node tests/smoke.cjs http://localhost:8009/claude-cert-drill/ /shots
 ```
+
+## 開くまでの時間を測る
+
+問題を大きく足したときは、資格を開くまでの時間を測って前と比べる（#83。比べた数字は docs/design.md の「資格の読み込み」）。
+CPU は `CPU=n` で 1/n に絞る（既定 4）。service worker の先読みを待つので、公開版か `vite preview` に向ける。
+
+```sh
+docker run --rm --network host -v "$PWD":/work:ro -w /work -e NODE_PATH=/usr/src/app/node_modules \
+  -e CPU=4 zenika/alpine-chrome:with-puppeteer \
+  node tests/measure-open.cjs https://uekei0612.github.io/claude-cert-drill/dev/ fe-a 3
+```
