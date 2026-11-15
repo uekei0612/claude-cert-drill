@@ -36,6 +36,15 @@ const H31H_KEY =
 /** 平成31年度 春期 午前のうち、サンプル問題セットと同じ問題（載せない） */
 const H31H_DUP = [3, 9, 10, 14, 19, 28, 33, 34, 38, 53, 55, 57, 59, 65, 71, 72];
 
+/** IPA の解答例（平成30年度 秋期 午前 問1〜問80。#71） */
+const H30A_KEY =
+  "エウアエウウエエエウウエエイウイウアエウ" +
+  "エイエイアエイウアエエウエウアアエウイア" +
+  "エウウエウエイウイイエエイエアイイエエエ" +
+  "エウイイアイアエエアイエエエウウイアエア";
+/** 平成30年度 秋期 午前のうち、すでに載せている問題と同じもの（載せない）。問6・74 は令和8・5年度の公開問題、問25・32 は令和6年度の公開問題、残りはサンプル問題セット */
+const H30A_DUP = [6, 7, 11, 25, 31, 32, 41, 74];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
 const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
 const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
@@ -91,9 +100,10 @@ test("教科書：はじめにと、どの細目にも章がある（#69）", ()
 const GOZEN = [
   { name: "令和元年度 秋期", file: "2019r01a_fe_am_qs.pdf", key: R01A_KEY, dup: R01A_DUP },
   { name: "平成31年度 春期", file: "2019h31h_fe_am_qs.pdf", key: H31H_KEY, dup: H31H_DUP },
+  { name: "平成30年度 秋期", file: "2018h30a_fe_am_qs.pdf", key: H30A_KEY, dup: H30A_DUP },
 ];
 
-test.each(GOZEN)("$name 午前：サンプル問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
+test.each(GOZEN)("$name 午前：すでに載せている問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
   expect(g.key.length).toBe(80);
   const qs = gozenQs.filter(q => q.source?.label.startsWith(`${g.name} `));
   const seen = new Set<number>();
@@ -101,7 +111,7 @@ test.each(GOZEN)("$name 午前：サンプル問題と重ならない問題が�
     const m = q.source?.label.match(new RegExp(`^${g.name} 基本情報技術者試験 午前 問(\\d+)$`));
     expect(m, q.id).toBeTruthy();
     const no = Number(m![1]);
-    expect(g.dup, `${q.id}（問${no}）はサンプル問題と同じ`).not.toContain(no);
+    expect(g.dup, `${q.id}（問${no}）はすでに載せている問題と同じ`).not.toContain(no);
     expect(optionLabel(exam, q.answer), `${q.id}（${g.name} 午前 問${no}）`).toBe(g.key[no - 1]);
     expect(q.source?.url?.endsWith(`/${g.file}`), q.id).toBe(true);
     // 解答例の分野：問1〜50 がテクノロジ系、問51〜60 がマネジメント系、問61〜80 がストラテジ系
