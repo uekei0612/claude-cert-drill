@@ -1278,3 +1278,94 @@ export const h30aQ52 = arrowNet(
     { from: "n6", to: "e", name: "H", days: "10" },
   ],
 );
+
+/* ---- 平成30年度 春期 午前（#73） ---- */
+
+/** 平成30年度 春期 問2：横 5 マス・縦 4 マスの格子。左下が P，右上が Q，R は P から右へ 2・上へ 2 の点 */
+export const h30hQ2 = (() => {
+  const [x0, y0, cw, ch] = [90, 112, 34, 24];
+  const parts: string[] = [];
+  for (let i = 0; i <= 5; i++)
+    parts.push(
+      line([
+        [x0 + i * cw, y0],
+        [x0 + i * cw, y0 - 4 * ch],
+      ]),
+    );
+  for (let j = 0; j <= 4; j++)
+    parts.push(
+      line([
+        [x0, y0 - j * ch],
+        [x0 + 5 * cw, y0 - j * ch],
+      ]),
+    );
+  const pt = (i: number, j: number, label: string, dx: number, dy: number) => [
+    dot(x0 + i * cw, y0 - j * ch, 4.5),
+    text(x0 + i * cw + dx, y0 - j * ch + dy, label, { fs: 13, bold: true }),
+  ];
+  parts.push(...pt(0, 0, "P", -12, 8), ...pt(5, 4, "Q", 13, -6), ...pt(2, 2, "R", -11, -9));
+  return svg(340, 124, parts);
+})();
+
+/** 平成30年度 春期 問9：主記憶から，プロセッサ内の a を経て命令デコーダへ */
+export const h30hQ9 = svg(340, 84, [
+  box(112, 4, 224, 76, "", { kind: "muted" }),
+  text(224, 18, "プロセッサ", { fs: 12 }),
+  box(4, 34, 80, 30, "主記憶", { fs: 12 }),
+  arrow([
+    [84, 49],
+    [124, 49],
+  ]),
+  box(124, 34, 86, 30, "a", { kind: "accent", fs: 13, bold: true }),
+  arrow([
+    [210, 49],
+    [232, 49],
+  ]),
+  box(232, 34, 96, 30, "命令デコーダ", { fs: 12 }),
+]);
+
+/** 平成30年度 春期 問49：処理 1 → 判定（A＞6 or B＝0）→ Yes なら処理 2，No なら処理 2 を飛ばして合流 */
+export const h30hQ49 = svg(340, 160, [
+  line([
+    [150, 2],
+    [150, 10],
+  ]),
+  shape("M100 10 H200 V36 H100 Z"),
+  text(150, 23, "処理 1", { fs: FS_FLOW }),
+  down(150, 36, 50),
+  shape("M150 50 L230 70 L150 90 L70 70 Z"),
+  text(150, 70, "A＞6 or B＝0", { fs: FS_FLOW }),
+  down(150, 90, 106),
+  text(166, 98, "Yes", { fs: FS_FLOW, anchor: "start" }),
+  shape("M100 106 H200 V132 H100 Z"),
+  text(150, 119, "処理 2", { fs: FS_FLOW }),
+  line([
+    [150, 132],
+    [150, 158],
+  ]),
+  line([
+    [230, 70],
+    [280, 70],
+    [280, 146],
+  ]),
+  arrow([
+    [280, 146],
+    [152, 146],
+  ]),
+  text(250, 60, "No", { fs: FS_FLOW }),
+]);
+
+/** 平成30年度 春期 問51：アローダイアグラム（作業 A〜F） */
+export const h30hQ51 = arrowNet(
+  340,
+  132,
+  { s: [24, 30], n2: [184, 30], e: [316, 30], n3: [100, 106], n4: [240, 106] },
+  [
+    { from: "s", to: "n2", name: "A", days: "6" },
+    { from: "s", to: "n3", name: "B", days: "3" },
+    { from: "n3", to: "n2", name: "C", days: "4" },
+    { from: "n2", to: "e", name: "D", days: "2" },
+    { from: "n3", to: "n4", name: "E", days: "4" },
+    { from: "n4", to: "e", name: "F", days: "1" },
+  ],
+);
