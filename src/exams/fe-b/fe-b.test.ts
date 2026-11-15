@@ -49,3 +49,9 @@ test("情報セキュリティの分野は、公開問題の問6 とサンプル
     expect(q.tasks[0].startsWith("2."), q.id).toBe(security);
   }
 });
+
+test("教科書：はじめにと、どの細目にも章がある（#70）", () => {
+  expect(exam.primer?.title).toBeTruthy();
+  const tasks = exam.domains.flatMap(d => d.tasks.map(t => t.id));
+  expect(Object.keys(exam.lessons ?? {}).sort()).toEqual(tasks.sort());
+});

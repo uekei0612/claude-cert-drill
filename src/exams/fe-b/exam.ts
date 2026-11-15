@@ -2,7 +2,7 @@
    分野と細目は IPA の試験要綱の科目B の出題範囲に合わせる（問1〜問16 がアルゴリズムとプログラミング、
    問17〜問20 が情報セキュリティ）。問題は IPA の公開問題を出典付きで載せ、解説と要点は自作 */
 import type { Domain, Exam } from "../../core/exam/types";
-import { primer } from "./lessons/primer";
+import { lessons, primer } from "./lessons";
 import { meta } from "./meta";
 import { notes } from "./notes";
 import { questions } from "./questions";
@@ -34,9 +34,10 @@ export const feB: Exam = {
   scenarios: [],
   questions,
   notes,
+  lessons,
   primer,
   outOfScope: [
-    "科目A（知識を問う 60 問の小問）はまだ載せていない",
+    "科目A（知識を問う 60 問の小問）は別の資格 FE-A に載せている",
     "公開されていない年度（令和4年度以前の新形式前の問題など）は載せていない",
   ],
   sources: [

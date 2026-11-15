@@ -144,7 +144,9 @@ export function validateExam(exam: Exam): string[] {
   const ids = exam.questions.map(q => q.id);
   if (new Set(ids).size !== ids.length) bad(exam.id, "問題の ID が重複している");
   for (const q of exam.questions) {
-    if (!/^[sd]\d+-\d{2}$/.test(q.id)) bad(q.id, "問題の ID は <シナリオ or 分野>-<2 桁>");
+    // 連番は 2 桁。100 問を超えた分野だけ 100 から 3 桁にする（#71。01〜99 の ID は変えない）
+    if (!/^[sd]\d+-(\d{2}|[1-9]\d{2})$/.test(q.id))
+      bad(q.id, "問題の ID は <シナリオ or 分野>-<2 桁（100 以上は 3 桁）>");
     else if (q.id.split("-")[0] !== (q.scenario ?? `d${q.tasks[0].split(".")[0]}`))
       bad(q.id, "問題の ID の頭が、シナリオ（無ければ主たる細目の分野）と合わない");
     if (exam.scenarios.length && !scenarioIds.has(q.scenario ?? "")) bad(q.id, `シナリオ ${q.scenario} が無い`);

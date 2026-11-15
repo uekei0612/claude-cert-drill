@@ -15,3 +15,95 @@ export const koukai = (year: 5 | 6 | 7 | 8, no: number, modified = false): Quest
   url: PDF[year],
   ...(modified ? { modified } : {}),
 });
+
+const SAMPLE_PDF =
+  "https://www.ipa.go.jp/shiken/syllabus/henkou/2022/ssf7ph000000h5tb-att/fe_kamoku_a_set_sample_qs.pdf";
+
+/** 科目A サンプル問題（60 問）セット（2022 年 12 月公開）の問 no（#68） */
+export const sample = (no: number, modified = false): QuestionSource => ({
+  label: `基本情報技術者試験 科目A サンプル問題セット 問${no}`,
+  url: SAMPLE_PDF,
+  ...(modified ? { modified } : {}),
+});
+
+const AM_PDF: Record<string, string> = {
+  r01a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000dict-att/2019r01a_fe_am_qs.pdf",
+  h31h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000ddiw-att/2019h31h_fe_am_qs.pdf",
+  h30a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000f01f-att/2018h30a_fe_am_qs.pdf",
+  h30h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000fabr-att/2018h30h_fe_am_qs.pdf",
+  h29h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000fzx1-att/2017h29h_fe_am_qs.pdf",
+  h29a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000fqpm-att/2017h29a_fe_am_qs.pdf",
+  h28a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000g6fw-att/2016h28a_fe_am_qs.pdf",
+  h28h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000gn5o-att/2016h28h_fe_am_qs.pdf",
+  h27a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000gxj0-att/2015h27a_fe_am_qs.pdf",
+  h27h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000000f52-att/2015h27h_fe_am_qs.pdf",
+  h26a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000000ye5-att/2014h26a_fe_am_qs.pdf",
+  h26h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000001dzu-att/2014h26h_fe_am_qs.pdf",
+  h25a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p900000027za-att/2013h25a_fe_am_qs.pdf",
+  h25h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000002e6g-att/2013h25h_fe_am_qs.pdf",
+  h24a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000002h5m-att/2012h24a_fe_am_qs.pdf",
+  h24h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p900000038er-att/2012h24h_fe_am_qs.pdf",
+  h23a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000003ojp-att/2011h23a_fe_am_qs.pdf",
+  h23toku: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000003ya2-att/2011h23tokubetsu_fe_am_qs.pdf",
+  h22a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000004d6f-att/2010h22a_fe_am_qs.pdf",
+  h22h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000004n2z-att/2010h22h_fe_am_qs.pdf",
+  h21a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000f3yi-att/2009h21a_fe_am_qs.pdf",
+  h21h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/ug65p90000009bhl-att/2009h21h_fe_am_qs.pdf",
+};
+const AM_LABEL: Record<string, string> = {
+  r01a: "令和元年度 秋期",
+  h31h: "平成31年度 春期",
+  h30a: "平成30年度 秋期",
+  h30h: "平成30年度 春期",
+  h29h: "平成29年度 春期",
+  h29a: "平成29年度 秋期",
+  h28a: "平成28年度 秋期",
+  h28h: "平成28年度 春期",
+  h27a: "平成27年度 秋期",
+  h27h: "平成27年度 春期",
+  h26a: "平成26年度 秋期",
+  h26h: "平成26年度 春期",
+  h25a: "平成25年度 秋期",
+  h25h: "平成25年度 春期",
+  h24a: "平成24年度 秋期",
+  h24h: "平成24年度 春期",
+  h23a: "平成23年度 秋期",
+  h23toku: "平成23年度 特別試験",
+  h22a: "平成22年度 秋期",
+  h22h: "平成22年度 春期",
+  h21a: "平成21年度 秋期",
+  h21h: "平成21年度 春期",
+};
+
+/** 新形式（科目A）になる前の午前試験の問 no（#71・#73〜）。冊子は画像なので、文は読み取って書き起こした */
+export const gozen = (
+  exam:
+    | "r01a"
+    | "h31h"
+    | "h30a"
+    | "h30h"
+    | "h29h"
+    | "h29a"
+    | "h28a"
+    | "h28h"
+    | "h27a"
+    | "h27h"
+    | "h26a"
+    | "h26h"
+    | "h25a"
+    | "h25h"
+    | "h24a"
+    | "h24h"
+    | "h23a"
+    | "h23toku"
+    | "h22a"
+    | "h22h"
+    | "h21a"
+    | "h21h",
+  no: number,
+  modified = false,
+): QuestionSource => ({
+  label: `${AM_LABEL[exam]} 基本情報技術者試験 午前 問${no}`,
+  url: AM_PDF[exam],
+  ...(modified ? { modified } : {}),
+});
