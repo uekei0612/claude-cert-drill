@@ -41,6 +41,8 @@ import { h23tokuMgmtStrat } from "./h23toku-ms";
 import { h23tokuTech } from "./h23toku-t";
 import { h22aMgmtStrat } from "./h22a-ms";
 import { h22aTech } from "./h22a-t";
+import { h22hMgmtStrat } from "./h22h-ms";
+import { h22hTech } from "./h22h-t";
 import { samples } from "./sample";
 
 /** 年度ごとのファイルを古い順に並べ、サンプル問題セット（#68）、新形式の前の午前（#71・#73〜。新しい回から）の順。問題の ID は記録のキーなので、足すときは分野ごとに続きの番号にする */
@@ -88,4 +90,6 @@ export const questions: Question[] = [
   ...h23tokuMgmtStrat,
   ...h22aTech,
   ...h22aMgmtStrat,
+  ...h22hTech,
+  ...h22hMgmtStrat,
 ];
