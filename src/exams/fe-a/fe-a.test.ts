@@ -94,6 +94,16 @@ const H27A_KEY =
   "イアエエアウイアアエウエイイエイイウアア";
 const H27A_DUP = [1, 2, 6, 8, 15, 18, 21, 30, 42, 51, 55, 58, 61, 63, 65, 71, 72, 77, 78];
 
+/* 平成27年度 春期 午前の解答例（#76） */
+const H27H_KEY =
+  "ウアエイイアエアアウアウエアイエエイウエ" +
+  "アウウエエウアエイエエイウウイアイウアウ" +
+  "イアイイイウウエウウウウイエイウアイエア" +
+  "エアウウウウウイエアエイウイイウウイエア";
+const H27H_DUP = [
+  1, 4, 9, 10, 13, 18, 23, 28, 29, 31, 32, 33, 35, 38, 42, 46, 51, 54, 56, 60, 62, 64, 69, 70, 71, 73, 75, 77,
+];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
 const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
 const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
@@ -163,6 +173,13 @@ const GOZEN: { name: string; file: string; key: string; dup: number[]; area?: st
     area: "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTMMMMMMMMMMMSSSSSSSSSSSSSSSSSSS",
   },
   { name: "平成27年度 秋期", file: "2015h27a_fe_am_qs.pdf", key: H27A_KEY, dup: H27A_DUP },
+  {
+    name: "平成27年度 春期",
+    file: "2015h27h_fe_am_qs.pdf",
+    key: H27H_KEY,
+    dup: H27H_DUP,
+    area: "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTMMMMMMMMMMSSSSSSSSSSSSSSSSSSS",
+  },
 ];
 
 test.each(GOZEN)("$name 午前：すでに載せている問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
