@@ -112,6 +112,16 @@ const H26A_KEY =
   "エウエエイエウエウエイイウウウウイイエウ";
 const H26A_DUP = [3, 9, 10, 11, 18, 19, 21, 31, 34, 40, 44, 45, 48, 53, 54, 62, 64, 65, 67, 68, 79];
 
+/* 平成26年度 春期 午前の解答例（#77） */
+const H26H_KEY =
+  "アウエウウウイアエエイアエエアイイウアエ" +
+  "エウアウアイウエイウエエウエアアウエアエ" +
+  "アウエウエイアイイイウエエエウアイアエア" +
+  "アイイウアエイアエエエアイイイウエエアア";
+const H26H_DUP = [
+  2, 18, 19, 20, 21, 26, 29, 31, 33, 36, 38, 39, 41, 44, 45, 50, 53, 54, 57, 58, 60, 62, 63, 67, 69, 71, 73, 77, 79,
+];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
 const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
 const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
@@ -189,6 +199,7 @@ const GOZEN: { name: string; file: string; key: string; dup: number[]; area?: st
     area: "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTMMMMMMMMMMSSSSSSSSSSSSSSSSSSS",
   },
   { name: "平成26年度 秋期", file: "2014h26a_fe_am_qs.pdf", key: H26A_KEY, dup: H26A_DUP },
+  { name: "平成26年度 春期", file: "2014h26h_fe_am_qs.pdf", key: H26H_KEY, dup: H26H_DUP },
 ];
 
 test.each(GOZEN)("$name 午前：すでに載せている問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
@@ -199,7 +210,9 @@ test.each(GOZEN)("$name 午前：すでに載せている問題と重ならな�
     const m = q.source?.label.match(new RegExp(`^${g.name} 基本情報技術者試験 午前 問(\\d+)$`));
     expect(m, q.id).toBeTruthy();
     const no = Number(m![1]);
-    expect(g.dup, `${q.id}（問${no}）はすでに載せている問題と同じ`).not.toContain(no);
+    expect(g.dup, `${q.id}（問${no}）は載せない問題（すでに載せている問題と同じか，今の範囲から外れる）`).not.toContain(
+      no,
+    );
     expect(optionLabel(exam, q.answer), `${q.id}（${g.name} 午前 問${no}）`).toBe(g.key[no - 1]);
     expect(q.source?.url?.endsWith(`/${g.file}`), q.id).toBe(true);
     // 解答例の分野：既定は問1〜50 がテクノロジ系、問51〜60 がマネジメント系、問61〜80 がストラテジ系
