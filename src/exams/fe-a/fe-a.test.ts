@@ -54,6 +54,14 @@ const H30H_KEY =
 /** 平成30年度 春期 午前のうち、すでに載せている問題と同じもの（載せない）。問36 は令和5年度の公開問題、残りはサンプル問題セット */
 const H30H_DUP = [4, 17, 24, 36, 41, 60, 65, 74, 80];
 
+/* 平成29年度 秋期 午前の解答例（#74） */
+const H29A_KEY =
+  "アアウイウイイエエアイウアアアアアウエア" +
+  "イウウアイエウイアエアイエエイアイエアウ" +
+  "エウイエウウイイイウウエエエイアアエイア" +
+  "ウエエエアアウエアイイエエイアイエウイウ";
+const H29A_DUP = [18, 34, 48, 49, 59];
+
 /* 平成29年度 春期 午前の解答例（#74） */
 const H29H_KEY =
   "エエイアアイウエエエエイイウアウエアイア" +
@@ -119,6 +127,7 @@ const GOZEN = [
   { name: "平成31年度 春期", file: "2019h31h_fe_am_qs.pdf", key: H31H_KEY, dup: H31H_DUP },
   { name: "平成30年度 秋期", file: "2018h30a_fe_am_qs.pdf", key: H30A_KEY, dup: H30A_DUP },
   { name: "平成30年度 春期", file: "2018h30h_fe_am_qs.pdf", key: H30H_KEY, dup: H30H_DUP },
+  { name: "平成29年度 秋期", file: "2017h29a_fe_am_qs.pdf", key: H29A_KEY, dup: H29A_DUP },
   { name: "平成29年度 春期", file: "2017h29h_fe_am_qs.pdf", key: H29H_KEY, dup: H29H_DUP },
 ];
 
