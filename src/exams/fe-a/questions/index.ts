@@ -9,9 +9,11 @@ import { h31hMgmtStrat } from "./h31h-ms";
 import { h31hTech } from "./h31h-t";
 import { h30aMgmtStrat } from "./h30a-ms";
 import { h30aTech } from "./h30a-t";
+import { h30hMgmtStrat } from "./h30h-ms";
+import { h30hTech } from "./h30h-t";
 import { samples } from "./sample";
 
-/** 年度ごとのファイルを古い順に並べ、サンプル問題セット（#68）、新形式の前の午前（#71）の順。問題の ID は記録のキーなので、足すときは分野ごとに続きの番号にする */
+/** 年度ごとのファイルを古い順に並べ、サンプル問題セット（#68）、新形式の前の午前（#71・#73〜。新しい回から）の順。問題の ID は記録のキーなので、足すときは分野ごとに続きの番号にする */
 export const questions: Question[] = [
   ...r05,
   ...r06,
@@ -24,4 +26,6 @@ export const questions: Question[] = [
   ...h31hMgmtStrat,
   ...h30aTech,
   ...h30aMgmtStrat,
+  ...h30hTech,
+  ...h30hMgmtStrat,
 ];

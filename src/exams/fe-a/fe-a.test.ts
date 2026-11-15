@@ -45,6 +45,15 @@ const H30A_KEY =
 /** 平成30年度 秋期 午前のうち、すでに載せている問題と同じもの（載せない）。問6・74 は令和8・5年度の公開問題、問25・32 は令和6年度の公開問題、残りはサンプル問題セット */
 const H30A_DUP = [6, 7, 11, 25, 31, 32, 41, 74];
 
+/** IPA の解答例（平成30年度 春期 午前 問1〜問80。#73） */
+const H30H_KEY =
+  "アエウアウウウエエイウエアイアウエアイア" +
+  "ウエアエエイイアエウエエアアアエウイアイ" +
+  "アエエウイウイイエエエウイアアイエイアイ" +
+  "イエウアエイイイウアアエウイウアイエエウ";
+/** 平成30年度 春期 午前のうち、すでに載せている問題と同じもの（載せない）。問36 は令和5年度の公開問題、残りはサンプル問題セット */
+const H30H_DUP = [4, 17, 24, 36, 41, 60, 65, 74, 80];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
 const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
 const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
@@ -101,6 +110,7 @@ const GOZEN = [
   { name: "令和元年度 秋期", file: "2019r01a_fe_am_qs.pdf", key: R01A_KEY, dup: R01A_DUP },
   { name: "平成31年度 春期", file: "2019h31h_fe_am_qs.pdf", key: H31H_KEY, dup: H31H_DUP },
   { name: "平成30年度 秋期", file: "2018h30a_fe_am_qs.pdf", key: H30A_KEY, dup: H30A_DUP },
+  { name: "平成30年度 春期", file: "2018h30h_fe_am_qs.pdf", key: H30H_KEY, dup: H30H_DUP },
 ];
 
 test.each(GOZEN)("$name 午前：すでに載せている問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
