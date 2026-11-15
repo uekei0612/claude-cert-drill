@@ -337,6 +337,31 @@ const OUT = process.argv[3] || "/tmp/shots";
   });
   if (bar.save > 60 || bar.next > 60 || bar.sw > 320) throw new Error(`練習の下の帯が崩れる：${JSON.stringify(bar)}`);
   await shot("25-practice-bar-320");
+  // 横向き（#84）。ブラウザでは切り欠きが出ないので、左右 59px の欠け（横向きの iPhone 相当）を仮に入れる。
+  // 文字は欠けにかからず、中央に寄せた外の空き（(844 − 720) ÷ 2 = 62px）があるので内の余白は 16px だけ
+  await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await page.evaluate(() => {
+    const s = document.createElement("style");
+    s.id = "fake-notch";
+    s.textContent = ":root { --safe-l: 59px !important; --safe-r: 59px !important; }";
+    document.head.append(s);
+  });
+  const land = await page.evaluate(() => {
+    const rects = [...document.querySelectorAll(".page *")]
+      .filter(e => e.childElementCount === 0 && e.textContent.trim())
+      .map(e => e.getBoundingClientRect())
+      .filter(r => r.width);
+    const next = document.querySelector(".sticky-next .btn.primary").getBoundingClientRect();
+    return {
+      left: Math.round(Math.min(...rects.map(r => r.left))),
+      right: Math.round(innerWidth - Math.max(...rects.map(r => r.right))),
+      next: Math.round(innerWidth - next.right),
+    };
+  });
+  if (land.left < 59 || land.right < 59 || land.next > 62 + 16 + 1)
+    throw new Error(`横向きの左右の余白がおかしい（欠けは 59px、次へは端から 78px のはず）：${JSON.stringify(land)}`);
+  await shot("30-practice-landscape");
+  await page.evaluate(() => document.getElementById("fake-notch").remove());
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
   // 壊れた URL でも落ちない（errors に例外が入れば最後に失敗にする）
