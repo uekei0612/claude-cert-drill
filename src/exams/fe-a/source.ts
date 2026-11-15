@@ -29,11 +29,16 @@ export const sample = (no: number, modified = false): QuestionSource => ({
 const AM_PDF: Record<string, string> = {
   r01a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000dict-att/2019r01a_fe_am_qs.pdf",
   h31h: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000ddiw-att/2019h31h_fe_am_qs.pdf",
+  h30a: "https://www.ipa.go.jp/shiken/mondai-kaiotu/gmcbt8000000f01f-att/2018h30a_fe_am_qs.pdf",
 };
-const AM_LABEL: Record<string, string> = { r01a: "令和元年度 秋期", h31h: "平成31年度 春期" };
+const AM_LABEL: Record<string, string> = {
+  r01a: "令和元年度 秋期",
+  h31h: "平成31年度 春期",
+  h30a: "平成30年度 秋期",
+};
 
 /** 新形式（科目A）になる前の午前試験の問 no（#71）。冊子は画像なので、文は読み取って書き起こした */
-export const gozen = (exam: "r01a" | "h31h", no: number, modified = false): QuestionSource => ({
+export const gozen = (exam: "r01a" | "h31h" | "h30a", no: number, modified = false): QuestionSource => ({
   label: `${AM_LABEL[exam]} 基本情報技術者試験 午前 問${no}`,
   url: AM_PDF[exam],
   ...(modified ? { modified } : {}),
