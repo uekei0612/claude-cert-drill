@@ -27,6 +27,15 @@ const R01A_KEY =
 /** 令和元年度 秋期 午前のうち、サンプル問題セットと同じ問題（載せない） */
 const R01A_DUP = [1, 9, 10, 11, 17, 20, 25, 36, 44, 46, 53, 76, 78];
 
+/** IPA の解答例（平成31年度 春期 午前 問1〜問80。#71） */
+const H31H_KEY =
+  "ウウエウイアエアウイエウエエエイアエアエ" +
+  "エイアウウイイイウエアエエアウアウアアア" +
+  "イアアウイアイウアアイエエイイアエアエエ" +
+  "イエイイアエイイイイエエエウイエアエエウ";
+/** 平成31年度 春期 午前のうち、サンプル問題セットと同じ問題（載せない） */
+const H31H_DUP = [3, 9, 10, 14, 19, 28, 33, 34, 38, 53, 55, 57, 59, 65, 71, 72];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
 const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
 const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
@@ -78,21 +87,32 @@ test("教科書：はじめにと、どの細目にも章がある（#69）", ()
   expect(Object.keys(exam.lessons ?? {}).sort()).toEqual(tasks.sort());
 });
 
-test("令和元年度 秋期 午前：サンプル問題と重ならない 67 問があり、答えが IPA の解答例と同じ（#71）", () => {
-  expect(R01A_KEY.length).toBe(80);
+/** 新形式の前の午前（#71）。回ごとの解答例と、サンプル問題セットと重なるので載せない問題 */
+const GOZEN = [
+  { name: "令和元年度 秋期", file: "2019r01a_fe_am_qs.pdf", key: R01A_KEY, dup: R01A_DUP },
+  { name: "平成31年度 春期", file: "2019h31h_fe_am_qs.pdf", key: H31H_KEY, dup: H31H_DUP },
+];
+
+test.each(GOZEN)("$name 午前：サンプル問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
+  expect(g.key.length).toBe(80);
+  const qs = gozenQs.filter(q => q.source?.label.startsWith(`${g.name} `));
   const seen = new Set<number>();
-  for (const q of gozenQs) {
-    const m = q.source?.label.match(/^令和元年度 秋期 基本情報技術者試験 午前 問(\d+)$/);
+  for (const q of qs) {
+    const m = q.source?.label.match(new RegExp(`^${g.name} 基本情報技術者試験 午前 問(\\d+)$`));
     expect(m, q.id).toBeTruthy();
     const no = Number(m![1]);
-    expect(R01A_DUP, `${q.id}（問${no}）はサンプル問題と同じ`).not.toContain(no);
-    expect(optionLabel(exam, q.answer), `${q.id}（令和元年度 秋期 午前 問${no}）`).toBe(R01A_KEY[no - 1]);
-    expect(q.source?.url).toMatch(/2019r01a_fe_am_qs\.pdf$/);
+    expect(g.dup, `${q.id}（問${no}）はサンプル問題と同じ`).not.toContain(no);
+    expect(optionLabel(exam, q.answer), `${q.id}（${g.name} 午前 問${no}）`).toBe(g.key[no - 1]);
+    expect(q.source?.url?.endsWith(`/${g.file}`), q.id).toBe(true);
     // 解答例の分野：問1〜50 がテクノロジ系、問51〜60 がマネジメント系、問61〜80 がストラテジ系
     const area = no <= 50 ? "1." : no <= 60 ? "2." : "3.";
     expect(q.tasks[0].startsWith(area), `${q.id}（問${no}）の分野`).toBe(true);
     seen.add(no);
   }
-  expect(seen.size).toBe(80 - R01A_DUP.length);
-  expect(gozenQs.length).toBe(80 - R01A_DUP.length);
+  expect(seen.size).toBe(80 - g.dup.length);
+  expect(qs.length).toBe(80 - g.dup.length);
+});
+
+test("午前の問題は、載せている回のどれかのもの（#71）", () => {
+  expect(gozenQs.length).toBe(GOZEN.reduce((n, g) => n + 80 - g.dup.length, 0));
 });
