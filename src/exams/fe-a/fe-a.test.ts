@@ -104,6 +104,14 @@ const H27H_DUP = [
   1, 4, 9, 10, 13, 18, 23, 28, 29, 31, 32, 33, 35, 38, 42, 46, 51, 54, 56, 60, 62, 64, 69, 70, 71, 73, 75, 77,
 ];
 
+/* 平成26年度 秋期 午前の解答例（#77） */
+const H26A_KEY =
+  "エアエエイアエエエイイウイエウイイウエウ" +
+  "ウエウエエイエウアアアウアエウイウエウウ" +
+  "アイウエアウアイエエアウウイエエアイアウ" +
+  "エウエエイエウエウエイイウウウウイイエウ";
+const H26A_DUP = [3, 9, 10, 11, 18, 19, 21, 31, 34, 40, 44, 45, 48, 53, 54, 62, 64, 65, 67, 68, 79];
+
 const sampleQs = exam.questions.filter(q => q.source?.label.includes("サンプル問題セット"));
 const gozenQs = exam.questions.filter(q => q.source?.label.includes("午前"));
 const publicQs = exam.questions.filter(q => !sampleQs.includes(q) && !gozenQs.includes(q));
@@ -180,6 +188,7 @@ const GOZEN: { name: string; file: string; key: string; dup: number[]; area?: st
     dup: H27H_DUP,
     area: "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTMMMMMMMMMMSSSSSSSSSSSSSSSSSSS",
   },
+  { name: "平成26年度 秋期", file: "2014h26a_fe_am_qs.pdf", key: H26A_KEY, dup: H26A_DUP },
 ];
 
 test.each(GOZEN)("$name 午前：すでに載せている問題と重ならない問題が全部あり、答えが IPA の解答例と同じ（#71）", g => {
