@@ -271,6 +271,25 @@ export const d4: Record<string, Lesson> = {
         ],
       },
       {
+        h: "この章で出てくる名前",
+        body: [
+          "本文で括弧の説明だけで済ませた名前を、まとめて見直します。",
+          {
+            terms: [
+              ["`output_config.format`", "structured outputs で、応答の形（`json_schema`）を指定するリクエストの欄"],
+              [
+                "`additionalProperties: false`",
+                "スキーマに無い項目を許さない指定。structured outputs のオブジェクトには必須",
+              ],
+              [
+                "`minimum`・`maximum`・`minLength`",
+                "数や長さの制約。structured outputs のスキーマでは使えない（送ると 400 エラー）",
+              ],
+            ],
+          },
+        ],
+      },
+      {
         h: "試験での考え方",
         body: [
           "「JSON の形が崩れる」ならスキーマ（ツールの `input_schema` か structured outputs）です。「形は正しいが値が作り話」なら、項目を null 可にします。「合計が合わない」はスキーマでは防げないので、検証（4.4）です。",
@@ -439,6 +458,24 @@ export const d4: Record<string, Lesson> = {
               "一番遅い場合。提出の直後に届いた依頼は、次の提出まで待ち（最大 12 時間）、そこから処理に最大 24 時間かかる",
           },
           "結果の取り込みや、失敗の出し直しにも時間が要るので、実際はそれより短い間隔で提出します。",
+        ],
+      },
+      {
+        h: "この章で出てくる名前",
+        body: [
+          "本文で括弧の説明だけで済ませた名前を、まとめて見直します。",
+          {
+            terms: [
+              [
+                "`custom_id`",
+                "バッチの各リクエストに付ける ID（英数字・`-`・`_` で 1〜64 文字）。結果との対応はこれで取る",
+              ],
+              [
+                "`succeeded`・`errored`・`canceled`・`expired`",
+                "結果の 1 件ごとの種類。成功以外は課金されない。24 時間で終わらなかったものは `expired`",
+              ],
+            ],
+          },
         ],
       },
       {
