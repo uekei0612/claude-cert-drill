@@ -2,7 +2,17 @@
 import { type ItemStat, review, reviewGuess } from "../engine/schedule";
 import type { MockScore } from "../engine/mock";
 import { dayKey } from "../engine/plan";
-import { type ActiveMock, type Data, MAX_MOCKS, type Settings, capDays, emptyData, itemKey } from "./schema";
+import {
+  type ActiveMock,
+  type Data,
+  type ExamSettings,
+  MAX_MOCKS,
+  type QuestionLang,
+  type Settings,
+  capDays,
+  emptyData,
+  itemKey,
+} from "./schema";
 
 /** 日ごとの回答に足す（取り消しでは負の数を足す。0 未満にはしない。#38） */
 export function logDay(d: Data, examId: string, at: number, answered: number, correct: number): Data {
@@ -96,6 +106,17 @@ export const savedIds = (d: Data, examId: string): string[] =>
     .map(([k]) => k.slice(examId.length + 1));
 
 export const setSettings = (d: Data, s: Partial<Settings>): Data => ({ ...d, settings: { ...d.settings, ...s } });
+
+/** その資格で使う 1 回の問題数（資格ごとの値が無ければ共通の値。#85） */
+export const practiceSizeOf = (d: Data, examId: string): number =>
+  d.settings.exams?.[examId]?.practiceSize ?? d.settings.practiceSize;
+
+/** その資格で使う問題文の言語（資格ごとの値が無ければ共通の値。#85） */
+export const langOf = (d: Data, examId: string): QuestionLang => d.settings.exams?.[examId]?.lang ?? d.settings.lang;
+
+/** その資格だけの設定を変える（#85） */
+export const setExamSettings = (d: Data, examId: string, s: ExamSettings): Data =>
+  setSettings(d, { exams: { ...d.settings.exams, [examId]: { ...d.settings.exams?.[examId], ...s } } });
 
 /** 資格の試験日を決める・消す（date が空なら消す） */
 export function setExamDate(d: Data, examId: string, date: string): Data {

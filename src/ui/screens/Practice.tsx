@@ -8,7 +8,7 @@ import { seeded } from "../../core/engine/rng";
 import type { Exam } from "../../core/exam/types";
 import { findTask } from "../../core/exam/types";
 import type { ItemStat } from "../../core/engine/schedule";
-import { answer, markGuess, savedIds, toggleSaved, undoAnswer } from "../../core/store/actions";
+import { answer, langOf, markGuess, practiceSizeOf, savedIds, toggleSaved, undoAnswer } from "../../core/store/actions";
 import { itemKey } from "../../core/store/schema";
 import { getData, update, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
@@ -47,7 +47,7 @@ function plan(exam: Exam, only: string | undefined, now: number, seed: number): 
   const d = getData();
   const ids = only === "saved" ? savedIds(d, exam.id) : parseIdsOnly(only);
   return planPractice(exam, id => d.items[itemKey(exam.id, id)], now, seeded(seed), {
-    size: ids ? ids.length : d.settings.practiceSize,
+    size: ids ? ids.length : practiceSizeOf(d, exam.id),
     maxNew: ids ? ids.length : undefined,
     only,
     ids,
@@ -83,7 +83,7 @@ function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
 }
 
 export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: number }) {
-  const lang = useData().settings.lang;
+  const lang = langOf(useData(), exam.id);
   // キー操作（#40）。今の問題に合わせた処理を、描くたびに下で差し替える（結果の画面などでは無し）
   const onKey = useRef<((key: string) => boolean) | undefined>(undefined);
   onKey.current = undefined;

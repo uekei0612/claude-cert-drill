@@ -1,9 +1,9 @@
-/* 問題文の言語の切り替え（英語／訳はタップ／併記／日本語）。設定に保存し、練習・模擬試験の途中でも切り替えられる。
+/* 問題文の言語の切り替え（英語／訳はタップ／併記／日本語）。資格ごとに保存し（#85）、練習・模擬試験の途中でも切り替えられる。
    問題文を上に出すため、4 つ並べた帯ではなく、今の言語を 1 字で出す小さなボタンにし、押すと選択肢が開く（#31）。
    訳の無い資格では出さない */
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { Exam } from "../core/exam/types";
-import { setSettings } from "../core/store/actions";
+import { langOf, setExamSettings } from "../core/store/actions";
 import { QUESTION_LANGS, type QuestionLang } from "../core/store/schema";
 import { update, useData } from "../app/store";
 
@@ -21,7 +21,7 @@ const LANG_NOTE: Record<QuestionLang, string> = {
 };
 
 export function LangSwitch({ exam }: { exam: Exam }) {
-  const lang = useData().settings.lang;
+  const lang = langOf(useData(), exam.id);
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   // 外を押したら閉じる
@@ -60,7 +60,7 @@ export function LangSwitch({ exam }: { exam: Exam }) {
               class={l === lang ? "on" : ""}
               aria-pressed={l === lang}
               onClick={() => {
-                update(d => setSettings(d, { lang: l }));
+                update(d => setExamSettings(d, exam.id, { lang: l }));
                 setOpen(false);
               }}
             >

@@ -144,6 +144,10 @@ const OUT = process.argv[3] || "/tmp/shots";
   await clickText("練習する");
   if (!/^1 \/ 5/.test(await page.$eval(".head-label", e => e.textContent)))
     throw new Error("ホームで変えた問題数で練習にならない");
+  // 問題数は資格ごと：CCAR-F で変えても FE-B は 10 問のまま（#85）
+  await goto("#/fe-b");
+  if ((await page.$eval(".size-row .seg button.on", e => e.textContent.trim())) !== "10 問")
+    throw new Error("CCAR-F で変えた問題数が FE-B にも効いている");
   await goto("#/ccar-f");
   await page.$$eval(".size-row .seg button", bs => bs.find(b => b.textContent.trim() === "10 問").click());
   // ホームのカード：本体は詳細へ、右端の「練習 ▶」は練習へ。押す前に行き先が分かる（#32・#33）
