@@ -2,6 +2,7 @@
 import { useState } from "preact/hooks";
 import { idsOnly, orderFor } from "../../core/engine/practice";
 import type { Exam } from "../../core/exam/types";
+import { langOf } from "../../core/store/actions";
 import { useData } from "../../app/store";
 import { Meter, pct } from "../Meter";
 import { LangSwitch } from "../LangSwitch";
@@ -107,8 +108,8 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                   <span class={ok ? "okc" : "ngc"}>{ok ? "○" : chosen === undefined ? "－" : "×"}</span>
                   <span>
                     {i + 1}. <span class="tag">{q.tasks[0]}</span>
-                    <span class="small row-stem" lang={stemLang(exam, data.settings.lang)}>
-                      {stemOf(exam, q, data.settings.lang)}
+                    <span class="small row-stem" lang={stemLang(exam, langOf(data, exam.id))}>
+                      {stemOf(exam, q, langOf(data, exam.id))}
                     </span>
                   </span>
                 </button>
@@ -121,7 +122,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                       chosen={chosen}
                       reveal={true}
                       scenarioOpen={false}
-                      lang={data.settings.lang}
+                      lang={langOf(data, exam.id)}
                       learnLink
                     />
                     <div class="row end">

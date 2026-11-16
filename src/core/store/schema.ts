@@ -22,10 +22,18 @@ export interface Settings {
   readonly theme: Theme;
   /** 前回開いた資格（起動時にそこへ） */
   readonly lastExam?: string;
+  /** 資格 ID → その資格だけの設定（#85）。無い項目は上の共通の値を使う */
+  readonly exams?: Readonly<Record<string, ExamSettings>>;
   /** 資格 ID → 試験日（"YYYY-MM-DD"）。ホームに 1 日の目安を逆算して出す（#37） */
   readonly examDates?: Readonly<Record<string, string>>;
   /** ホームの「はじめての方へ」を閉じた（#50） */
   readonly introDone?: boolean;
+}
+
+/** 資格ごとの設定（#85）。CCAR-F は英語で 5 問、科目A は 20 問、のように資格で使い方が違う */
+export interface ExamSettings {
+  readonly practiceSize?: number;
+  readonly lang?: QuestionLang;
 }
 
 export interface MockResult {
@@ -122,22 +130,38 @@ function item(x: unknown): ItemStat | undefined {
   };
 }
 
+const isSize = (x: unknown): x is number => (PRACTICE_SIZES as readonly unknown[]).includes(x);
+const isLang = (x: unknown): x is QuestionLang => (QUESTION_LANGS as readonly unknown[]).includes(x);
+
+/** 資格ごとの設定。知らない値の項目だけ捨て、空になった資格は残さない */
+function examSettings(x: unknown): Record<string, ExamSettings> {
+  const out: Record<string, ExamSettings> = {};
+  if (!isObj(x)) return out;
+  for (const [k, v] of Object.entries(x)) {
+    if (!/^[a-z0-9-]+$/.test(k) || !isObj(v)) continue;
+    const s: ExamSettings = {
+      ...(isSize(v.practiceSize) ? { practiceSize: v.practiceSize } : {}),
+      ...(isLang(v.lang) ? { lang: v.lang } : {}),
+    };
+    if (Object.keys(s).length) out[k] = s;
+  }
+  return out;
+}
+
 function settings(x: unknown): Settings {
   if (!isObj(x)) return DEFAULT_SETTINGS;
-  const size = (PRACTICE_SIZES as readonly unknown[]).includes(x.practiceSize)
-    ? (x.practiceSize as number)
-    : DEFAULT_SETTINGS.practiceSize;
+  const size = isSize(x.practiceSize) ? x.practiceSize : DEFAULT_SETTINGS.practiceSize;
   const lastExam = typeof x.lastExam === "string" && /^[a-z0-9-]+$/.test(x.lastExam) ? x.lastExam : undefined;
-  const lang = (QUESTION_LANGS as readonly unknown[]).includes(x.lang)
-    ? (x.lang as QuestionLang)
-    : DEFAULT_SETTINGS.lang;
+  const lang = isLang(x.lang) ? x.lang : DEFAULT_SETTINGS.lang;
   const theme = (THEMES as readonly unknown[]).includes(x.theme) ? (x.theme as Theme) : DEFAULT_SETTINGS.theme;
   const base: Settings = { practiceSize: size, lang, theme };
   const examDates: Record<string, string> = {};
   if (isObj(x.examDates))
     for (const [k, v] of Object.entries(x.examDates))
       if (/^[a-z0-9-]+$/.test(k) && typeof v === "string" && parseDate(v) !== undefined) examDates[k] = v;
-  const withDates0 = Object.keys(examDates).length ? { ...base, examDates } : base;
+  const exams = examSettings(x.exams);
+  const withExams = Object.keys(exams).length ? { ...base, exams } : base;
+  const withDates0 = Object.keys(examDates).length ? { ...withExams, examDates } : withExams;
   const withDates = x.introDone === true ? { ...withDates0, introDone: true } : withDates0;
   return lastExam ? { ...withDates, lastExam } : withDates;
 }

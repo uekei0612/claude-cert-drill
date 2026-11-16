@@ -4,8 +4,16 @@ import { APP } from "../../app/config";
 import { APP_ENV, APP_VERSION } from "../../app/env";
 import { catalog } from "../../exams";
 import { sourceLang } from "../../core/exam/types";
-import { resetAll, resetExam, setExamDate, setSettings } from "../../core/store/actions";
-import { PRACTICE_SIZES, QUESTION_LANGS, THEMES } from "../../core/store/schema";
+import {
+  langOf,
+  practiceSizeOf,
+  resetAll,
+  resetExam,
+  setExamDate,
+  setExamSettings,
+  setSettings,
+} from "../../core/store/actions";
+import { PRACTICE_SIZES, QUESTION_LANGS, type QuestionLang, THEMES } from "../../core/store/schema";
 import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../app/store";
 import { ManualCopy, copyToClipboard } from "../CopyButton";
 import { Notices } from "../Notices";
@@ -29,8 +37,6 @@ export function Settings() {
   const answered = Object.keys(data.items).length;
   // 控えは記録とは別のキーにある。記録が変わるたびに描き直されるので、そのつど読む
   const backup = getBackup();
-  // 問題文の言語の設定は、英語が原文の資格にだけ効く（#57）
-  const englishExams = catalog.list.filter(e => sourceLang(e) === "en");
 
   const download = () => {
     const blob = new Blob([exportJson()], { type: "application/json" });
@@ -78,69 +84,68 @@ export function Settings() {
         使い方と用語
       </a>
 
-      <section class="card">
-        <h2>試験日</h2>
-        {catalog.list.map(e => (
-          <label key={e.id} class="row between">
-            <span>{e.code}</span>
-            <span class="row">
-              <input
-                type="date"
-                value={data.settings.examDates?.[e.id] ?? ""}
-                onChange={ev => update(d => setExamDate(d, e.id, ev.currentTarget.value))}
-              />
-              {data.settings.examDates?.[e.id] && (
-                <button type="button" class="btn ghost small" onClick={() => update(d => setExamDate(d, e.id, ""))}>
-                  消す
-                </button>
-              )}
-            </span>
-          </label>
-        ))}
-        <p class="muted small">
-          決めると、ホームに試験までの日数と、今日やる量の目安（残りを日数で割ったもの）が出ます。
-        </p>
-      </section>
-
-      <section class="card">
-        <h2>練習</h2>
-        <label class="row between">
-          <span>1 回の問題数</span>
-          <select
-            value={data.settings.practiceSize}
-            onChange={e => update(d => setSettings(d, { practiceSize: Number(e.currentTarget.value) }))}
-          >
-            {PRACTICE_SIZES.map(n => (
-              <option key={n} value={n}>
-                {n} 問
-              </option>
-            ))}
-          </select>
-        </label>
-        {englishExams.length > 0 && (
-          <label class="row between">
-            <span>問題文の言語</span>
-            <select
-              value={data.settings.lang}
-              onChange={e =>
-                update(d => setSettings(d, { lang: e.currentTarget.value as (typeof QUESTION_LANGS)[number] }))
-              }
-            >
-              {QUESTION_LANGS.map(l => (
-                <option key={l} value={l}>
-                  {SETTING_LABEL[l]}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {englishExams.length > 0 && (
-          <p class="muted small">
-            {englishExams.map(e => e.code).join("・")}
-            の本番の試験は英語です。まず「訳はタップ」で英語を先に読み、詰まったときだけ訳を開くのがおすすめです。解説は常に日本語です。
-          </p>
-        )}
-      </section>
+      {catalog.list.map(e => {
+        // 問題文の言語は、英語が原文の資格にだけ出す（#57）
+        const english = sourceLang(e) === "en";
+        return (
+          <section key={e.id} class="card" aria-labelledby={`exam-${e.id}-h`}>
+            <h2 id={`exam-${e.id}-h`}>{e.code}</h2>
+            <label class="row between">
+              <span>試験日</span>
+              <span class="row">
+                <input
+                  type="date"
+                  value={data.settings.examDates?.[e.id] ?? ""}
+                  onChange={ev => update(d => setExamDate(d, e.id, ev.currentTarget.value))}
+                />
+                {data.settings.examDates?.[e.id] && (
+                  <button type="button" class="btn ghost small" onClick={() => update(d => setExamDate(d, e.id, ""))}>
+                    消す
+                  </button>
+                )}
+              </span>
+            </label>
+            <label class="row between">
+              <span>1 回の問題数</span>
+              <select
+                value={practiceSizeOf(data, e.id)}
+                onChange={ev => update(d => setExamSettings(d, e.id, { practiceSize: Number(ev.currentTarget.value) }))}
+              >
+                {PRACTICE_SIZES.map(n => (
+                  <option key={n} value={n}>
+                    {n} 問
+                  </option>
+                ))}
+              </select>
+            </label>
+            {english && (
+              <label class="row between">
+                <span>問題文の言語</span>
+                <select
+                  value={langOf(data, e.id)}
+                  onChange={ev =>
+                    update(d => setExamSettings(d, e.id, { lang: ev.currentTarget.value as QuestionLang }))
+                  }
+                >
+                  {QUESTION_LANGS.map(l => (
+                    <option key={l} value={l}>
+                      {SETTING_LABEL[l]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {english && (
+              <p class="muted small">
+                本番の試験は英語です。まず「訳はタップ」で英語を先に読み、詰まったときだけ訳を開くのがおすすめです。解説は常に日本語です。
+              </p>
+            )}
+          </section>
+        );
+      })}
+      <p class="muted small">
+        試験日を決めると、ホームに試験までの日数と、今日やる量の目安（残りを日数で割ったもの）が出ます。問題数と言語は、ホームや出題画面で変えても、その資格にだけ効きます。
+      </p>
 
       <section class="card">
         <h2>見た目</h2>

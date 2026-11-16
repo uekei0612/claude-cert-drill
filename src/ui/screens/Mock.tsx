@@ -6,7 +6,7 @@ import { addUsed, mockLeft, planMock, scoreMock } from "../../core/engine/mock";
 import { optionOrder, orderFor } from "../../core/engine/practice";
 import { seeded } from "../../core/engine/rng";
 import type { Exam } from "../../core/exam/types";
-import { abandonMock, finishMock, patchMock, startMock } from "../../core/store/actions";
+import { abandonMock, finishMock, langOf, patchMock, startMock } from "../../core/store/actions";
 import { getData, update, useData } from "../../app/store";
 import { HelpTip } from "../HelpTip";
 import { LangSwitch } from "../LangSwitch";
@@ -220,7 +220,7 @@ export function Mock({ exam }: { exam: Exam }) {
         reveal={false}
         onChoose={choose}
         scenarioOpen={!prev || prev.scenario !== q.scenario}
-        lang={data.settings.lang}
+        lang={langOf(data, exam.id)}
       />
       <p class="kbd-hint muted small">キー：{optionKeys(exam, order.length)}で選ぶ・← → で前後・F で旗</p>
       <div class="sticky-next">
