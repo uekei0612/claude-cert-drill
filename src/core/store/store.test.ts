@@ -13,6 +13,10 @@ import {
   logDay,
   savedIds,
   setExamDate,
+  setExamSettings,
+  setSettings,
+  langOf,
+  practiceSizeOf,
   setRead,
   startMock,
   toggleSaved,
@@ -350,5 +354,29 @@ describe("模擬試験の見直しの選択肢の並び（#46）", () => {
     const raw = JSON.parse(JSON.stringify(done));
     raw.mocks["ccar-f"][0].orders["s1-02"] = [0, 0, 1, 2];
     expect(parseData(raw).mocks["ccar-f"]![0]!.orders).toEqual({ "s1-01": [3, 1, 0, 2] });
+  });
+});
+
+describe("資格ごとの設定（#85）", () => {
+  test("資格ごとの値が無ければ共通の値、あればその資格にだけ効く", () => {
+    let d = setSettings(emptyData(), { practiceSize: 20, lang: "peek" });
+    expect([practiceSizeOf(d, "ccar-f"), langOf(d, "ccar-f")]).toEqual([20, "peek"]);
+    d = setExamSettings(d, "ccar-f", { practiceSize: 5 });
+    d = setExamSettings(d, "ccar-f", { lang: "ja" });
+    expect([practiceSizeOf(d, "ccar-f"), langOf(d, "ccar-f")]).toEqual([5, "ja"]);
+    expect([practiceSizeOf(d, "fe-b"), langOf(d, "fe-b")]).toEqual([20, "peek"]);
+  });
+  test("記録に残り、知らない値の項目と資格 ID でないキーは捨てる", () => {
+    const d = setExamSettings(emptyData(), "ccar-f", { practiceSize: 5, lang: "both" });
+    expect(parseData(JSON.parse(JSON.stringify(d))).settings.exams).toEqual({
+      "ccar-f": { practiceSize: 5, lang: "both" },
+    });
+    const back = parseData({
+      settings: {
+        exams: { "ccar-f": { practiceSize: 7, lang: "ja" }, "fe-b": { practiceSize: "x" }, "x y": { lang: "ja" } },
+      },
+    });
+    expect(back.settings.exams).toEqual({ "ccar-f": { lang: "ja" } });
+    expect(parseData(emptyData()).settings.exams).toBeUndefined();
   });
 });

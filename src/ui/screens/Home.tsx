@@ -3,7 +3,7 @@ import { dailyPlan, parseDate } from "../../core/engine/plan";
 import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../core/engine/progress";
 import type { Exam } from "../../core/exam/types";
 import { PRIMER_ID, findTask, lessonOrder } from "../../core/exam/types";
-import { daysOf, readChapters, savedIds, setSettings } from "../../core/store/actions";
+import { daysOf, practiceSizeOf, readChapters, savedIds, setExamSettings, setSettings } from "../../core/store/actions";
 import { PRACTICE_SIZES, itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
 import { Activity } from "../Activity";
@@ -25,6 +25,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const readCount = chapters.filter(id => read.has(id)).length;
   const nextRead = nextChapter(exam, read);
   const examDate = data.settings.examDates?.[exam.id];
+  const size = practiceSizeOf(data, exam.id);
   const examAt = examDate ? parseDate(examDate) : undefined;
   const unseen = all.total - all.seen;
   const unread = chapters.length - readCount;
@@ -137,9 +138,9 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
           {PRACTICE_SIZES.map(n => (
             <button
               key={n}
-              class={n === data.settings.practiceSize ? "on" : ""}
-              aria-pressed={n === data.settings.practiceSize}
-              onClick={() => update(d => setSettings(d, { practiceSize: n }))}
+              class={n === size ? "on" : ""}
+              aria-pressed={n === size}
+              onClick={() => update(d => setExamSettings(d, exam.id, { practiceSize: n }))}
             >
               {n} 問
             </button>

@@ -2,7 +2,7 @@
 import { useState } from "preact/hooks";
 import { naturalOrder } from "../../core/engine/practice";
 import { type Exam, optionLabel } from "../../core/exam/types";
-import { savedIds } from "../../core/store/actions";
+import { langOf, savedIds } from "../../core/store/actions";
 import { getData, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard, stemLang, stemOf } from "../QuestionCard";
@@ -59,8 +59,8 @@ export function Saved({ exam }: { exam: Exam }) {
                     <span aria-hidden="true">{open === id ? "▾" : "▸"}</span>
                     <span>
                       <span class="tag">{q.tasks[0]}</span>
-                      <span class="small row-stem" lang={stemLang(exam, data.settings.lang)}>
-                        {stemOf(exam, q, data.settings.lang)}
+                      <span class="small row-stem" lang={stemLang(exam, langOf(data, exam.id))}>
+                        {stemOf(exam, q, langOf(data, exam.id))}
                       </span>
                     </span>
                   </button>
@@ -71,7 +71,7 @@ export function Saved({ exam }: { exam: Exam }) {
                       order={naturalOrder(q.options.length)}
                       reveal={true}
                       scenarioOpen={false}
-                      lang={data.settings.lang}
+                      lang={langOf(data, exam.id)}
                       learnLink
                     />
                   )}
