@@ -5,9 +5,55 @@ import { filterQuestions, idsOnly, isPermutation, optionOrder, orderFor, parseId
 import { questionsOfDomain, questionsOfTask, readiness, tally, weakestTasks } from "./progress";
 import { dailyPlan, dayKey, daysUntil, parseDate, streak } from "./plan";
 import { seeded } from "./rng";
-import { DAY, type ItemStat, RETRY_MS, isKnown, isLearning, review, reviewGuess } from "./schedule";
+import {
+  DAY,
+  type ItemStat,
+  RETRY_MS,
+  WEAK_LAPSES,
+  isKnown,
+  isLearning,
+  isWeak,
+  review,
+  reviewGuess,
+} from "./schedule";
 
 const NOW = Date.UTC(2026, 10, 4);
+
+describe("忘れた回数と苦手（#87）", () => {
+  test("初見の誤答と、同じ回のやり直しでの誤答は数えない", () => {
+    let s = review(undefined, false, NOW);
+    s = review(s, false, NOW + RETRY_MS);
+    s = review(s, false, NOW + 2 * RETRY_MS);
+    expect(s.lapses).toBeUndefined();
+    expect(isWeak(s)).toBe(false);
+  });
+  test("覚えかけ（間隔 1 日以上）になってから間違えると 1 回。2 回で苦手", () => {
+    let s = review(undefined, true, NOW);
+    s = review(s, false, NOW + DAY);
+    expect(s.lapses).toBe(1);
+    expect(isWeak(s)).toBe(false);
+    // やり直しで続けて間違えても増えない
+    s = review(s, false, NOW + DAY + RETRY_MS);
+    expect(s.lapses).toBe(1);
+    // また覚えかけにしてから忘れる
+    s = review(s, true, NOW + 2 * DAY);
+    s = review(s, true, NOW + 3 * DAY);
+    expect(s.lapses).toBe(1);
+    s = review(s, false, NOW + 7 * DAY);
+    expect(s.lapses).toBe(WEAK_LAPSES);
+    expect(isWeak(s)).toBe(true);
+    // 覚え直しても苦手のまま（また忘れやすい問題として残す）
+    s = review(review(s, true, NOW + 8 * DAY), true, NOW + 9 * DAY);
+    expect(isKnown(s, NOW + 9 * DAY)).toBe(true);
+    expect(isWeak(s)).toBe(true);
+  });
+  test("勘の正解でも回数は残る。勘のあと（間隔 0）の誤答は数えない", () => {
+    const learned = review(review(undefined, true, NOW), false, NOW + DAY);
+    const g = reviewGuess(learned, NOW + 2 * DAY);
+    expect(g.lapses).toBe(1);
+    expect(review(g, false, NOW + 3 * DAY).lapses).toBe(1);
+  });
+});
 
 describe("review", () => {
   test("正解で 1 日 → 3 日 → ease 倍に延びる", () => {

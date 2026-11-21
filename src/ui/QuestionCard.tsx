@@ -6,13 +6,16 @@
    答えを見たあとは、問題・選択肢・解説をまとめて Claude に貼れるようにコピーのボタンを出す。
    公開問題などを使った問題は、問題文の下に出典を出す（#61）。
    答える前は、hintCopy のときだけ、問題と選択肢だけ（答え・解説なし）でヒントを頼む文を写すボタンを出す（#36）。
+   答えを見たあと、苦手な問題（覚えたあとに何度も間違えた。#87）には、忘れた回数を出す。
    learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出す（間違えた直後に読めるように。#26）。
    練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { APP } from "../app/config";
+import { useData } from "../app/store";
+import { WEAK_LAPSES } from "../core/engine/schedule";
 import type { Exam, ExamMeta, Question, Stem } from "../core/exam/types";
 import { domainOf, findTask, optionLabel, sourceText, stemText } from "../core/exam/types";
-import type { QuestionLang } from "../core/store/schema";
+import { type QuestionLang, itemKey } from "../core/store/schema";
 import { CopyButton } from "./CopyButton";
 import { hintText, questionText } from "./copyText";
 import { href } from "./route";
@@ -117,6 +120,7 @@ export function QuestionCard({
   const domain = domainOf(exam, q);
   const ja = exam.translations?.ja;
   const tq = ja?.questions[q.id];
+  const lapses = useData().items[itemKey(exam.id, q.id)]?.lapses ?? 0;
   // 訳を開いた問題の ID（同じカードのまま次の問題に変わったら閉じた状態に戻す）
   const [openedId, setOpenedId] = useState<string | undefined>();
   const peeking = lang === "peek";
@@ -201,6 +205,11 @@ export function QuestionCard({
       </ol>
       {reveal && (
         <div class="point">
+          {lapses >= WEAK_LAPSES && (
+            <p class="weak-note small">
+              <strong>苦手</strong>　覚えたあとに {lapses} 回間違えています。解説と教科書の章を読み直しましょう
+            </p>
+          )}
           <p>
             <strong>覚えること</strong>　{q.point}
           </p>

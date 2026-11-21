@@ -134,7 +134,7 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f");
   const homeAfter = await text();
   if (homeAfter.includes("未解答 60 問")) throw new Error("練習の答えが記録されていない");
-  if (!/振り返り\s*2 問/.test(homeAfter)) throw new Error("ホームに振り返りの問題数が出ない");
+  if (!/振り返り\s*印 2 問/.test(homeAfter)) throw new Error("ホームに振り返りの問題数が出ない");
   // 今日答えた分が、続けた日数とカレンダーに出る（#38）
   if (!/続けた日数 1 日[\s\S]*今日 3 問/.test(homeAfter)) throw new Error("今日の回答が続けた日数に出ない");
   if (!(await page.$(".cal .cell.today.l1"))) throw new Error("今日の回答がカレンダーに出ない");
@@ -236,6 +236,11 @@ const OUT = process.argv[3] || "/tmp/shots";
   await goto("#/ccar-f");
   await goto("#/ccar-f/saved");
   if ((await page.$$(".review-row")).length !== 1) throw new Error("外した印が残っている");
+  // 苦手の一覧（#87）：切り替えで移れる。まだ覚えたあとに間違えた問題は無いので、理由が出る
+  await clickText("苦手 0");
+  if (!(await page.evaluate(() => location.hash)).endsWith("/saved/weak")) throw new Error("苦手の一覧に移れない");
+  if (!(await text()).includes("今は苦手な問題はありません")) throw new Error("苦手が無いときの説明が出ない");
+  await shot("24b-weak-empty");
 
   // 分野・細目
   await goto("#/ccar-f/domains");

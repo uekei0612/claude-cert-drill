@@ -159,7 +159,7 @@ function item(x: unknown): ItemStat | undefined {
   const { ease, interval, due, tries, correct, last } = x;
   if (![ease, interval, due, tries, correct].every(num)) return undefined;
   if ((ease as number) <= 0 || (interval as number) < 0 || (tries as number) < (correct as number)) return undefined;
-  return {
+  const base: ItemStat = {
     ease: ease as number,
     interval: interval as number,
     due: due as number,
@@ -167,6 +167,11 @@ function item(x: unknown): ItemStat | undefined {
     correct: correct as number,
     last: num(last) ? last : (due as number),
   };
+  // 忘れた回数（#87）。間違えた回数を超える値は壊れているので捨てる
+  const { lapses } = x;
+  return num(lapses) && Number.isInteger(lapses) && lapses > 0 && lapses <= base.tries - base.correct
+    ? { ...base, lapses }
+    : base;
 }
 
 const isSize = (x: unknown): x is number => (PRACTICE_SIZES as readonly unknown[]).includes(x);

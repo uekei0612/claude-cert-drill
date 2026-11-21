@@ -1,6 +1,6 @@
 /* アプリ独自の用語と、指標の定義（#50）。指標の横の「?」と、使い方のページの両方がここを読む。
    基準を変えたら（#27・#28・#32 など）ここも合わせる */
-import { MAX_INTERVAL, RETRY_MS } from "../core/engine/schedule";
+import { MAX_INTERVAL, RETRY_MS, WEAK_LAPSES } from "../core/engine/schedule";
 import type { Exam } from "../core/exam/types";
 
 export type TermId =
@@ -15,6 +15,7 @@ export type TermId =
   | "task"
   | "domain"
   | "saved"
+  | "weak"
   | "streak"
   | "mock";
 
@@ -85,6 +86,12 @@ export const TERMS: readonly Term[] = [
     id: "saved",
     term: "振り返り",
     def: () => "答えのあとに「☆ 後で振り返る」で印を付けた問題の一覧。印を付けた問題だけで練習もできます。",
+  },
+  {
+    id: "weak",
+    term: "苦手",
+    def: () =>
+      `一度正解して覚えかけ（次に出すまでの間隔が 1 日以上）になったあとに、${WEAK_LAPSES} 回以上間違えた問題。同じ回のやり直しで続けて間違えた分は数えません。今は覚えていても、また忘れやすい問題として一覧に残ります。`,
   },
   {
     id: "streak",

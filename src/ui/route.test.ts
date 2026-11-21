@@ -14,6 +14,8 @@ const routes: Route[] = [
   { name: "practice", examId: "ccar-f", start: "resume" },
   { name: "practice", examId: "ccar-f", only: "d2", start: "new" },
   { name: "saved", examId: "ccar-f" },
+  { name: "saved", examId: "ccar-f", view: "weak" },
+  { name: "practice", examId: "ccar-f", only: "weak" },
   { name: "mock", examId: "ccar-f" },
   { name: "mock-result", examId: "ccar-f", at: 1793718460101 },
   { name: "domains", examId: "ccar-f" },
