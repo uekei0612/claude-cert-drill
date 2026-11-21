@@ -4,6 +4,9 @@ import { planMock, scoreMock } from "../engine/mock";
 import { seeded } from "../engine/rng";
 import {
   abandonMock,
+  clearPractice,
+  practiceOf,
+  savePractice,
   answer,
   finishMock,
   markGuess,
@@ -378,5 +381,50 @@ describe("資格ごとの設定（#85）", () => {
     });
     expect(back.settings.exams).toEqual({ "ccar-f": { lang: "ja" } });
     expect(parseData(emptyData()).settings.exams).toBeUndefined();
+  });
+});
+
+describe("途中の練習（#86）", () => {
+  const p = {
+    only: "d1",
+    queue: [fixture.questions[0]!.id, fixture.questions[1]!.id],
+    pos: 1,
+    done: [{ id: fixture.questions[0]!.id, ok: false }],
+    requeued: [fixture.questions[0]!.id],
+    orders: { [fixture.questions[0]!.id]: [1, 0, 2, 3] },
+    updatedAt: 1,
+  };
+  test("資格ごとに残り、読み戻せる。答えを見ている途中（選んだ答え・取り消し・勘）も戻る", () => {
+    const withAnswer = {
+      ...p,
+      chosen: 2,
+      undo: { prev: { ease: 2.5, interval: 1, due: 5, tries: 1, correct: 1, last: 4 }, requeued: false, at: 9 },
+      guess: true,
+    };
+    let d = savePractice(emptyData(), fixture.id, withAnswer);
+    d = savePractice(d, "other", p);
+    expect(parseData(JSON.parse(JSON.stringify(d))).practices).toEqual({ [fixture.id]: withAnswer, other: p });
+    expect(practiceOf(d, fixture)).toEqual(withAnswer);
+  });
+  test("問題が見つからない回は続きにしない。形の崩れた回は捨てる", () => {
+    const d = savePractice(emptyData(), fixture.id, { ...p, queue: [...p.queue, "zz-99"] });
+    expect(practiceOf(d, fixture)).toBeUndefined();
+    const back = parseData({
+      practices: {
+        a: { ...p, pos: 2 },
+        b: { ...p, queue: [] },
+        c: { ...p, done: [{ id: 1 }] },
+        "x y": p,
+        ok: p,
+      },
+    });
+    expect(Object.keys(back.practices!)).toEqual(["ok"]);
+    expect(parseData(emptyData()).practices).toBeUndefined();
+  });
+  test("捨てる・資格の記録を消すと一緒に消える。ほかの資格の回は残る", () => {
+    let d = savePractice(savePractice(emptyData(), fixture.id, p), "other", p);
+    expect(Object.keys(resetExam(d, fixture.id).practices!)).toEqual(["other"]);
+    d = clearPractice(clearPractice(d, fixture.id), "other");
+    expect(d.practices).toBeUndefined();
   });
 });

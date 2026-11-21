@@ -1,38 +1,37 @@
 /* 練習。1 問ずつ答えてすぐ解説を見る。答えはその場で記録する（途中でやめても残る）。
+   解いている途中の回も記録に残し、同じ絞り込みで開けば続きから（ホームのカードからも。#86）。
    間違えた問題は、その回の最後にもう一度出す（1 回だけ）。
    間違えたときは、押し間違いなら次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44）。
    正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27） */
-import { useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { idsOnly, optionOrder, orderFor, parseIdsOnly, planPractice } from "../../core/engine/practice";
 import { seeded } from "../../core/engine/rng";
 import type { Exam } from "../../core/exam/types";
 import { findTask } from "../../core/exam/types";
-import type { ItemStat } from "../../core/engine/schedule";
-import { answer, langOf, markGuess, practiceSizeOf, savedIds, toggleSaved, undoAnswer } from "../../core/store/actions";
-import { itemKey } from "../../core/store/schema";
+import {
+  answer,
+  clearPractice,
+  langOf,
+  markGuess,
+  practiceOf,
+  practiceSizeOf,
+  savePractice,
+  savedIds,
+  toggleSaved,
+  undoAnswer,
+} from "../../core/store/actions";
+import { type ActivePractice, itemKey } from "../../core/store/schema";
 import { getData, update, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
 import { optionIndex, optionKeys, useKeys } from "../keys";
-import { href } from "../route";
+import { type PracticeStart, href } from "../route";
 
-interface Done {
-  readonly id: string;
-  readonly ok: boolean;
-  /** 勘で当たった */
-  readonly guess?: boolean;
-}
+/** 画面で持つ回の状態（記録に残す形から時刻を除いたもの） */
+type Session = Omit<ActivePractice, "updatedAt">;
 
-/** 取り消すときに戻す先：答える前の記録と、この答えでやり直しに足したかどうか */
-interface Undo {
-  readonly prev: ItemStat | undefined;
-  readonly requeued: boolean;
-  /** 答えた時刻（その日の回答から外すため） */
-  readonly at: number;
-}
-
-function onlyLabel(exam: Exam, only?: string): string | undefined {
+export function onlyLabel(exam: Exam, only?: string): string | undefined {
   if (!only) return undefined;
   if (only === "saved") return "振り返り";
   if (parseIdsOnly(only)) return "解き直し";
@@ -52,6 +51,25 @@ function plan(exam: Exam, only: string | undefined, now: number, seed: number): 
     only,
     ids,
   });
+}
+
+/** 新しい回を組む（選択肢の並びも決める） */
+function freshSession(exam: Exam, only: string | undefined, now: number, seed: number): Session {
+  const queue = plan(exam, only, now, seed);
+  const rng = seeded(seed + 7);
+  const byId = new Map(exam.questions.map(q => [q.id, q]));
+  const orders = Object.fromEntries(
+    queue.flatMap(id => (byId.has(id) ? [[id, optionOrder(rng, exam, byId.get(id)!)] as const] : [])),
+  );
+  return { ...(only ? { only } : {}), queue, pos: 0, done: [], requeued: [], orders };
+}
+
+/** 記録に残した途中の回のうち、同じ絞り込みのもの */
+function resumable(exam: Exam, only: string | undefined): Session | undefined {
+  const p = practiceOf(getData(), exam);
+  if (!p || (p.only ?? "") !== (only ?? "")) return undefined;
+  const { updatedAt: _t, ...s } = p;
+  return s;
 }
 
 /** 出せる問題が無いとき：理由と、次に行ける先を出す（行き止まりにしない。#49） */
@@ -82,7 +100,17 @@ function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
   );
 }
 
-export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: number }) {
+export function Practice({
+  exam,
+  only,
+  start,
+  now,
+}: {
+  exam: Exam;
+  only?: string;
+  start?: PracticeStart;
+  now: number;
+}) {
   const lang = langOf(useData(), exam.id);
   // キー操作（#40）。今の問題に合わせた処理を、描くたびに下で差し替える（結果の画面などでは無し）
   const onKey = useRef<((key: string) => boolean) | undefined>(undefined);
@@ -90,33 +118,31 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   useKeys(key => onKey.current?.(key));
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
   const [round, setRound] = useState(0);
-  const initial = useMemo(() => plan(exam, only, now, seed + round), [exam, only, seed, round]);
+  // 途中の回（同じ絞り込み）があれば、start に従う。指定が無ければ「続きから／新しく」を選んでもらう（#86）
+  const [paused] = useState(() => (start === "new" ? undefined : resumable(exam, only)));
+  const [asking, setAsking] = useState(start === undefined && !!paused);
+  const [s, setS] = useState<Session>(() => paused ?? freshSession(exam, only, now, seed));
+  useEffect(() => {
+    if (start === "new") update(d => clearPractice(d, exam.id));
+  }, []);
+  const { queue, pos, chosen, done, undo } = s;
+  const requeued = new Set(s.requeued);
+  const guess = !!s.guess;
 
-  const [queue, setQueue] = useState<string[]>(initial);
-  const [pos, setPos] = useState(0);
-  const [chosen, setChosen] = useState<number | undefined>();
-  const [done, setDone] = useState<Done[]>([]);
-  const [requeued, setRequeued] = useState<ReadonlySet<string>>(new Set());
-  const [undo, setUndo] = useState<Undo | undefined>();
-  const [guess, setGuess] = useState(false);
-  const orders = useMemo(() => {
-    const rng = seeded(seed + round + 7);
-    const byId = new Map(exam.questions.map(q => [q.id, q]));
-    return new Map(initial.flatMap(id => (byId.has(id) ? [[id, optionOrder(rng, exam, byId.get(id)!)] as const] : [])));
-  }, [initial]);
-
-  const restart = () => {
-    const next = plan(exam, only, Date.now(), seed + round + 1);
-    setRound(round + 1);
-    setQueue(next);
-    setPos(0);
-    setChosen(undefined);
-    setUndo(undefined);
-    setDone([]);
-    setRequeued(new Set());
+  /** 回の状態を変え、記録にも残す。1 問も答えていない回は残さない（前の途中の回を消さない）。
+      終わった回は消す */
+  const commit = (next: Session) => {
+    setS(next);
+    if (next.pos >= next.queue.length) update(d => clearPractice(d, exam.id));
+    else if (next.done.length) update(d => savePractice(d, exam.id, { ...next, updatedAt: Date.now() }));
   };
 
-  const byId = new Map(exam.questions.map(q => [q.id, q]));
+  const restart = () => {
+    setRound(round + 1);
+    commit(freshSession(exam, only, Date.now(), seed + round + 1));
+  };
+
+  const byId = useMemo(() => new Map(exam.questions.map(q => [q.id, q])), [exam]);
   const back = href(only === "saved" ? { name: "saved", examId: exam.id } : { name: "home", examId: exam.id });
   const label = onlyLabel(exam, only);
 
@@ -129,6 +155,39 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
         <EmptyPractice exam={exam} only={only} />
       </main>
     );
+
+  if (asking && paused) {
+    const base = paused.queue.length - paused.requeued.length;
+    const answered = new Set(paused.done.map(d => d.id)).size;
+    return (
+      <main class="page">
+        <a class="btn ghost" href={back}>
+          ← {only === "saved" ? "振り返り" : "ホーム"}
+        </a>
+        <section class="card stack practice-choice">
+          <h1>練習の途中です</h1>
+          <p>
+            {label && `${label}・`}
+            {Math.min(answered, base)} / {base} 問に回答済み
+          </p>
+          <button class="btn primary block" onClick={() => setAsking(false)}>
+            続きから再開する
+          </button>
+          <button
+            class="btn block"
+            onClick={() => {
+              update(d => clearPractice(d, exam.id));
+              setS(freshSession(exam, only, Date.now(), seed + 1));
+              setAsking(false);
+            }}
+          >
+            新しく始める
+          </button>
+          <p class="muted small">新しく始めると、途中の回は捨てます（答えた問題の記録は残ります）。</p>
+        </section>
+      </main>
+    );
+  }
 
   if (pos >= queue.length) {
     const firstTry = done.filter((d, i) => done.findIndex(x => x.id === d.id) === i);
@@ -193,20 +252,23 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
   const isRetry = pos >= base;
   const retries = queue.length - base;
 
+  /** 答えを見ていない状態の回（選んだ答え・取り消し・勘を外す） */
+  const { chosen: _c, undo: _u, guess: _g, ...plain } = s;
+
   const choose = (orig: number) => {
     if (revealed) return;
     const ok = orig === q.answer;
     const requeue = !ok && !requeued.has(id);
-    setChosen(orig);
-    setDone([...done, { id, ok }]);
     const at = Date.now();
-    setUndo({ prev: getData().items[itemKey(exam.id, id)], requeued: requeue, at });
-    setGuess(false);
+    const prevStat = getData().items[itemKey(exam.id, id)];
     update(d => answer(d, exam.id, id, ok, at));
-    if (requeue) {
-      setQueue([...queue, id]);
-      setRequeued(new Set([...requeued, id]));
-    }
+    commit({
+      ...plain,
+      chosen: orig,
+      done: [...done, { id, ok }],
+      undo: { ...(prevStat ? { prev: prevStat } : {}), requeued: requeue, at },
+      ...(requeue ? { queue: [...queue, id], requeued: [...s.requeued, id] } : {}),
+    });
   };
 
   /** 正解に「勘だった」を付ける・外す */
@@ -214,31 +276,28 @@ export function Practice({ exam, only, now }: { exam: Exam; only?: string; now: 
     if (!undo) return;
     const on = !guess;
     update(d => markGuess(d, exam.id, id, undo.prev, on, Date.now()));
-    setDone([...done.slice(0, -1), { id, ok: true, guess: on }]);
-    setGuess(on);
+    commit({ ...s, done: [...done.slice(0, -1), { id, ok: true, ...(on ? { guess: true } : {}) }], guess: on });
   };
 
   /** 答えを取り消して、選び直せるようにする */
   const cancel = () => {
     if (!undo) return;
     update(d => undoAnswer(d, exam.id, id, undo.prev, undo.at, chosen === q.answer));
-    setDone(done.slice(0, -1));
-    if (undo.requeued) {
-      setQueue(queue.slice(0, -1));
-      setRequeued(new Set([...requeued].filter(x => x !== id)));
-    }
-    setUndo(undefined);
-    setChosen(undefined);
+    const rest = { ...plain, done: done.slice(0, -1) };
+    const back = undo.requeued
+      ? { ...rest, queue: queue.slice(0, -1), requeued: s.requeued.filter(x => x !== id) }
+      : rest;
+    // 1 問目を取り消して答えが無くなった回は、記録からも消す（答えていない回は残さない）
+    if (!back.done.length) update(d => clearPractice(d, exam.id));
+    commit(back);
   };
 
   const next = () => {
-    setChosen(undefined);
-    setUndo(undefined);
-    setPos(pos + 1);
+    commit({ ...plain, pos: pos + 1 });
     scrollTo(0, 0);
   };
 
-  const order = orderFor(exam, q, orders.get(id));
+  const order = orderFor(exam, q, s.orders[id]);
   onKey.current = key => {
     const i = optionIndex(key, exam);
     if (!revealed && i >= 0 && i < order.length) {

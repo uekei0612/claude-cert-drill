@@ -70,6 +70,43 @@ export interface ActiveMock {
   readonly cursor: number;
 }
 
+/** 練習の 1 問分の結果 */
+export interface PracticeDone {
+  readonly id: string;
+  readonly ok: boolean;
+  /** 勘で当たった */
+  readonly guess?: boolean;
+}
+
+/** 練習で答えを取り消すときに戻す先：答える前の記録と、この答えでやり直しに足したかどうか */
+export interface PracticeUndo {
+  readonly prev?: ItemStat;
+  readonly requeued: boolean;
+  /** 答えた時刻（その日の回答から外すため） */
+  readonly at: number;
+}
+
+/** 解いている途中の練習（ホームに戻っても続きから。#86） */
+export interface ActivePractice {
+  /** 絞り込み（無しは全部の問題から） */
+  readonly only?: string;
+  /** 出す問題の並び（間違えて回の最後に足した「やり直し」も含む） */
+  readonly queue: readonly string[];
+  /** 今の問題の位置 */
+  readonly pos: number;
+  readonly done: readonly PracticeDone[];
+  /** やり直しに足した問題 */
+  readonly requeued: readonly string[];
+  /** 問題 ID → 表示する選択肢の順番 */
+  readonly orders: Readonly<Record<string, readonly number[]>>;
+  /** 今の問題で選んだ元の選択肢の添字（答えを見ている途中なら） */
+  readonly chosen?: number;
+  readonly undo?: PracticeUndo;
+  readonly guess?: boolean;
+  /** 最後に答えた時刻 */
+  readonly updatedAt: number;
+}
+
 export interface Data {
   readonly version: number;
   readonly settings: Settings;
@@ -78,6 +115,8 @@ export interface Data {
   /** 資格 ID → 終えた模擬試験（新しい順、最大 20） */
   readonly mocks: Readonly<Record<string, readonly MockResult[]>>;
   readonly activeMock?: ActiveMock;
+  /** 資格 ID → 解いている途中の練習（#86） */
+  readonly practices?: Readonly<Record<string, ActivePractice>>;
   /** 後で振り返る印。"<資格ID>:<問題ID>" → 印を付けた時刻 */
   readonly saved?: Readonly<Record<string, number>>;
   /** 日ごとの回答。"<資格ID>:<YYYY-MM-DD>" → [答えた数, 正解した数]。古いものから捨てて MAX_DAYS 日分まで（#38） */
@@ -234,6 +273,39 @@ function activeMock(x: unknown): ActiveMock | undefined {
   };
 }
 
+const int = (x: unknown): x is number => num(x) && Number.isInteger(x) && x >= 0;
+
+function practiceDone(x: unknown): PracticeDone | undefined {
+  if (!isObj(x) || typeof x.id !== "string" || typeof x.ok !== "boolean") return undefined;
+  return x.guess === true && x.ok ? { id: x.id, ok: true, guess: true } : { id: x.id, ok: x.ok };
+}
+
+/** 途中の練習。形が崩れていれば丸ごと捨てる（中途半端に直すと回の数え方が合わなくなる） */
+function activePractice(x: unknown): ActivePractice | undefined {
+  if (!isObj(x)) return undefined;
+  const { only, queue, pos, done, requeued, orders, chosen, undo, updatedAt } = x;
+  if (!strArr(queue) || !queue.length || !strArr(requeued) || !Array.isArray(done) || !isObj(orders)) return undefined;
+  if (!int(pos) || pos >= queue.length || !num(updatedAt)) return undefined;
+  if (only !== undefined && typeof only !== "string") return undefined;
+  const ds = done.map(practiceDone);
+  if (!ds.every(d => d)) return undefined;
+  const base: ActivePractice = {
+    ...(typeof only === "string" ? { only } : {}),
+    queue,
+    pos,
+    done: ds as PracticeDone[],
+    requeued,
+    orders: ordersOf(orders),
+    updatedAt,
+  };
+  if (!int(chosen) || chosen >= MAX_OPTIONS) return base;
+  const u =
+    isObj(undo) && typeof undo.requeued === "boolean" && num(undo.at)
+      ? { ...(item(undo.prev) ? { prev: item(undo.prev) } : {}), requeued: undo.requeued, at: undo.at }
+      : undefined;
+  return { ...base, chosen, ...(u ? { undo: u } : {}), ...(x.guess === true ? { guess: true } : {}) };
+}
+
 /** どんな値からでも、正しい形の記録を作る（読み込み・取り込みの両方で使う） */
 export function parseData(raw: unknown): Data {
   if (!isObj(raw)) return emptyData();
@@ -269,7 +341,14 @@ export function parseData(raw: unknown): Data {
   const read: Record<string, number> = {};
   if (isObj(raw.read)) for (const [k, v] of Object.entries(raw.read)) if (num(v) && READ_KEY_RE.test(k)) read[k] = v;
   const am = activeMock(raw.activeMock);
-  const data: Data = { version: VERSION, settings: settings(raw.settings), items, mocks };
+  const practices: Record<string, ActivePractice> = {};
+  if (isObj(raw.practices))
+    for (const [k, v] of Object.entries(raw.practices)) {
+      const p = activePractice(v);
+      if (p && /^[a-z0-9-]+$/.test(k)) practices[k] = p;
+    }
+  const data0: Data = { version: VERSION, settings: settings(raw.settings), items, mocks };
+  const data = Object.keys(practices).length ? { ...data0, practices } : data0;
   const withSaved = Object.keys(saved).length ? { ...data, saved } : data;
   const withRead = Object.keys(read).length ? { ...withSaved, read } : withSaved;
   const capped = capDays(days);
