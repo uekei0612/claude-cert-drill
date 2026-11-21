@@ -28,6 +28,10 @@ import {
   noteIds,
   noteOf,
   setNote,
+  EXPORT_NUDGE_DAYS,
+  exportNudge,
+  markExported,
+  snoozeExportNudge,
 } from "./actions";
 import { MAX_NOTE, emptyData, parseData } from "./schema";
 import { createStore } from "./store";
@@ -285,6 +289,33 @@ describe("問題のメモ（#88）", () => {
     expect(back.notes).toEqual(d.notes);
     expect(noteIds(resetExam(d, "ccar-f"), "ccar-f")).toEqual([]);
     expect(noteIds(resetExam(d, "ccar-f"), "fe-a")).toEqual(["d1-01"]);
+  });
+});
+
+describe("書き出しの案内（#89）", () => {
+  const DAY = 864e5;
+  const W = EXPORT_NUDGE_DAYS * DAY;
+  test("答えていなければ出さない。最初に答えてから 14 日で、まだ書き出していないと出す", () => {
+    expect(exportNudge(emptyData(), NOW)).toBeUndefined();
+    const d = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    expect(exportNudge(d, NOW + W - DAY)).toBeUndefined();
+    expect(exportNudge(d, NOW + W + DAY)).toEqual({ days: EXPORT_NUDGE_DAYS + 1, never: true });
+  });
+  test("書き出したあとに答えていなければ出さない。答えていれば、書き出してから 14 日で出す", () => {
+    const d = markExported(answer(emptyData(), "ccar-f", "s1-01", true, NOW), NOW + DAY);
+    expect(exportNudge(d, NOW + 100 * DAY)).toBeUndefined();
+    const later = answer(d, "ccar-f", "s1-02", true, NOW + 2 * DAY);
+    expect(exportNudge(later, NOW + DAY + W - 1)).toBeUndefined();
+    expect(exportNudge(later, NOW + DAY + W)).toEqual({ days: EXPORT_NUDGE_DAYS, never: false });
+  });
+  test("「あとで」から 14 日は出さない。時刻は記録に残る", () => {
+    const d = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    const s = snoozeExportNudge(d, NOW + W);
+    expect(exportNudge(s, NOW + 2 * W - 1)).toBeUndefined();
+    expect(exportNudge(s, NOW + 2 * W)).toBeDefined();
+    const back = parseData(JSON.parse(JSON.stringify(markExported(s, NOW + 3 * W))));
+    expect([back.exportedAt, back.exportNudgeSnoozedAt]).toEqual([NOW + 3 * W, NOW + W]);
+    expect(parseData({ exportedAt: "x" }).exportedAt).toBeUndefined();
   });
 });
 

@@ -5,6 +5,7 @@ import type { Exam } from "../../core/exam/types";
 import { PRIMER_ID, findTask, lessonOrder } from "../../core/exam/types";
 import {
   daysOf,
+  exportNudge,
   noteIds,
   practiceOf,
   practiceSizeOf,
@@ -12,11 +13,13 @@ import {
   savedIds,
   setExamSettings,
   setSettings,
+  snoozeExportNudge,
   weakIds,
 } from "../../core/store/actions";
 import { PRACTICE_SIZES, itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
 import { Activity } from "../Activity";
+import { downloadRecord } from "../exportRecord";
 import { HelpTip } from "../HelpTip";
 import { Meter, pct } from "../Meter";
 import { STEPS } from "../glossary";
@@ -48,6 +51,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const target = exam.format.target;
   const saved = savedIds(data, exam.id).filter(id => exam.questions.some(q => q.id === id)).length;
   const weakCount = weakIds(data, exam).length;
+  const nudge = exportNudge(data, now);
   const noteCount = noteIds(data, exam.id).filter(id => exam.questions.some(q => q.id === id)).length;
   // 解いている途中の練習（#86）。やり直しに足した問題は数えない
   const practice = practiceOf(data, exam);
@@ -137,6 +141,29 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
             >
               新しく始める
             </a>
+          </div>
+        </section>
+      )}
+
+      {nudge && (
+        <section class="card notice export-nudge" aria-labelledby="export-h">
+          <strong id="export-h">記録を書き出しておきましょう</strong>
+          <span class="small">
+            {nudge.never
+              ? `最初に答えてから ${nudge.days} 日、まだ一度も書き出していません。`
+              : `最後に書き出してから ${nudge.days} 日たちました。`}
+            記録はこの端末の中にしか無く、機種変更やアプリを消すと一緒に消えます。
+          </span>
+          <div class="row wrap">
+            <button class="btn primary" onClick={downloadRecord}>
+              ファイルに書き出す
+            </button>
+            <a class="btn" href={href({ name: "settings" })}>
+              設定で（コピーなど）
+            </a>
+            <button class="btn ghost" onClick={() => update(d => snoozeExportNudge(d, Date.now()))}>
+              あとで
+            </button>
           </div>
         </section>
       )}

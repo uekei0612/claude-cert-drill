@@ -6,6 +6,7 @@ import { catalog } from "../../exams";
 import { sourceLang } from "../../core/exam/types";
 import {
   langOf,
+  markExported,
   practiceSizeOf,
   resetAll,
   resetExam,
@@ -16,6 +17,7 @@ import {
 import { PRACTICE_SIZES, QUESTION_LANGS, type QuestionLang, THEMES } from "../../core/store/schema";
 import { exportJson, getBackup, importJson, replaceData, restoreBackup, update, useData } from "../../app/store";
 import { ManualCopy, copyToClipboard } from "../CopyButton";
+import { downloadRecord } from "../exportRecord";
 import { Notices } from "../Notices";
 import { href } from "../route";
 import { THEME_LABEL } from "../theme";
@@ -38,18 +40,12 @@ export function Settings() {
   // 控えは記録とは別のキーにある。記録が変わるたびに描き直されるので、そのつど読む
   const backup = getBackup();
 
-  const download = () => {
-    const blob = new Blob([exportJson()], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${APP.id}-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
-  };
   // 問題や教科書のコピーと同じ仕組みで写す（http の dev でも写せる。#46）
   const copy = async () => {
     const text = exportJson();
     const ok = await copyToClipboard(text);
+    // 写せたら書き出した扱いにする（#89）。手で写す欄に出したときは、写したか分からないので数えない
+    if (ok) update(d => markExported(d, Date.now()));
     setManual(ok ? undefined : text);
     setMsg(
       ok
@@ -166,10 +162,17 @@ export function Settings() {
       <section class="card">
         <h2>記録を移す</h2>
         <p class="muted small">
-          ホーム画面に追加したアプリは、Safari とは別に記録を持ちます。片方で書き出して、もう片方で読み込んでください。
+          {
+            "ホーム画面に追加したアプリは、Safari とは別に記録を持ちます。片方で書き出して、もう片方で読み込んでください。記録はこの端末の中にしか無いので、機種変更やアプリを消したときに備えて、ときどき書き出してください。"
+          }
+        </p>
+        <p class="muted small exported-at">
+          {data.exportedAt
+            ? `最後に書き出した日：${new Date(data.exportedAt).toLocaleDateString("ja-JP")}`
+            : "まだ書き出していません。"}
         </p>
         <div class="row wrap">
-          <button class="btn" onClick={download}>
+          <button class="btn" onClick={downloadRecord}>
             ファイルに書き出す
           </button>
           <button class="btn" onClick={copy}>
