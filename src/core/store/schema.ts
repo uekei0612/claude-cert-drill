@@ -107,6 +107,13 @@ export interface ActivePractice {
   readonly updatedAt: number;
 }
 
+/** 問題ごとのメモ（#88）。なぜ間違えたか・どこで迷ったかを自分の言葉で残す */
+export interface Note {
+  readonly text: string;
+  /** 書いた（直した）時刻 */
+  readonly at: number;
+}
+
 export interface Data {
   readonly version: number;
   readonly settings: Settings;
@@ -119,6 +126,8 @@ export interface Data {
   readonly practices?: Readonly<Record<string, ActivePractice>>;
   /** 後で振り返る印。"<資格ID>:<問題ID>" → 印を付けた時刻 */
   readonly saved?: Readonly<Record<string, number>>;
+  /** 問題ごとのメモ。"<資格ID>:<問題ID>" → メモ（#88） */
+  readonly notes?: Readonly<Record<string, Note>>;
   /** 日ごとの回答。"<資格ID>:<YYYY-MM-DD>" → [答えた数, 正解した数]。古いものから捨てて MAX_DAYS 日分まで（#38） */
   readonly days?: Readonly<Record<string, readonly [number, number]>>;
   /** 教科書の読んだ章。"<資格ID>:<章ID>"（章 ID は細目 "1.1" か "intro"）→ 読んだ時刻（#29） */
@@ -128,6 +137,8 @@ export interface Data {
 export const DEFAULT_SETTINGS: Settings = { practiceSize: 10, lang: "en", theme: "system" };
 export const PRACTICE_SIZES = [5, 10, 20] as const;
 export const MAX_MOCKS = 20;
+/** メモの長さの上限（文字） */
+export const MAX_NOTE = 2000;
 /** 日ごとの回答を残す日数（資格をまたいだキーの数。約 1 年強） */
 export const MAX_DAYS = 400;
 
@@ -332,6 +343,11 @@ export function parseData(raw: unknown): Data {
           .slice(0, MAX_MOCKS);
   const saved: Record<string, number> = {};
   if (isObj(raw.saved)) for (const [k, v] of Object.entries(raw.saved)) if (num(v) && KEY_RE.test(k)) saved[k] = v;
+  const notes: Record<string, Note> = {};
+  if (isObj(raw.notes))
+    for (const [k, v] of Object.entries(raw.notes))
+      if (KEY_RE.test(k) && isObj(v) && typeof v.text === "string" && v.text.trim() && num(v.at))
+        notes[k] = { text: v.text.slice(0, MAX_NOTE), at: v.at };
   const days: Record<string, readonly [number, number]> = {};
   if (isObj(raw.days))
     for (const [k, v] of Object.entries(raw.days))
@@ -355,7 +371,8 @@ export function parseData(raw: unknown): Data {
   const data0: Data = { version: VERSION, settings: settings(raw.settings), items, mocks };
   const data = Object.keys(practices).length ? { ...data0, practices } : data0;
   const withSaved = Object.keys(saved).length ? { ...data, saved } : data;
-  const withRead = Object.keys(read).length ? { ...withSaved, read } : withSaved;
+  const withNotes = Object.keys(notes).length ? { ...withSaved, notes } : withSaved;
+  const withRead = Object.keys(read).length ? { ...withNotes, read } : withNotes;
   const capped = capDays(days);
   const withDays = Object.keys(capped).length ? { ...withRead, days: capped } : withRead;
   return am ? { ...withDays, activeMock: am } : withDays;

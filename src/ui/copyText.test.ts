@@ -35,6 +35,12 @@ describe("questionText", () => {
     expect(text).toContain("細目：1.1");
   });
 
+  test("メモがあれば最後に入れ、無ければ見出しも出さない（#88）", () => {
+    expect(text).not.toContain("私のメモ");
+    const withNote = questionText({ exam, q, order, chosen: 2, note: "C と D を取り違えた" });
+    expect(withNote.endsWith("■ 私のメモ（間違えた理由など）\nC と D を取り違えた")).toBe(true);
+  });
+
   test("記号がア〜の資格はア〜で書き、訳は付けない（#57・#58）", () => {
     const jq = jaFixture.questions[0]!;
     const t = questionText({ exam: jaFixture, q: jq, order: [0, 1, 2, 3], chosen: 0 });

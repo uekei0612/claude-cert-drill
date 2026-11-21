@@ -13,6 +13,7 @@ import {
   clearPractice,
   langOf,
   markGuess,
+  noteIds,
   practiceOf,
   practiceSizeOf,
   savePractice,
@@ -27,7 +28,7 @@ import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
 import { optionIndex, optionKeys, useKeys } from "../keys";
-import { type PracticeStart, href } from "../route";
+import { type PracticeStart, type Route, href } from "../route";
 
 /** 画面で持つ回の状態（記録に残す形から時刻を除いたもの） */
 type Session = Omit<ActivePractice, "updatedAt">;
@@ -36,6 +37,7 @@ export function onlyLabel(exam: Exam, only?: string): string | undefined {
   if (!only) return undefined;
   if (only === "saved") return "振り返り";
   if (only === "weak") return "苦手";
+  if (only === "notes") return "メモ";
   if (parseIdsOnly(only)) return "解き直し";
   if (/^d\d+$/.test(only)) return exam.domains.find(d => d.id === only)?.ja;
   if (/^s\d+$/.test(only)) return exam.scenarios.find(s => s.id === only)?.ja;
@@ -43,18 +45,26 @@ export function onlyLabel(exam: Exam, only?: string): string | undefined {
   return t ? `${t.id} ${t.ja}` : undefined;
 }
 
-/** 振り返りの画面から始める絞り込み（印を付けた問題・苦手な問題）。やめると振り返りへ戻る */
-const fromReview = (only?: string): boolean => only === "saved" || only === "weak";
+/** 振り返りの画面から始める絞り込み（印を付けた問題・苦手な問題・メモのある問題）。やめると振り返りへ戻る */
+const fromReview = (only?: string): boolean => only === "saved" || only === "weak" || only === "notes";
 
 /** 振り返りの画面の、その絞り込みの一覧 */
-const reviewRoute = (examId: string, only?: string) =>
-  only === "weak" ? { name: "saved" as const, examId, view: "weak" as const } : { name: "saved" as const, examId };
+const reviewRoute = (examId: string, only?: string): Route =>
+  only === "weak" || only === "notes" ? { name: "saved", examId, view: only } : { name: "saved", examId };
 
-/** 1 回分を組む。印を付けた問題（only が "saved"）・苦手な問題（"weak"。#87）・名指しの問題（"q:…"）は、
+/** 1 回分を組む。印を付けた問題（only が "saved"）・苦手な問題（"weak"。#87）・メモのある問題（"notes"。#88）・
+    名指しの問題（"q:…"）は、
     回の長さで切らずに全部出す */
 function plan(exam: Exam, only: string | undefined, now: number, seed: number): string[] {
   const d = getData();
-  const ids = only === "saved" ? savedIds(d, exam.id) : only === "weak" ? weakIds(d, exam) : parseIdsOnly(only);
+  const ids =
+    only === "saved"
+      ? savedIds(d, exam.id)
+      : only === "weak"
+        ? weakIds(d, exam)
+        : only === "notes"
+          ? noteIds(d, exam.id).filter(id => exam.questions.some(q => q.id === id))
+          : parseIdsOnly(only);
   return planPractice(exam, id => d.items[itemKey(exam.id, id)], now, seeded(seed), {
     size: ids ? ids.length : practiceSizeOf(d, exam.id),
     maxNew: ids ? ids.length : undefined,
@@ -90,11 +100,13 @@ function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
       ? "後で振り返る印を付けた問題がありません。練習で答えたあとに「☆ 後で振り返る」を押すと、ここで練習できます。"
       : only === "weak"
         ? "苦手な問題はありません。一度覚えた問題を 2 回以上間違えると、ここで練習できます。"
-        : parseIdsOnly(only)
-          ? "解き直す問題が見つかりません（問題が入れ替わった可能性があります）。"
-          : only
-            ? `「${onlyLabel(exam, only) ?? only}」に当てはまる問題がありません。`
-            : "この資格には、まだ問題がありません。";
+        : only === "notes"
+          ? "メモを書いた問題がありません。答えたあとの「✎ メモを書く」で書いた問題を、ここで練習できます。"
+          : parseIdsOnly(only)
+            ? "解き直す問題が見つかりません（問題が入れ替わった可能性があります）。"
+            : only
+              ? `「${onlyLabel(exam, only) ?? only}」に当てはまる問題がありません。`
+              : "この資格には、まだ問題がありません。";
   return (
     <section class="card stack">
       <p>{reason}</p>

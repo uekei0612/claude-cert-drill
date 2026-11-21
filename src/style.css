@@ -617,12 +617,37 @@ a.tap {
   height: 10px;
 }
 /* 振り返り・見直しの一覧の行：問題文の冒頭を 2 行まで（#47） */
-.row-stem {
+.row-stem,
+.row-note {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow: hidden;
+}
+/* メモ（#88）：一覧の行に添える本文と、答えのあとの問題カードの欄 */
+.row-note {
+  margin-top: 4px;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+.note-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+.note-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.note-box .row.end {
+  align-items: center;
+  gap: 8px;
 }
 /* 自動で写せなかったときの、手で写すための欄（#49） */
 .row:has(> .manual-copy) {

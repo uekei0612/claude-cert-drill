@@ -301,3 +301,37 @@ describe("苦手（#87）", () => {
     expect(root.textContent).toContain("苦手な問題はありません");
   });
 });
+
+describe("問題のメモ（#88）", () => {
+  test("答える前は出さない。答えたあとに書いて次へ進んでも残り、振り返りのメモの一覧に出る", () => {
+    mount(<Practice exam={fixture} now={NOW} />);
+    expect(root.querySelector(".note-add")).toBeNull();
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    const id = store.getData().practices![fixture.id]!.done[0]!.id;
+    click(byText("✎ メモを書く"));
+    const ta = root.querySelector<HTMLTextAreaElement>(".note-box textarea")!;
+    act(() => {
+      ta.value = "期限と間隔を取り違えた";
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    // 「完了」を押さずに次へ進んでも保存する
+    click(byText("次へ"));
+    expect(store.getData().notes?.[`${fixture.id}:${id}`]?.text).toBe("期限と間隔を取り違えた");
+
+    act(() => render(null, root));
+    mount(<Saved exam={fixture} view="notes" now={NOW} />);
+    expect(root.querySelector(".row-note")?.textContent).toContain("期限と間隔を取り違えた");
+    expect(byText("この 1 問を練習する").getAttribute("href")).toBe(`#/${fixture.id}/practice?only=notes`);
+    // 開くとメモを直せる。空にして完了すると消える
+    click(root.querySelector<HTMLButtonElement>(".review-row")!);
+    click(byText("直す"));
+    const ta2 = root.querySelector<HTMLTextAreaElement>(".note-box textarea")!;
+    expect(ta2.value).toBe("期限と間隔を取り違えた");
+    act(() => {
+      ta2.value = "";
+      ta2.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    click(byText("完了"));
+    expect(store.getData().notes).toBeUndefined();
+  });
+});
