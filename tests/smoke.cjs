@@ -139,13 +139,26 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!/続けた日数 1 日[\s\S]*今日 3 問/.test(homeAfter)) throw new Error("今日の回答が続けた日数に出ない");
   if (!(await page.$(".cal .cell.today.l1"))) throw new Error("今日の回答がカレンダーに出ない");
   await shot("05-home-after");
+  // 途中でホームに戻った練習は、ホームのカードから続きから再開できる（#86）
+  if (!/練習の途中です\s*3 \/ 10 問に回答済み/.test(homeAfter)) throw new Error("ホームに途中の練習が出ない");
+  await clickText("続きから再開する");
+  if (!/^4 \/ 10/.test(await page.$eval(".head-label", e => e.textContent)))
+    throw new Error("続きから再開すると、4 問目から始まらない");
+  await goto("#/ccar-f");
   // ホームで問題数を変えて練習を始められる。設定にも残る（#48）
   await page.$$eval(".size-row .seg button", bs => bs.find(b => b.textContent.trim() === "5 問").click());
+  // 途中の回があるときに練習を開くと、続きからか新しくかを選ぶ（#86）
   await clickText("練習する");
+  if (!/練習の途中です[\s\S]*続きから再開する[\s\S]*新しく始める/.test(await text()))
+    throw new Error("途中の回があるのに、続きか新しくかを選べない");
+  await shot("05b-practice-choice");
+  await clickText("新しく始める");
   if (!/^1 \/ 5/.test(await page.$eval(".head-label", e => e.textContent)))
     throw new Error("ホームで変えた問題数で練習にならない");
   // 問題数は資格ごと：CCAR-F で変えても FE-B は 10 問のまま（#85）
   await goto("#/fe-b");
+  // FE-B の中身は初めて開いたときに読み込む（#55）。読み終わるのを待つ
+  await page.waitForSelector(".size-row .seg button.on", { timeout: 10000 });
   if ((await page.$eval(".size-row .seg button.on", e => e.textContent.trim())) !== "10 問")
     throw new Error("CCAR-F で変えた問題数が FE-B にも効いている");
   await goto("#/ccar-f");
@@ -484,7 +497,11 @@ const OUT = process.argv[3] || "/tmp/shots";
   await click(".option");
   await shot("16-practice-both");
   await page.reload({ waitUntil: "networkidle0" });
+  // 答えたあとに開き直しても、続きから同じ問題の答えを見た状態に戻る（#86）
+  await clickText("続きから再開する");
+  if (!(await page.$(".why"))) throw new Error("開き直して続きから再開すると、答えを見た状態に戻らない");
   if (!(await page.$(".stem .ja-sub"))) throw new Error("言語の設定が残らない");
+  await clickText("次へ");
   await setLang("英語");
 
   // 訳はタップ：最初は英語だけ。「訳を見る」で訳が出て、次の問題ではまた閉じる。答えたら訳が出る
@@ -534,7 +551,8 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!(await text()).includes("おつかれさまでした")) throw new Error("キーだけで練習が終わらない");
 
   // コピーに失敗したら、選べる欄に出して手で写せるようにする（#49）
-  await goto("#/ccar-f/practice");
+  // （上の訳はタップの回が途中で残っているので、新しく始める。#86）
+  await goto("#/ccar-f/practice?start=new");
   await click(".option");
   await page.evaluate(() => {
     document.execCommand = () => false;

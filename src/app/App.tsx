@@ -83,7 +83,8 @@ export function App() {
   else if (route.name === "help") screen = <Help />;
   else if (route.name === "picker" || !meta) screen = <ExamPicker />;
   else if (!exam) screen = <ExamLoading failed={loading.status === "error"} />;
-  else if (route.name === "practice") screen = <Practice key={href(route)} exam={exam} only={route.only} now={now} />;
+  else if (route.name === "practice")
+    screen = <Practice key={href(route)} exam={exam} only={route.only} start={route.start} now={now} />;
   else if (route.name === "mock") screen = <Mock exam={exam} />;
   else if (route.name === "domains")
     screen = <Domains key={route.domainId ?? ""} exam={exam} domainId={route.domainId} now={now} />;

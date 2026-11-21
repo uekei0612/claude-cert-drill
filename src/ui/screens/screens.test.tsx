@@ -188,3 +188,70 @@ test("使い方と設定の下に、資格ごとの断り書きを出す（#61�
     expect(text).toContain("CCAR-F：問題と教科書はすべて自作の非公式教材です。Anthropic とは関係がありません。");
   }
 });
+
+describe("練習の続き（#86）", () => {
+  const stemNow = () => root.querySelector(".stem")!.textContent;
+
+  test("答えてから離れると、ホームに続きと新しくのボタンが出て、続きからは同じ問題・答えを見た状態に戻る", () => {
+    mount(<Practice exam={fixture} now={NOW} />);
+    // 開いただけでは残さない
+    expect(store.getData().practices).toBeUndefined();
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    const stem = stemNow();
+    const saved = store.getData().practices![fixture.id]!;
+    expect(saved.done.length).toBe(1);
+    expect(saved.chosen).toBeDefined();
+
+    mount(<Home exam={fixture} now={NOW} />);
+    expect(root.textContent).toContain("練習の途中です");
+    expect(byText("続きから再開する").getAttribute("href")).toBe(`#/${fixture.id}/practice?start=resume`);
+    expect(byText("新しく始める").getAttribute("href")).toBe(`#/${fixture.id}/practice?start=new`);
+
+    act(() => render(null, root));
+    mount(<Practice exam={fixture} start="resume" now={NOW} />);
+    expect(stemNow()).toBe(stem);
+    expect(root.querySelectorAll(".why").length).toBeGreaterThan(0);
+    click(byText("次へ"));
+    expect(store.getData().practices![fixture.id]!.pos).toBe(1);
+  });
+
+  test("指定なしで開くと続きか新しくかを選べる。新しくを選ぶと途中の回は消える", () => {
+    mount(<Practice exam={fixture} now={NOW} />);
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    click(byText("次へ"));
+    const queue = store.getData().practices![fixture.id]!.queue;
+
+    act(() => render(null, root));
+    mount(<Practice exam={fixture} now={NOW} />);
+    expect(root.textContent).toContain("練習の途中です");
+    click(byText("続きから再開する"));
+    expect(root.textContent).toContain(`2 / ${queue.length - store.getData().practices![fixture.id]!.requeued.length}`);
+
+    act(() => render(null, root));
+    mount(<Practice exam={fixture} now={NOW} />);
+    click(byText("新しく始める"));
+    expect(store.getData().practices).toBeUndefined();
+    expect(root.querySelectorAll("button.option").length).toBeGreaterThan(0);
+  });
+
+  test("ホームの「新しく始める」（start=new）は途中の回を消して新しい回にする。絞り込みが違えば聞かない", () => {
+    mount(<Practice exam={fixture} now={NOW} />);
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    act(() => render(null, root));
+    mount(<Practice exam={fixture} only="d1" now={NOW} />);
+    expect(root.textContent).not.toContain("練習の途中です");
+    act(() => render(null, root));
+    mount(<Practice exam={fixture} start="new" now={NOW} />);
+    expect(store.getData().practices).toBeUndefined();
+    expect(root.querySelectorAll(".why").length).toBe(0);
+  });
+
+  test("回を最後まで終えると途中の回は消える", () => {
+    mount(<Practice exam={fixture} only={idsOnly([fixture.questions[0]!.id])} now={NOW} />);
+    const q = fixture.questions[0]!;
+    click(root.querySelector<HTMLButtonElement>(`button.option[data-orig="${q.answer}"]`)!);
+    expect(store.getData().practices).toBeDefined();
+    click(byText("結果を見る"));
+    expect(store.getData().practices).toBeUndefined();
+  });
+});

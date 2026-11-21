@@ -3,7 +3,15 @@ import { dailyPlan, parseDate } from "../../core/engine/plan";
 import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../core/engine/progress";
 import type { Exam } from "../../core/exam/types";
 import { PRIMER_ID, findTask, lessonOrder } from "../../core/exam/types";
-import { daysOf, practiceSizeOf, readChapters, savedIds, setExamSettings, setSettings } from "../../core/store/actions";
+import {
+  daysOf,
+  practiceOf,
+  practiceSizeOf,
+  readChapters,
+  savedIds,
+  setExamSettings,
+  setSettings,
+} from "../../core/store/actions";
 import { PRACTICE_SIZES, itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
 import { Activity } from "../Activity";
@@ -12,6 +20,7 @@ import { Meter, pct } from "../Meter";
 import { STEPS } from "../glossary";
 import { href } from "../route";
 import { chapterTag, chapterTitle, nextChapter } from "./Learn";
+import { onlyLabel } from "./Practice";
 import { fmt } from "./Mock";
 import { srcAttrs } from "../src";
 
@@ -36,6 +45,11 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const lastMock = data.mocks[exam.id]?.[0];
   const target = exam.format.target;
   const saved = savedIds(data, exam.id).filter(id => exam.questions.some(q => q.id === id)).length;
+  // 解いている途中の練習（#86）。やり直しに足した問題は数えない
+  const practice = practiceOf(data, exam);
+  const practiceBase = practice ? practice.queue.length - practice.requeued.length : 0;
+  const practiceAnswered = practice ? new Set(practice.done.map(d => d.id)).size : 0;
+  const practiceLabel = practice ? onlyLabel(exam, practice.only) : undefined;
 
   return (
     <main class="page with-tabs">
@@ -96,6 +110,31 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
             {fmt(active.limitMs - active.usedMs)}（時間は止まっています）。続きから再開する
           </span>
         </a>
+      )}
+
+      {practice && (
+        <section class="card notice practice-resume" aria-labelledby="resume-h">
+          <strong id="resume-h">練習の途中です</strong>
+          <span class="small">
+            {practiceLabel && `${practiceLabel}・`}
+            {Math.min(practiceAnswered, practiceBase)} / {practiceBase} 問に回答済み
+          </span>
+          <div class="row wrap">
+            <a
+              class="btn primary"
+              href={href({ name: "practice", examId: exam.id, only: practice.only, start: "resume" })}
+            >
+              続きから再開する
+            </a>
+            <a
+              class="btn"
+              href={href({ name: "practice", examId: exam.id, only: practice.only, start: "new" })}
+              title="途中の回を捨てて、新しい回を始めます（答えた問題の記録は残ります）"
+            >
+              新しく始める
+            </a>
+          </div>
+        </section>
       )}
 
       {!data.settings.introDone && (

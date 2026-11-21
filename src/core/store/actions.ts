@@ -2,8 +2,10 @@
 import { type ItemStat, review, reviewGuess } from "../engine/schedule";
 import type { MockScore } from "../engine/mock";
 import { dayKey } from "../engine/plan";
+import type { Exam } from "../exam/types";
 import {
   type ActiveMock,
+  type ActivePractice,
   type Data,
   type ExamSettings,
   MAX_MOCKS,
@@ -124,6 +126,29 @@ export function setExamDate(d: Data, examId: string, date: string): Data {
   return setSettings(d, { examDates: date ? { ...rest, [examId]: date } : rest });
 }
 
+/** 途中の練習を残す（資格ごとに 1 つ。前のものは置き換える。#86） */
+export const savePractice = (d: Data, examId: string, p: ActivePractice): Data => ({
+  ...d,
+  practices: { ...d.practices, [examId]: p },
+});
+
+/** 途中の練習を捨てる */
+export function clearPractice(d: Data, examId: string): Data {
+  if (!d.practices?.[examId]) return d;
+  const { [examId]: _drop, ...rest } = d.practices;
+  if (Object.keys(rest).length) return { ...d, practices: rest };
+  const { practices: _none, ...without } = d;
+  return without;
+}
+
+/** 続きから始められる途中の練習。問題が入れ替わって見つからない問題があれば無し（#86） */
+export function practiceOf(d: Data, exam: Pick<Exam, "id" | "questions">): ActivePractice | undefined {
+  const p = d.practices?.[exam.id];
+  if (!p) return undefined;
+  const ids = new Set(exam.questions.map(q => q.id));
+  return p.queue.every(id => ids.has(id)) ? p : undefined;
+}
+
 export const startMock = (d: Data, m: ActiveMock): Data => ({ ...d, activeMock: m });
 
 export const patchMock = (d: Data, f: (m: ActiveMock) => ActiveMock): Data =>
@@ -167,7 +192,7 @@ export function resetExam(d: Data, examId: string): Data {
   const saved = Object.fromEntries(Object.entries(d.saved ?? {}).filter(mine));
   const read = Object.fromEntries(Object.entries(d.read ?? {}).filter(mine));
   const days = Object.fromEntries(Object.entries(d.days ?? {}).filter(mine));
-  const cleared = { ...d, items, mocks, saved, read, days };
+  const cleared = { ...clearPractice(d, examId), items, mocks, saved, read, days };
   return d.activeMock?.examId === examId ? abandonMock(cleared) : cleared;
 }
 

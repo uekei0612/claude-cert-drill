@@ -10,7 +10,8 @@ export type Route =
   | { readonly name: "home"; readonly examId: string }
   /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"、後で振り返る印を付けた問題 "saved"、
       問題を名指し "q:s1-01,s2-03"） */
-  | { readonly name: "practice"; readonly examId: string; readonly only?: string }
+  /** start は途中の回があるときの始め方（resume＝続きから、new＝捨てて新しく。無ければ画面で選ぶ。#86） */
+  | { readonly name: "practice"; readonly examId: string; readonly only?: string; readonly start?: PracticeStart }
   | { readonly name: "mock"; readonly examId: string }
   /** 終えた模擬試験の見直し。at は finishedAt */
   | { readonly name: "mock-result"; readonly examId: string; readonly at: number }
@@ -23,6 +24,8 @@ export type Route =
   | { readonly name: "learn"; readonly examId: string; readonly taskId?: string; readonly section?: number }
   /** 教科書と要点の検索（#41）。q は入れた語 */
   | { readonly name: "search"; readonly examId: string; readonly q?: string };
+
+export type PracticeStart = "resume" | "new";
 
 export function parseRoute(hash: string): Route {
   const [path = "", query = ""] = hash.replace(/^#\/?/, "").split("?");
@@ -45,7 +48,13 @@ export function parseRoute(hash: string): Route {
       return { name: "home", examId };
     case "practice": {
       const only = q.get("only");
-      return only ? { name: "practice", examId, only } : { name: "practice", examId };
+      const start = q.get("start");
+      return {
+        name: "practice",
+        examId,
+        ...(only ? { only } : {}),
+        ...(start === "resume" || start === "new" ? { start } : {}),
+      };
     }
     case "mock":
       if (arg && /^\d+$/.test(arg)) return { name: "mock-result", examId, at: Number(arg) };
@@ -82,8 +91,11 @@ export function href(r: Route): string {
       return "#/help";
     case "home":
       return `#/${r.examId}`;
-    case "practice":
-      return `#/${r.examId}/practice${r.only ? `?${new URLSearchParams({ only: r.only })}` : ""}`;
+    case "practice": {
+      const q = new URLSearchParams({ ...(r.only ? { only: r.only } : {}), ...(r.start ? { start: r.start } : {}) });
+      const qs = q.toString();
+      return `#/${r.examId}/practice${qs ? `?${qs}` : ""}`;
+    }
     case "mock":
       return `#/${r.examId}/mock`;
     case "mock-result":
