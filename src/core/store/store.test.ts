@@ -24,6 +24,7 @@ import {
   startMock,
   toggleSaved,
   undoAnswer,
+  weakIds,
 } from "./actions";
 import { emptyData, parseData } from "./schema";
 import { createStore } from "./store";
@@ -225,6 +226,40 @@ describe("後で振り返る印", () => {
   });
 });
 
+describe("苦手（#87）", () => {
+  /** 覚えかけにしてから間違える、を n 回 */
+  const forget = (d0: ReturnType<typeof emptyData>, id: string, n: number, t0: number) => {
+    let d = d0;
+    for (let i = 0; i < n; i++) {
+      d = answer(d, "test-x", id, true, t0 + 2 * i * 864e5);
+      d = answer(d, "test-x", id, false, t0 + (2 * i + 1) * 864e5);
+    }
+    return d;
+  };
+  test("忘れた回数の多い順に並べ、2 回未満と今の問題に無い ID は出さない", () => {
+    let d = forget(emptyData(), "s1-01", 2, NOW);
+    d = forget(d, "s2-03", 3, NOW);
+    d = forget(d, "s3-01", 1, NOW);
+    d = forget(d, "gone-01", 4, NOW);
+    expect(weakIds(d, fixture)).toEqual(["s2-03", "s1-01"]);
+  });
+  test("忘れた回数は記録に残り、壊れた値（誤答の数を超える・負・小数）は捨てる", () => {
+    const d = forget(emptyData(), "s1-01", 2, NOW);
+    const s = d.items["test-x:s1-01"]!;
+    expect(s.lapses).toBe(2);
+    expect(parseData(JSON.parse(JSON.stringify(d))).items["test-x:s1-01"]).toEqual(s);
+    for (const lapses of [3, -1, 1.5, "2"])
+      expect(parseData({ items: { "test-x:s1-01": { ...s, lapses } } }).items["test-x:s1-01"]?.lapses).toBeUndefined();
+  });
+  test("取り消すと忘れた回数も戻る", () => {
+    const d = answer(emptyData(), "test-x", "s1-01", true, NOW);
+    const prev = d.items["test-x:s1-01"];
+    const ng = answer(d, "test-x", "s1-01", false, NOW + 864e5);
+    expect(ng.items["test-x:s1-01"]?.lapses).toBe(1);
+    expect(undoAnswer(ng, "test-x", "s1-01", prev, NOW + 864e5, false).items["test-x:s1-01"]).toEqual(prev);
+  });
+});
+
 describe("教科書の読んだ章（#29）", () => {
   test("付ける・外す。資格ごとに分かれる", () => {
     let d = setRead(emptyData(), "ccar-f", "1.1", true, 5);
@@ -276,7 +311,7 @@ describe("日ごとの回答（#38）", () => {
   test("模擬試験を終えると、出した問題の数と正解の数が入る", () => {
     const p = planMock(fixture, seeded(3));
     const start = startMock(emptyData(), {
-      examId: "fx",
+      examId: "test-x",
       questionIds: p.questionIds,
       scenarioIds: p.scenarioIds,
       startedAt: NOW,
@@ -288,7 +323,7 @@ describe("日ごとの回答（#38）", () => {
       cursor: 0,
     });
     const done = finishMock(start, scoreMock(fixture, p.questionIds, {}), NOW);
-    expect([...daysOf(done, "fx").values()]).toEqual([[p.questionIds.length, 0]]);
+    expect([...daysOf(done, "test-x").values()]).toEqual([[p.questionIds.length, 0]]);
   });
   test("記録に残り、壊れた値は捨て、古い日から捨てて上限に収める。資格の記録を消すと一緒に消える", () => {
     let d = emptyData();

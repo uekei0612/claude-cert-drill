@@ -269,6 +269,24 @@ a.card {
 .ngc {
   color: var(--ng);
 }
+/* 苦手（#87）：一覧の行の印・ホームの件数・答えのあとの注意 */
+.weakc {
+  color: var(--ng);
+  font-weight: 700;
+}
+.tag.weak-tag {
+  background: var(--ng-soft);
+  color: var(--ng);
+}
+.weak-note {
+  margin: 0 0 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--ng-soft);
+}
+.weak-note strong {
+  color: var(--ng);
+}
 .tag {
   display: inline-block;
   font-size: 0.75rem;
@@ -993,7 +1011,10 @@ select {
   overflow: hidden;
   background: var(--surface);
 }
-.seg button {
+.seg button,
+.seg a {
+  display: inline-flex;
+  align-items: center;
   min-height: var(--tap);
   padding: 0 14px;
   border: 0;
@@ -1001,12 +1022,14 @@ select {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--muted);
+  text-decoration: none;
   cursor: pointer;
 }
-.seg button + button {
+.seg > * + * {
   border-left: 1px solid var(--line);
 }
-.seg button.on {
+.seg button.on,
+.seg a.on {
   background: var(--accent);
   color: var(--on-accent);
 }

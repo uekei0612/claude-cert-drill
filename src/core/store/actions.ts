@@ -1,5 +1,5 @@
 /* 記録を変える操作。画面からはここを呼ぶ */
-import { type ItemStat, review, reviewGuess } from "../engine/schedule";
+import { type ItemStat, isWeak, review, reviewGuess } from "../engine/schedule";
 import type { MockScore } from "../engine/mock";
 import { dayKey } from "../engine/plan";
 import type { Exam } from "../exam/types";
@@ -106,6 +106,16 @@ export const savedIds = (d: Data, examId: string): string[] =>
     .filter(([k]) => k.startsWith(`${examId}:`))
     .sort((a, b) => b[1] - a[1])
     .map(([k]) => k.slice(examId.length + 1));
+
+/** 苦手な問題の ID（忘れた回数の多い順、同じなら最後に答えたのが新しい順。#87）。
+    今の問題に無い ID は除く */
+export function weakIds(d: Data, exam: Pick<Exam, "id" | "questions">): string[] {
+  const stat = (id: string) => d.items[itemKey(exam.id, id)];
+  return exam.questions
+    .filter(q => isWeak(stat(q.id)))
+    .sort((a, b) => stat(b.id)!.lapses! - stat(a.id)!.lapses! || stat(b.id)!.last - stat(a.id)!.last)
+    .map(q => q.id);
+}
 
 export const setSettings = (d: Data, s: Partial<Settings>): Data => ({ ...d, settings: { ...d.settings, ...s } });
 
