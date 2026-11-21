@@ -132,6 +132,10 @@ export interface Data {
   readonly days?: Readonly<Record<string, readonly [number, number]>>;
   /** 教科書の読んだ章。"<資格ID>:<章ID>"（章 ID は細目 "1.1" か "intro"）→ 読んだ時刻（#29） */
   readonly read?: Readonly<Record<string, number>>;
+  /** 最後に記録を書き出した時刻（ファイル・コピー。#89） */
+  readonly exportedAt?: number;
+  /** 書き出しの案内を「あとで」にした時刻（#89） */
+  readonly exportNudgeSnoozedAt?: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = { practiceSize: 10, lang: "en", theme: "system" };
@@ -375,5 +379,9 @@ export function parseData(raw: unknown): Data {
   const withRead = Object.keys(read).length ? { ...withNotes, read } : withNotes;
   const capped = capDays(days);
   const withDays = Object.keys(capped).length ? { ...withRead, days: capped } : withRead;
-  return am ? { ...withDays, activeMock: am } : withDays;
+  const withMock = am ? { ...withDays, activeMock: am } : withDays;
+  const withExported = num(raw.exportedAt) ? { ...withMock, exportedAt: raw.exportedAt } : withMock;
+  return num(raw.exportNudgeSnoozedAt)
+    ? { ...withExported, exportNudgeSnoozedAt: raw.exportNudgeSnoozedAt }
+    : withExported;
 }

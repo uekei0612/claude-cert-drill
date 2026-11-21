@@ -1,7 +1,7 @@
 /* 記録を変える操作。画面からはここを呼ぶ */
-import { type ItemStat, isWeak, review, reviewGuess } from "../engine/schedule";
+import { DAY, type ItemStat, isWeak, review, reviewGuess } from "../engine/schedule";
 import type { MockScore } from "../engine/mock";
-import { dayKey } from "../engine/plan";
+import { dayKey, parseDate } from "../engine/plan";
 import type { Exam } from "../exam/types";
 import {
   type ActiveMock,
@@ -138,6 +138,33 @@ export function weakIds(d: Data, exam: Pick<Exam, "id" | "questions">): string[]
     .filter(q => isWeak(stat(q.id)))
     .sort((a, b) => stat(b.id)!.lapses! - stat(a.id)!.lapses! || stat(b.id)!.last - stat(a.id)!.last)
     .map(q => q.id);
+}
+
+/** 書き出しを促すまでの日数（#89） */
+export const EXPORT_NUDGE_DAYS = 14;
+
+/** 記録を書き出した（#89） */
+export const markExported = (d: Data, now: number): Data => ({ ...d, exportedAt: now });
+
+/** 書き出しの案内を「あとで」にする（EXPORT_NUDGE_DAYS 日は出さない。#89） */
+export const snoozeExportNudge = (d: Data, now: number): Data => ({ ...d, exportNudgeSnoozedAt: now });
+
+/** 書き出しを促すか（#89）。書き出してから（まだなら最初に答えた日から）EXPORT_NUDGE_DAYS 日以上たち、
+    その後にも答えていて、「あとで」から EXPORT_NUDGE_DAYS 日たっているとき。
+    days は書き出してから（まだなら最初に答えてから）の日数 */
+export function exportNudge(d: Data, now: number): { days: number; never: boolean } | undefined {
+  const lasts = Object.values(d.items).map(s => s.last);
+  if (!lasts.length) return undefined;
+  const latest = Math.max(...lasts);
+  if (d.exportedAt !== undefined && latest <= d.exportedAt) return undefined;
+  // 最初に答えた日：日ごとの回答のいちばん古い日（無ければ、問題の最後に答えた時刻のいちばん古いもの）
+  const firstDay = Object.keys(d.days ?? {})
+    .map(k => parseDate(k.slice(k.indexOf(":") + 1)))
+    .filter((t): t is number => t !== undefined);
+  const since = d.exportedAt ?? Math.min(...lasts, ...firstDay);
+  const wait = EXPORT_NUDGE_DAYS * DAY;
+  if (now - since < wait || now - (d.exportNudgeSnoozedAt ?? 0) < wait) return undefined;
+  return { days: Math.floor((now - since) / DAY), never: d.exportedAt === undefined };
 }
 
 export const setSettings = (d: Data, s: Partial<Settings>): Data => ({ ...d, settings: { ...d.settings, ...s } });

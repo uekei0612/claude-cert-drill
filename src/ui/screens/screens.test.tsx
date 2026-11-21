@@ -335,3 +335,21 @@ describe("問題のメモ（#88）", () => {
     expect(store.getData().notes).toBeUndefined();
   });
 });
+
+describe("書き出しの案内（#89）", () => {
+  test("しばらく書き出していないとホームに出る。書き出すと記録に時刻が残って消え、「あとで」でも消える", () => {
+    act(() => store.setData(answer(store.getData(), fixture.id, "s1-01", true, NOW - 20 * 864e5)));
+    mount(<Home exam={fixture} now={NOW} />);
+    expect(root.querySelector(".export-nudge")?.textContent).toContain("最初に答えてから 20 日");
+    click(byText("あとで"));
+    expect(root.querySelector(".export-nudge")).toBeNull();
+
+    act(() => store.setData({ ...store.getData(), exportNudgeSnoozedAt: undefined }));
+    mount(<Home exam={fixture} now={NOW} />);
+    URL.createObjectURL = () => "blob:x";
+    URL.revokeObjectURL = () => {};
+    click(byText("ファイルに書き出す"));
+    expect(store.getData().exportedAt).toBeGreaterThan(NOW - 1000);
+    expect(root.querySelector(".export-nudge")).toBeNull();
+  });
+});
