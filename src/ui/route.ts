@@ -9,7 +9,7 @@ export type Route =
   | { readonly name: "help" }
   | { readonly name: "home"; readonly examId: string }
   /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"、後で振り返る印を付けた問題 "saved"、
-      苦手な問題 "weak"（#87）、問題を名指し "q:s1-01,s2-03"） */
+      苦手な問題 "weak"（#87）、メモのある問題 "notes"（#88）、問題を名指し "q:s1-01,s2-03"） */
   /** start は途中の回があるときの始め方（resume＝続きから、new＝捨てて新しく。無ければ画面で選ぶ。#86） */
   | { readonly name: "practice"; readonly examId: string; readonly only?: string; readonly start?: PracticeStart }
   | { readonly name: "mock"; readonly examId: string }
@@ -17,7 +17,7 @@ export type Route =
   | { readonly name: "mock-result"; readonly examId: string; readonly at: number }
   /** 分野と細目の一覧。domainId があればその分野の位置から見せる */
   | { readonly name: "domains"; readonly examId: string; readonly domainId?: string }
-  /** 振り返り。view が無ければ後で振り返る印を付けた問題、weak は苦手な問題（#87） */
+  /** 振り返り。view が無ければ後で振り返る印を付けた問題、weak は苦手な問題（#87）、notes はメモのある問題（#88） */
   | { readonly name: "saved"; readonly examId: string; readonly view?: ReviewView }
   | { readonly name: "task"; readonly examId: string; readonly taskId: string }
   /** 教科書。taskId が無ければ目次。section があればその節の位置から見せる */
@@ -28,8 +28,8 @@ export type Route =
 export type PracticeStart = "resume" | "new";
 
 /** 振り返りの一覧の種類（印のほか） */
-export type ReviewView = "weak";
-const REVIEW_VIEWS: readonly string[] = ["weak"] satisfies readonly ReviewView[];
+export type ReviewView = "weak" | "notes";
+const REVIEW_VIEWS: readonly string[] = ["weak", "notes"] satisfies readonly ReviewView[];
 
 export function parseRoute(hash: string): Route {
   const [path = "", query = ""] = hash.replace(/^#\/?/, "").split("?");

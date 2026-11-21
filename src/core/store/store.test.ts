@@ -25,8 +25,11 @@ import {
   toggleSaved,
   undoAnswer,
   weakIds,
+  noteIds,
+  noteOf,
+  setNote,
 } from "./actions";
-import { emptyData, parseData } from "./schema";
+import { MAX_NOTE, emptyData, parseData } from "./schema";
 import { createStore } from "./store";
 
 const store = createStore({ key: "test-store", app: "test-app", storage: () => localStorage });
@@ -257,6 +260,31 @@ describe("苦手（#87）", () => {
     const ng = answer(d, "test-x", "s1-01", false, NOW + 864e5);
     expect(ng.items["test-x:s1-01"]?.lapses).toBe(1);
     expect(undoAnswer(ng, "test-x", "s1-01", prev, NOW + 864e5, false).items["test-x:s1-01"]).toEqual(prev);
+  });
+});
+
+describe("問題のメモ（#88）", () => {
+  test("書く・直す・空で消す。前後の空白は除き、新しく書いた順に並ぶ", () => {
+    let d = setNote(emptyData(), "ccar-f", "s1-01", "  temperature と取り違えた\n", 1);
+    d = setNote(d, "ccar-f", "s2-03", "選択肢 C の言い回し", 2);
+    expect(noteOf(d, "ccar-f", "s1-01")).toEqual({ text: "temperature と取り違えた", at: 1 });
+    expect(noteIds(d, "ccar-f")).toEqual(["s2-03", "s1-01"]);
+    d = setNote(d, "ccar-f", "s1-01", "直した", 3);
+    expect(noteIds(d, "ccar-f")).toEqual(["s1-01", "s2-03"]);
+    d = setNote(setNote(d, "ccar-f", "s1-01", " ", 4), "ccar-f", "s2-03", "", 5);
+    expect(d).toEqual(emptyData());
+  });
+  test("長すぎるメモは切る。記録に残り、壊れた値は捨てる。資格の記録を消すと一緒に消える", () => {
+    const d = setNote(setNote(emptyData(), "ccar-f", "s1-01", "x".repeat(MAX_NOTE + 5), 1), "fe-a", "d1-01", "a", 2);
+    expect(noteOf(d, "ccar-f", "s1-01")?.text.length).toBe(MAX_NOTE);
+    const raw = JSON.parse(JSON.stringify(d));
+    const back = parseData({
+      ...raw,
+      notes: { ...raw.notes, "bad key": { text: "a", at: 1 }, "ccar-f:x": { text: " ", at: 1 }, "ccar-f:y": "a" },
+    });
+    expect(back.notes).toEqual(d.notes);
+    expect(noteIds(resetExam(d, "ccar-f"), "ccar-f")).toEqual([]);
+    expect(noteIds(resetExam(d, "ccar-f"), "fe-a")).toEqual(["d1-01"]);
   });
 });
 

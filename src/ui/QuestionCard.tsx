@@ -6,17 +6,20 @@
    答えを見たあとは、問題・選択肢・解説をまとめて Claude に貼れるようにコピーのボタンを出す。
    公開問題などを使った問題は、問題文の下に出典を出す（#61）。
    答える前は、hintCopy のときだけ、問題と選択肢だけ（答え・解説なし）でヒントを頼む文を写すボタンを出す（#36）。
+   答えを見たあとは、問題ごとのメモ（なぜ間違えたか）を書ける。コピーにもメモを入れる（#88）。
    答えを見たあと、苦手な問題（覚えたあとに何度も間違えた。#87）には、忘れた回数を出す。
    learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出す（間違えた直後に読めるように。#26）。
    練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { APP } from "../app/config";
-import { useData } from "../app/store";
+import { getData, useData } from "../app/store";
 import { WEAK_LAPSES } from "../core/engine/schedule";
 import type { Exam, ExamMeta, Question, Stem } from "../core/exam/types";
 import { domainOf, findTask, optionLabel, sourceText, stemText } from "../core/exam/types";
 import { type QuestionLang, itemKey } from "../core/store/schema";
+import { noteOf } from "../core/store/actions";
 import { CopyButton } from "./CopyButton";
+import { NoteBox } from "./NoteBox";
 import { hintText, questionText } from "./copyText";
 import { href } from "./route";
 import { RichText, inline } from "./Rich";
@@ -223,11 +226,12 @@ export function QuestionCard({
           )}
         </div>
       )}
+      {reveal && <NoteBox key={q.id} examId={exam.id} questionId={q.id} />}
       {reveal && (
         <div class="row end">
           <CopyButton
             label={`${APP.assistant} に聞く用にコピー`}
-            text={() => questionText({ exam, q, order, chosen })}
+            text={() => questionText({ exam, q, order, chosen, note: noteOf(getData(), exam.id, q.id)?.text })}
           />
         </div>
       )}

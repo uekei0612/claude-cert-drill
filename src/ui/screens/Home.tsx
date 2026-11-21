@@ -5,6 +5,7 @@ import type { Exam } from "../../core/exam/types";
 import { PRIMER_ID, findTask, lessonOrder } from "../../core/exam/types";
 import {
   daysOf,
+  noteIds,
   practiceOf,
   practiceSizeOf,
   readChapters,
@@ -47,6 +48,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const target = exam.format.target;
   const saved = savedIds(data, exam.id).filter(id => exam.questions.some(q => q.id === id)).length;
   const weakCount = weakIds(data, exam).length;
+  const noteCount = noteIds(data, exam.id).filter(id => exam.questions.some(q => q.id === id)).length;
   // 解いている途中の練習（#86）。やり直しに足した問題は数えない
   const practice = practiceOf(data, exam);
   const practiceBase = practice ? practice.queue.length - practice.requeued.length : 0;
@@ -202,6 +204,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
           <span>★ 振り返り</span>
           <span class="muted small">
             印 {saved} 問{weakCount > 0 && <span class="weakc">・苦手 {weakCount} 問</span>}
+            {noteCount > 0 && `・メモ ${noteCount}`}
           </span>
         </div>
         {!saved && !weakCount && (

@@ -9,6 +9,8 @@ import {
   type Data,
   type ExamSettings,
   MAX_MOCKS,
+  MAX_NOTE,
+  type Note,
   type QuestionLang,
   type Settings,
   capDays,
@@ -84,6 +86,27 @@ export function toggleSaved(d: Data, examId: string, questionId: string, now: nu
   const { [k]: had, ...rest } = d.saved ?? {};
   return { ...d, saved: had === undefined ? { ...rest, [k]: now } : rest };
 }
+
+/** 問題のメモを書く・直す。前後の空白を除いて空なら消す（#88） */
+export function setNote(d: Data, examId: string, questionId: string, text: string, now: number): Data {
+  const k = itemKey(examId, questionId);
+  const { [k]: _had, ...rest } = d.notes ?? {};
+  const t = text.trim().slice(0, MAX_NOTE);
+  if (t) return { ...d, notes: { ...rest, [k]: { text: t, at: now } } };
+  if (Object.keys(rest).length) return { ...d, notes: rest };
+  const { notes: _none, ...without } = d;
+  return without;
+}
+
+export const noteOf = (d: Data, examId: string, questionId: string): Note | undefined =>
+  d.notes?.[itemKey(examId, questionId)];
+
+/** メモのある問題の ID（新しく書いた順） */
+export const noteIds = (d: Data, examId: string): string[] =>
+  Object.entries(d.notes ?? {})
+    .filter(([k]) => k.startsWith(`${examId}:`))
+    .sort((a, b) => b[1].at - a[1].at)
+    .map(([k]) => k.slice(examId.length + 1));
 
 /** 教科書の章に「読んだ」を付ける・外す（#29） */
 export function setRead(d: Data, examId: string, chapterId: string, on: boolean, now: number): Data {
@@ -200,9 +223,10 @@ export function resetExam(d: Data, examId: string): Data {
   const { [examId]: _drop, ...mocks } = d.mocks;
   const mine = ([k]: [string, unknown]) => !k.startsWith(`${examId}:`);
   const saved = Object.fromEntries(Object.entries(d.saved ?? {}).filter(mine));
+  const notes = Object.fromEntries(Object.entries(d.notes ?? {}).filter(mine));
   const read = Object.fromEntries(Object.entries(d.read ?? {}).filter(mine));
   const days = Object.fromEntries(Object.entries(d.days ?? {}).filter(mine));
-  const cleared = { ...clearPractice(d, examId), items, mocks, saved, read, days };
+  const cleared = { ...clearPractice(d, examId), items, mocks, saved, notes, read, days };
   return d.activeMock?.examId === examId ? abandonMock(cleared) : cleared;
 }
 
