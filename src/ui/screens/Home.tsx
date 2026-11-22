@@ -5,16 +5,21 @@ import type { Exam } from "../../core/exam/types";
 import { PRIMER_ID, findTask, lessonOrder } from "../../core/exam/types";
 import {
   daysOf,
+  exportNudge,
+  noteIds,
   practiceOf,
   practiceSizeOf,
   readChapters,
   savedIds,
   setExamSettings,
   setSettings,
+  snoozeExportNudge,
+  weakIds,
 } from "../../core/store/actions";
 import { PRACTICE_SIZES, itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
 import { Activity } from "../Activity";
+import { downloadRecord } from "../exportRecord";
 import { HelpTip } from "../HelpTip";
 import { Meter, pct } from "../Meter";
 import { STEPS } from "../glossary";
@@ -45,6 +50,9 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const lastMock = data.mocks[exam.id]?.[0];
   const target = exam.format.target;
   const saved = savedIds(data, exam.id).filter(id => exam.questions.some(q => q.id === id)).length;
+  const weakCount = weakIds(data, exam).length;
+  const nudge = exportNudge(data, now);
+  const noteCount = noteIds(data, exam.id).filter(id => exam.questions.some(q => q.id === id)).length;
   // 解いている途中の練習（#86）。やり直しに足した問題は数えない
   const practice = practiceOf(data, exam);
   const practiceBase = practice ? practice.queue.length - practice.requeued.length : 0;
@@ -137,6 +145,29 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         </section>
       )}
 
+      {nudge && (
+        <section class="card notice export-nudge" aria-labelledby="export-h">
+          <strong id="export-h">記録を書き出しておきましょう</strong>
+          <span class="small">
+            {nudge.never
+              ? `最初に答えてから ${nudge.days} 日、まだ一度も書き出していません。`
+              : `最後に書き出してから ${nudge.days} 日たちました。`}
+            記録はこの端末の中にしか無く、機種変更やアプリを消すと一緒に消えます。
+          </span>
+          <div class="row wrap">
+            <button class="btn primary" onClick={downloadRecord}>
+              ファイルに書き出す
+            </button>
+            <a class="btn" href={href({ name: "settings" })}>
+              設定で（コピーなど）
+            </a>
+            <button class="btn ghost" onClick={() => update(d => snoozeExportNudge(d, Date.now()))}>
+              あとで
+            </button>
+          </div>
+        </section>
+      )}
+
       {!data.settings.introDone && (
         <section class="card intro" aria-labelledby="intro-h">
           <div class="row between">
@@ -190,12 +221,22 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         {due ? `今日の練習（復習 ${due} 問から）` : all.seen < all.total ? "練習する（新しい問題から）" : "練習する"}
       </a>
 
-      <a class="card tight" href={href({ name: "saved", examId: exam.id })}>
+      <a
+        class="card tight"
+        href={href(
+          weakCount && !saved ? { name: "saved", examId: exam.id, view: "weak" } : { name: "saved", examId: exam.id },
+        )}
+      >
         <div class="row between">
           <span>★ 振り返り</span>
-          <span class="muted small">{saved} 問</span>
+          <span class="muted small">
+            印 {saved} 問{weakCount > 0 && <span class="weakc">・苦手 {weakCount} 問</span>}
+            {noteCount > 0 && `・メモ ${noteCount}`}
+          </span>
         </div>
-        {!saved && <span class="muted small">答えのあとの「☆ 後で振り返る」で印を付けた問題が集まります</span>}
+        {!saved && !weakCount && (
+          <span class="muted small">答えのあとの「☆ 後で振り返る」で印を付けた問題が集まります</span>
+        )}
       </a>
 
       {nextRead && (

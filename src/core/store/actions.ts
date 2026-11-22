@@ -1,7 +1,7 @@
 /* 記録を変える操作。画面からはここを呼ぶ */
-import { type ItemStat, review, reviewGuess } from "../engine/schedule";
+import { DAY, type ItemStat, isWeak, review, reviewGuess } from "../engine/schedule";
 import type { MockScore } from "../engine/mock";
-import { dayKey } from "../engine/plan";
+import { dayKey, parseDate } from "../engine/plan";
 import type { Exam } from "../exam/types";
 import {
   type ActiveMock,
@@ -9,6 +9,8 @@ import {
   type Data,
   type ExamSettings,
   MAX_MOCKS,
+  MAX_NOTE,
+  type Note,
   type QuestionLang,
   type Settings,
   capDays,
@@ -85,6 +87,27 @@ export function toggleSaved(d: Data, examId: string, questionId: string, now: nu
   return { ...d, saved: had === undefined ? { ...rest, [k]: now } : rest };
 }
 
+/** 問題のメモを書く・直す。前後の空白を除いて空なら消す（#88） */
+export function setNote(d: Data, examId: string, questionId: string, text: string, now: number): Data {
+  const k = itemKey(examId, questionId);
+  const { [k]: _had, ...rest } = d.notes ?? {};
+  const t = text.trim().slice(0, MAX_NOTE);
+  if (t) return { ...d, notes: { ...rest, [k]: { text: t, at: now } } };
+  if (Object.keys(rest).length) return { ...d, notes: rest };
+  const { notes: _none, ...without } = d;
+  return without;
+}
+
+export const noteOf = (d: Data, examId: string, questionId: string): Note | undefined =>
+  d.notes?.[itemKey(examId, questionId)];
+
+/** メモのある問題の ID（新しく書いた順） */
+export const noteIds = (d: Data, examId: string): string[] =>
+  Object.entries(d.notes ?? {})
+    .filter(([k]) => k.startsWith(`${examId}:`))
+    .sort((a, b) => b[1].at - a[1].at)
+    .map(([k]) => k.slice(examId.length + 1));
+
 /** 教科書の章に「読んだ」を付ける・外す（#29） */
 export function setRead(d: Data, examId: string, chapterId: string, on: boolean, now: number): Data {
   const k = `${examId}:${chapterId}`;
@@ -106,6 +129,43 @@ export const savedIds = (d: Data, examId: string): string[] =>
     .filter(([k]) => k.startsWith(`${examId}:`))
     .sort((a, b) => b[1] - a[1])
     .map(([k]) => k.slice(examId.length + 1));
+
+/** 苦手な問題の ID（忘れた回数の多い順、同じなら最後に答えたのが新しい順。#87）。
+    今の問題に無い ID は除く */
+export function weakIds(d: Data, exam: Pick<Exam, "id" | "questions">): string[] {
+  const stat = (id: string) => d.items[itemKey(exam.id, id)];
+  return exam.questions
+    .filter(q => isWeak(stat(q.id)))
+    .sort((a, b) => stat(b.id)!.lapses! - stat(a.id)!.lapses! || stat(b.id)!.last - stat(a.id)!.last)
+    .map(q => q.id);
+}
+
+/** 書き出しを促すまでの日数（#89） */
+export const EXPORT_NUDGE_DAYS = 14;
+
+/** 記録を書き出した（#89） */
+export const markExported = (d: Data, now: number): Data => ({ ...d, exportedAt: now });
+
+/** 書き出しの案内を「あとで」にする（EXPORT_NUDGE_DAYS 日は出さない。#89） */
+export const snoozeExportNudge = (d: Data, now: number): Data => ({ ...d, exportNudgeSnoozedAt: now });
+
+/** 書き出しを促すか（#89）。書き出してから（まだなら最初に答えた日から）EXPORT_NUDGE_DAYS 日以上たち、
+    その後にも答えていて、「あとで」から EXPORT_NUDGE_DAYS 日たっているとき。
+    days は書き出してから（まだなら最初に答えてから）の日数 */
+export function exportNudge(d: Data, now: number): { days: number; never: boolean } | undefined {
+  const lasts = Object.values(d.items).map(s => s.last);
+  if (!lasts.length) return undefined;
+  const latest = Math.max(...lasts);
+  if (d.exportedAt !== undefined && latest <= d.exportedAt) return undefined;
+  // 最初に答えた日：日ごとの回答のいちばん古い日（無ければ、問題の最後に答えた時刻のいちばん古いもの）
+  const firstDay = Object.keys(d.days ?? {})
+    .map(k => parseDate(k.slice(k.indexOf(":") + 1)))
+    .filter((t): t is number => t !== undefined);
+  const since = d.exportedAt ?? Math.min(...lasts, ...firstDay);
+  const wait = EXPORT_NUDGE_DAYS * DAY;
+  if (now - since < wait || now - (d.exportNudgeSnoozedAt ?? 0) < wait) return undefined;
+  return { days: Math.floor((now - since) / DAY), never: d.exportedAt === undefined };
+}
 
 export const setSettings = (d: Data, s: Partial<Settings>): Data => ({ ...d, settings: { ...d.settings, ...s } });
 
@@ -190,9 +250,10 @@ export function resetExam(d: Data, examId: string): Data {
   const { [examId]: _drop, ...mocks } = d.mocks;
   const mine = ([k]: [string, unknown]) => !k.startsWith(`${examId}:`);
   const saved = Object.fromEntries(Object.entries(d.saved ?? {}).filter(mine));
+  const notes = Object.fromEntries(Object.entries(d.notes ?? {}).filter(mine));
   const read = Object.fromEntries(Object.entries(d.read ?? {}).filter(mine));
   const days = Object.fromEntries(Object.entries(d.days ?? {}).filter(mine));
-  const cleared = { ...clearPractice(d, examId), items, mocks, saved, read, days };
+  const cleared = { ...clearPractice(d, examId), items, mocks, saved, notes, read, days };
   return d.activeMock?.examId === examId ? abandonMock(cleared) : cleared;
 }
 

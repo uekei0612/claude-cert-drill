@@ -5,6 +5,7 @@ import { type ComponentChild, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { store } from "../../app/store";
+import { answer } from "../../core/store/actions";
 import { fixture, flatFixture, jaFixture } from "../../core/engine/fixture";
 import { idsOnly } from "../../core/engine/practice";
 import { type Exam, optionLabel, optionText, shufflesOptions, stemText } from "../../core/exam/types";
@@ -70,7 +71,8 @@ describe.each([
       <Learn exam={exam} now={NOW} />,
       <Learn exam={exam} taskId={firstTask} now={NOW} />,
       <Search exam={exam} q="a" />,
-      <Saved exam={exam} />,
+      <Saved exam={exam} now={NOW} />,
+      <Saved exam={exam} view="weak" now={NOW} />,
     ]) {
       mount(node);
       expect(root.querySelector("main"), String(node)).not.toBeNull();
@@ -253,5 +255,101 @@ describe("練習の続き（#86）", () => {
     expect(store.getData().practices).toBeDefined();
     click(byText("結果を見る"));
     expect(store.getData().practices).toBeUndefined();
+  });
+});
+
+describe("苦手（#87）", () => {
+  /** s1-01 を 3 回、s2-01 を 2 回、s3-01 を 1 回忘れた記録 */
+  const seed = () => {
+    let d = store.getData();
+    const forget = (id: string, n: number) => {
+      for (let i = 0; i < n; i++) {
+        d = answer(d, fixture.id, id, true, NOW - (20 - 2 * i) * 864e5);
+        d = answer(d, fixture.id, id, false, NOW - (19 - 2 * i) * 864e5);
+      }
+    };
+    forget("s1-01", 3);
+    forget("s2-01", 2);
+    forget("s3-01", 1);
+    act(() => store.setData(d));
+  };
+
+  test("ホームに件数、振り返りに忘れた回数の多い順の一覧、そこから苦手だけで練習できる", () => {
+    seed();
+    mount(<Home exam={fixture} now={NOW} />);
+    expect(root.textContent).toContain("苦手 2 問");
+    // 印が無いので、振り返りのカードは苦手の一覧へ
+    expect(root.querySelector(`a[href="#/${fixture.id}/saved/weak"]`)).not.toBeNull();
+
+    mount(<Saved exam={fixture} view="weak" now={NOW} />);
+    const rows = [...root.querySelectorAll(".weak-tag")].map(e => e.textContent);
+    expect(rows).toEqual(["忘れた 3 回・まだ", "忘れた 2 回・まだ"]);
+    expect(byText("この 2 問を練習する").getAttribute("href")).toBe(`#/${fixture.id}/practice?only=weak`);
+
+    act(() => render(null, root));
+    mount(<Practice exam={fixture} only="weak" now={NOW} />);
+    expect(root.textContent).toContain("苦手・1 / 2");
+    // 答えると苦手の注意が出る
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    expect(root.querySelector(".weak-note")?.textContent).toMatch(/覚えたあとに \d 回間違えています/);
+  });
+
+  test("苦手が無ければ、理由を出す", () => {
+    mount(<Saved exam={fixture} view="weak" now={NOW} />);
+    expect(root.textContent).toContain("今は苦手な問題はありません");
+    mount(<Practice exam={fixture} only="weak" now={NOW} />);
+    expect(root.textContent).toContain("苦手な問題はありません");
+  });
+});
+
+describe("問題のメモ（#88）", () => {
+  test("答える前は出さない。答えたあとに書いて次へ進んでも残り、振り返りのメモの一覧に出る", () => {
+    mount(<Practice exam={fixture} now={NOW} />);
+    expect(root.querySelector(".note-add")).toBeNull();
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    const id = store.getData().practices![fixture.id]!.done[0]!.id;
+    click(byText("✎ メモを書く"));
+    const ta = root.querySelector<HTMLTextAreaElement>(".note-box textarea")!;
+    act(() => {
+      ta.value = "期限と間隔を取り違えた";
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    // 「完了」を押さずに次へ進んでも保存する
+    click(byText("次へ"));
+    expect(store.getData().notes?.[`${fixture.id}:${id}`]?.text).toBe("期限と間隔を取り違えた");
+
+    act(() => render(null, root));
+    mount(<Saved exam={fixture} view="notes" now={NOW} />);
+    expect(root.querySelector(".row-note")?.textContent).toContain("期限と間隔を取り違えた");
+    expect(byText("この 1 問を練習する").getAttribute("href")).toBe(`#/${fixture.id}/practice?only=notes`);
+    // 開くとメモを直せる。空にして完了すると消える
+    click(root.querySelector<HTMLButtonElement>(".review-row")!);
+    click(byText("直す"));
+    const ta2 = root.querySelector<HTMLTextAreaElement>(".note-box textarea")!;
+    expect(ta2.value).toBe("期限と間隔を取り違えた");
+    act(() => {
+      ta2.value = "";
+      ta2.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    click(byText("完了"));
+    expect(store.getData().notes).toBeUndefined();
+  });
+});
+
+describe("書き出しの案内（#89）", () => {
+  test("しばらく書き出していないとホームに出る。書き出すと記録に時刻が残って消え、「あとで」でも消える", () => {
+    act(() => store.setData(answer(store.getData(), fixture.id, "s1-01", true, NOW - 20 * 864e5)));
+    mount(<Home exam={fixture} now={NOW} />);
+    expect(root.querySelector(".export-nudge")?.textContent).toContain("最初に答えてから 20 日");
+    click(byText("あとで"));
+    expect(root.querySelector(".export-nudge")).toBeNull();
+
+    act(() => store.setData({ ...store.getData(), exportNudgeSnoozedAt: undefined }));
+    mount(<Home exam={fixture} now={NOW} />);
+    URL.createObjectURL = () => "blob:x";
+    URL.revokeObjectURL = () => {};
+    click(byText("ファイルに書き出す"));
+    expect(store.getData().exportedAt).toBeGreaterThan(NOW - 1000);
+    expect(root.querySelector(".export-nudge")).toBeNull();
   });
 });

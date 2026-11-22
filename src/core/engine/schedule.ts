@@ -12,6 +12,10 @@ export interface ItemStat {
   readonly correct: number;
   /** 最後に答えた時刻（ms） */
   readonly last: number;
+  /** 忘れた回数：覚えかけ以上（次の間隔が 1 日以上）になっていたのに間違えた回数（#87）。
+      同じ回のやり直しで続けて間違えた分は数えない（初見でつまずいた問題と、覚えても忘れる問題を分けるため）。
+      0 のときは持たない（この項目ができる前の記録も 0 として扱う） */
+  readonly lapses?: number;
 }
 
 export const DAY = 24 * 60 * 60 * 1000;
@@ -30,25 +34,37 @@ export function review(prev: ItemStat | undefined, ok: boolean, now: number): It
   const s = prev ?? { ease: START_EASE, interval: 0, due: now, tries: 0, correct: 0, last: now };
   const tries = s.tries + 1;
   if (!ok)
-    return {
-      ease: clamp(s.ease - 0.2, MIN_EASE, MAX_EASE),
-      interval: 0,
-      due: now + RETRY_MS,
-      tries,
-      correct: s.correct,
-      last: now,
-    };
+    return withLapses(
+      {
+        ease: clamp(s.ease - 0.2, MIN_EASE, MAX_EASE),
+        interval: 0,
+        due: now + RETRY_MS,
+        tries,
+        correct: s.correct,
+        last: now,
+      },
+      (s.lapses ?? 0) + (s.interval >= 1 ? 1 : 0),
+    );
   const correct = s.correct + 1;
   if (prev && s.interval > 0 && s.due > now) return { ...s, tries, correct, last: now };
   const interval = clamp(s.interval < 1 ? 1 : s.interval < 3 ? 3 : Math.round(s.interval * s.ease), 1, MAX_INTERVAL);
-  return {
-    ease: clamp(s.ease + 0.05, MIN_EASE, MAX_EASE),
-    interval,
-    due: now + interval * DAY,
-    tries,
-    correct,
-    last: now,
-  };
+  return withLapses(
+    {
+      ease: clamp(s.ease + 0.05, MIN_EASE, MAX_EASE),
+      interval,
+      due: now + interval * DAY,
+      tries,
+      correct,
+      last: now,
+    },
+    s.lapses ?? 0,
+  );
+}
+
+/** 忘れた回数を付ける（0 なら項目ごと持たない。前の記録と同じ形に保つ） */
+function withLapses(s: ItemStat, lapses: number): ItemStat {
+  const { lapses: _drop, ...rest } = s;
+  return lapses > 0 ? { ...rest, lapses } : rest;
 }
 
 /** 勘で当たった正解（#27）。当たりの回数には数えるが、間隔は 0 に戻して覚えた・覚えかけに入れず、
@@ -56,7 +72,10 @@ export function review(prev: ItemStat | undefined, ok: boolean, now: number): It
     間違えたわけではない） */
 export function reviewGuess(prev: ItemStat | undefined, now: number): ItemStat {
   const s = prev ?? { ease: START_EASE, interval: 0, due: now, tries: 0, correct: 0, last: now };
-  return { ease: s.ease, interval: 0, due: now + DAY, tries: s.tries + 1, correct: s.correct + 1, last: now };
+  return withLapses(
+    { ease: s.ease, interval: 0, due: now + DAY, tries: s.tries + 1, correct: s.correct + 1, last: now },
+    s.lapses ?? 0,
+  );
 }
 
 /** 覚えた扱いにする間隔（日）。1 回の正解（間隔 1 日）ではまだ数えず、
@@ -73,6 +92,12 @@ export const isKnown = (s: ItemStat | undefined, now: number): boolean =>
 
 /** 覚えかけ：直近は正解だが、まだ覚えた扱いでない（もう 1 回、期限が来てから正解すれば覚えた） */
 export const isLearning = (s: ItemStat | undefined, now: number): boolean => !!s && s.interval >= 1 && !isKnown(s, now);
+
+/** 苦手にする忘れた回数（#87）。1 回忘れるのは普通なので、2 回目から */
+export const WEAK_LAPSES = 2;
+
+/** 苦手な問題か：覚えかけ以上になってから 2 回以上間違えた（今覚えているかは問わない。また忘れやすい問題なので） */
+export const isWeak = (s: ItemStat | undefined): boolean => (s?.lapses ?? 0) >= WEAK_LAPSES;
 
 /** 期限が来ている問題か */
 export const isDue = (s: ItemStat | undefined, now: number): boolean => !!s && s.due <= now;

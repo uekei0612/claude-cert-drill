@@ -24,8 +24,16 @@ import {
   startMock,
   toggleSaved,
   undoAnswer,
+  weakIds,
+  noteIds,
+  noteOf,
+  setNote,
+  EXPORT_NUDGE_DAYS,
+  exportNudge,
+  markExported,
+  snoozeExportNudge,
 } from "./actions";
-import { emptyData, parseData } from "./schema";
+import { MAX_NOTE, emptyData, parseData } from "./schema";
 import { createStore } from "./store";
 
 const store = createStore({ key: "test-store", app: "test-app", storage: () => localStorage });
@@ -225,6 +233,92 @@ describe("後で振り返る印", () => {
   });
 });
 
+describe("苦手（#87）", () => {
+  /** 覚えかけにしてから間違える、を n 回 */
+  const forget = (d0: ReturnType<typeof emptyData>, id: string, n: number, t0: number) => {
+    let d = d0;
+    for (let i = 0; i < n; i++) {
+      d = answer(d, "test-x", id, true, t0 + 2 * i * 864e5);
+      d = answer(d, "test-x", id, false, t0 + (2 * i + 1) * 864e5);
+    }
+    return d;
+  };
+  test("忘れた回数の多い順に並べ、2 回未満と今の問題に無い ID は出さない", () => {
+    let d = forget(emptyData(), "s1-01", 2, NOW);
+    d = forget(d, "s2-03", 3, NOW);
+    d = forget(d, "s3-01", 1, NOW);
+    d = forget(d, "gone-01", 4, NOW);
+    expect(weakIds(d, fixture)).toEqual(["s2-03", "s1-01"]);
+  });
+  test("忘れた回数は記録に残り、壊れた値（誤答の数を超える・負・小数）は捨てる", () => {
+    const d = forget(emptyData(), "s1-01", 2, NOW);
+    const s = d.items["test-x:s1-01"]!;
+    expect(s.lapses).toBe(2);
+    expect(parseData(JSON.parse(JSON.stringify(d))).items["test-x:s1-01"]).toEqual(s);
+    for (const lapses of [3, -1, 1.5, "2"])
+      expect(parseData({ items: { "test-x:s1-01": { ...s, lapses } } }).items["test-x:s1-01"]?.lapses).toBeUndefined();
+  });
+  test("取り消すと忘れた回数も戻る", () => {
+    const d = answer(emptyData(), "test-x", "s1-01", true, NOW);
+    const prev = d.items["test-x:s1-01"];
+    const ng = answer(d, "test-x", "s1-01", false, NOW + 864e5);
+    expect(ng.items["test-x:s1-01"]?.lapses).toBe(1);
+    expect(undoAnswer(ng, "test-x", "s1-01", prev, NOW + 864e5, false).items["test-x:s1-01"]).toEqual(prev);
+  });
+});
+
+describe("問題のメモ（#88）", () => {
+  test("書く・直す・空で消す。前後の空白は除き、新しく書いた順に並ぶ", () => {
+    let d = setNote(emptyData(), "ccar-f", "s1-01", "  temperature と取り違えた\n", 1);
+    d = setNote(d, "ccar-f", "s2-03", "選択肢 C の言い回し", 2);
+    expect(noteOf(d, "ccar-f", "s1-01")).toEqual({ text: "temperature と取り違えた", at: 1 });
+    expect(noteIds(d, "ccar-f")).toEqual(["s2-03", "s1-01"]);
+    d = setNote(d, "ccar-f", "s1-01", "直した", 3);
+    expect(noteIds(d, "ccar-f")).toEqual(["s1-01", "s2-03"]);
+    d = setNote(setNote(d, "ccar-f", "s1-01", " ", 4), "ccar-f", "s2-03", "", 5);
+    expect(d).toEqual(emptyData());
+  });
+  test("長すぎるメモは切る。記録に残り、壊れた値は捨てる。資格の記録を消すと一緒に消える", () => {
+    const d = setNote(setNote(emptyData(), "ccar-f", "s1-01", "x".repeat(MAX_NOTE + 5), 1), "fe-a", "d1-01", "a", 2);
+    expect(noteOf(d, "ccar-f", "s1-01")?.text.length).toBe(MAX_NOTE);
+    const raw = JSON.parse(JSON.stringify(d));
+    const back = parseData({
+      ...raw,
+      notes: { ...raw.notes, "bad key": { text: "a", at: 1 }, "ccar-f:x": { text: " ", at: 1 }, "ccar-f:y": "a" },
+    });
+    expect(back.notes).toEqual(d.notes);
+    expect(noteIds(resetExam(d, "ccar-f"), "ccar-f")).toEqual([]);
+    expect(noteIds(resetExam(d, "ccar-f"), "fe-a")).toEqual(["d1-01"]);
+  });
+});
+
+describe("書き出しの案内（#89）", () => {
+  const DAY = 864e5;
+  const W = EXPORT_NUDGE_DAYS * DAY;
+  test("答えていなければ出さない。最初に答えてから 14 日で、まだ書き出していないと出す", () => {
+    expect(exportNudge(emptyData(), NOW)).toBeUndefined();
+    const d = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    expect(exportNudge(d, NOW + W - DAY)).toBeUndefined();
+    expect(exportNudge(d, NOW + W + DAY)).toEqual({ days: EXPORT_NUDGE_DAYS + 1, never: true });
+  });
+  test("書き出したあとに答えていなければ出さない。答えていれば、書き出してから 14 日で出す", () => {
+    const d = markExported(answer(emptyData(), "ccar-f", "s1-01", true, NOW), NOW + DAY);
+    expect(exportNudge(d, NOW + 100 * DAY)).toBeUndefined();
+    const later = answer(d, "ccar-f", "s1-02", true, NOW + 2 * DAY);
+    expect(exportNudge(later, NOW + DAY + W - 1)).toBeUndefined();
+    expect(exportNudge(later, NOW + DAY + W)).toEqual({ days: EXPORT_NUDGE_DAYS, never: false });
+  });
+  test("「あとで」から 14 日は出さない。時刻は記録に残る", () => {
+    const d = answer(emptyData(), "ccar-f", "s1-01", true, NOW);
+    const s = snoozeExportNudge(d, NOW + W);
+    expect(exportNudge(s, NOW + 2 * W - 1)).toBeUndefined();
+    expect(exportNudge(s, NOW + 2 * W)).toBeDefined();
+    const back = parseData(JSON.parse(JSON.stringify(markExported(s, NOW + 3 * W))));
+    expect([back.exportedAt, back.exportNudgeSnoozedAt]).toEqual([NOW + 3 * W, NOW + W]);
+    expect(parseData({ exportedAt: "x" }).exportedAt).toBeUndefined();
+  });
+});
+
 describe("教科書の読んだ章（#29）", () => {
   test("付ける・外す。資格ごとに分かれる", () => {
     let d = setRead(emptyData(), "ccar-f", "1.1", true, 5);
@@ -276,7 +370,7 @@ describe("日ごとの回答（#38）", () => {
   test("模擬試験を終えると、出した問題の数と正解の数が入る", () => {
     const p = planMock(fixture, seeded(3));
     const start = startMock(emptyData(), {
-      examId: "fx",
+      examId: "test-x",
       questionIds: p.questionIds,
       scenarioIds: p.scenarioIds,
       startedAt: NOW,
@@ -288,7 +382,7 @@ describe("日ごとの回答（#38）", () => {
       cursor: 0,
     });
     const done = finishMock(start, scoreMock(fixture, p.questionIds, {}), NOW);
-    expect([...daysOf(done, "fx").values()]).toEqual([[p.questionIds.length, 0]]);
+    expect([...daysOf(done, "test-x").values()]).toEqual([[p.questionIds.length, 0]]);
   });
   test("記録に残り、壊れた値は捨て、古い日から捨てて上限に収める。資格の記録を消すと一緒に消える", () => {
     let d = emptyData();

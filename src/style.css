@@ -269,6 +269,24 @@ a.card {
 .ngc {
   color: var(--ng);
 }
+/* 苦手（#87）：一覧の行の印・ホームの件数・答えのあとの注意 */
+.weakc {
+  color: var(--ng);
+  font-weight: 700;
+}
+.tag.weak-tag {
+  background: var(--ng-soft);
+  color: var(--ng);
+}
+.weak-note {
+  margin: 0 0 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--ng-soft);
+}
+.weak-note strong {
+  color: var(--ng);
+}
 .tag {
   display: inline-block;
   font-size: 0.75rem;
@@ -599,12 +617,37 @@ a.tap {
   height: 10px;
 }
 /* 振り返り・見直しの一覧の行：問題文の冒頭を 2 行まで（#47） */
-.row-stem {
+.row-stem,
+.row-note {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow: hidden;
+}
+/* メモ（#88）：一覧の行に添える本文と、答えのあとの問題カードの欄 */
+.row-note {
+  margin-top: 4px;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+.note-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+.note-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.note-box .row.end {
+  align-items: center;
+  gap: 8px;
 }
 /* 自動で写せなかったときの、手で写すための欄（#49） */
 .row:has(> .manual-copy) {
@@ -993,7 +1036,10 @@ select {
   overflow: hidden;
   background: var(--surface);
 }
-.seg button {
+.seg button,
+.seg a {
+  display: inline-flex;
+  align-items: center;
   min-height: var(--tap);
   padding: 0 14px;
   border: 0;
@@ -1001,12 +1047,14 @@ select {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--muted);
+  text-decoration: none;
   cursor: pointer;
 }
-.seg button + button {
+.seg > * + * {
   border-left: 1px solid var(--line);
 }
-.seg button.on {
+.seg button.on,
+.seg a.on {
   background: var(--accent);
   color: var(--on-accent);
 }

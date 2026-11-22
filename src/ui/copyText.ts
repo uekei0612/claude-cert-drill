@@ -35,6 +35,8 @@ export interface QuestionCopy {
   readonly order: readonly number[];
   /** 選んだ元の添字（未回答なら無し） */
   readonly chosen?: number;
+  /** 自分のメモ（#88）。あれば最後に足す（どこで勘違いしたかを Claude に伝えるため） */
+  readonly note?: string;
 }
 
 /** 問題の前半（頼む文・分野・シナリオ・問題・選択肢）。答えと解説は含めない */
@@ -71,7 +73,7 @@ export function hintText(c: Omit<QuestionCopy, "chosen">): string {
 
 /** 答えを見たあとの問題 1 問 */
 export function questionText(c: QuestionCopy): string {
-  const { exam, q, order, chosen } = c;
+  const { exam, q, order, chosen, note } = c;
   const letter = (orig: number) => optionLabel(exam, order.indexOf(orig));
   const out = questionHead(c, "について教えてください。");
   const answer = `■ 正解：${letter(q.answer)}`;
@@ -89,6 +91,7 @@ export function questionText(c: QuestionCopy): string {
       .join("\n")}`,
   );
   out.push(`■ 覚えること\n${q.point}`);
+  if (note) out.push(`■ 私のメモ（間違えた理由など）\n${note}`);
   return out.join("\n\n");
 }
 
