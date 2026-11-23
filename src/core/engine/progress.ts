@@ -4,7 +4,7 @@
    まだ解いていない問題は覚えていない扱い（本番の未回答が誤答なのと同じく、安全側に倒す） */
 import type { Exam, Question } from "../exam/types";
 import { domainOf } from "../exam/types";
-import { type ItemStat, isDue, isKnown } from "./schedule";
+import { type ItemStat, isDue, isKnown, isLearning } from "./schedule";
 
 export type StatOf = (questionId: string) => ItemStat | undefined;
 
@@ -12,6 +12,8 @@ export interface Tally {
   readonly total: number;
   /** 覚えた（isKnown） */
   readonly known: number;
+  /** あと 1 回（isLearning。直近は正解だが、まだ日をあけた 2 回目の正解が無い。#94） */
+  readonly learning: number;
   /** 一度でも解いた */
   readonly seen: number;
   /** 期限が来ている */
@@ -20,18 +22,23 @@ export interface Tally {
 
 export function tally(qs: readonly Question[], statOf: StatOf, now: number): Tally {
   let known = 0;
+  let learning = 0;
   let seen = 0;
   let due = 0;
   for (const q of qs) {
     const s = statOf(q.id);
     if (s) seen++;
     if (isKnown(s, now)) known++;
+    if (isLearning(s, now)) learning++;
     if (isDue(s, now)) due++;
   }
-  return { total: qs.length, known, seen, due };
+  return { total: qs.length, known, learning, seen, due };
 }
 
 export const ratio = (t: Tally): number => (t.total ? t.known / t.total : 0);
+
+/** あと 1 回の割合（メーターの薄い色。#94） */
+export const learningRatio = (t: Tally): number => (t.total ? t.learning / t.total : 0);
 
 export const questionsOfTask = (exam: Exam, taskId: string): Question[] =>
   exam.questions.filter(q => q.tasks[0] === taskId);

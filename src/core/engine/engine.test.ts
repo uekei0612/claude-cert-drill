@@ -155,9 +155,10 @@ describe("progress", () => {
   test("期限を間隔の分以上過ぎると覚えたから外す（期限を少し過ぎただけなら数え、復習待ちにも入る）", () => {
     const s = twice(); // 期限は NOW + 4 日、間隔 3 日
     const near = tally(fixture.questions.slice(0, 1), () => s, NOW + 6 * DAY);
-    expect(near).toEqual({ total: 1, known: 1, seen: 1, due: 1 });
+    expect(near).toEqual({ total: 1, known: 1, learning: 0, seen: 1, due: 1 });
     const far = tally(fixture.questions.slice(0, 1), () => s, NOW + 8 * DAY);
-    expect(far).toEqual({ total: 1, known: 0, seen: 1, due: 1 });
+    // 期限を大きく過ぎた問題は「あと 1 回」（期限に正解すれば覚えたに戻る）
+    expect(far).toEqual({ total: 1, known: 0, learning: 1, seen: 1, due: 1 });
     expect(isLearning(s, NOW + 8 * DAY)).toBe(true);
     // 期限が来てから正解すれば、また覚えた
     const again = review(s, true, NOW + 8 * DAY);

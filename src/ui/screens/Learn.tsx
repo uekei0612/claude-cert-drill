@@ -2,7 +2,7 @@
    章と節は、Claude に解説を頼めるようにまとめてコピーできる。
    章の終わり（まとめの後）まで読み進めると「読んだ」を自動で付ける。手で外せる（#29） */
 import { useEffect, useRef } from "preact/hooks";
-import { questionsOfTask, ratio, tally } from "../../core/engine/progress";
+import { learningRatio, questionsOfTask, ratio, tally } from "../../core/engine/progress";
 import type { Exam, Lesson, LessonBlock } from "../../core/exam/types";
 import { PRIMER_ID, domainOfTask, findTask, lessonOrder, optionLabel, optionLabels } from "../../core/exam/types";
 import { readChapters, setRead } from "../../core/store/actions";
@@ -272,7 +272,7 @@ export function Learn({
                     <span class="muted small">{inline(lessons[t.id]!.lead)}</span>
                     {tl.total > 0 && (
                       <div class="row toc-meter">
-                        <Meter value={ratio(tl)} label={`${t.ja}の習熟`} />
+                        <Meter value={ratio(tl)} sub={learningRatio(tl)} label={`${t.ja}の習熟`} />
                         <span class="muted small">
                           覚えた {tl.known}/{tl.total}
                         </span>
