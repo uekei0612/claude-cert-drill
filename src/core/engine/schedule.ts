@@ -28,6 +28,19 @@ export const RETRY_MS = 10 * 60 * 1000;
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
+/** その時刻の日（端末の時刻）の 0 時 */
+export function startOfDay(t: number): number {
+  const d = new Date(t);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+/** 期限が来る時刻（#90）。1 日以上先の期限（正解のあとの間隔・勘の翌日）は、時刻ではなくその日の 0 時から来たことにする。
+    時刻のままだと、前日の夜 21 時に正解した問題を翌朝 8 時に正解しても「期限前」になり、間隔が延びない
+    （夜に解いて朝に解く使い方では、いつまでも覚えたにならない）。誤答の 10 分後のやり直しは時刻のまま。
+    保存している期限は変えず、読むときにそろえる（前の記録もそのまま直る） */
+export const dueOf = (s: ItemStat): number =>
+  s.interval >= 1 || s.due - s.last >= DAY / 2 ? startOfDay(s.due) : s.due;
+
 /** 1 回答えたあとの記録。正解なら間隔を延ばし、誤答なら 0 に戻す。
     期限前の正解（同じ回での 2 回目や先取り）では間隔を延ばさない */
 export function review(prev: ItemStat | undefined, ok: boolean, now: number): ItemStat {
@@ -46,7 +59,7 @@ export function review(prev: ItemStat | undefined, ok: boolean, now: number): It
       (s.lapses ?? 0) + (s.interval >= 1 ? 1 : 0),
     );
   const correct = s.correct + 1;
-  if (prev && s.interval > 0 && s.due > now) return { ...s, tries, correct, last: now };
+  if (prev && s.interval > 0 && dueOf(s) > now) return { ...s, tries, correct, last: now };
   const interval = clamp(s.interval < 1 ? 1 : s.interval < 3 ? 3 : Math.round(s.interval * s.ease), 1, MAX_INTERVAL);
   return withLapses(
     {
@@ -83,7 +96,7 @@ export function reviewGuess(prev: ItemStat | undefined, now: number): ItemStat {
 export const KNOWN_INTERVAL = 3;
 
 /** 期限を間隔の分以上過ぎた問題か（前に答えてから間隔の 2 倍以上たった。忘れているかもしれない） */
-export const isStale = (s: ItemStat, now: number): boolean => now - s.due > s.interval * DAY;
+export const isStale = (s: ItemStat, now: number): boolean => now - dueOf(s) > s.interval * DAY;
 
 /** 覚えた扱いの問題か：日をあけて 2 回以上続けて正解していて、期限を大きく過ぎていない。
     合格の目安・分野・細目の「覚えた」はすべてこれで数える */
@@ -100,4 +113,4 @@ export const WEAK_LAPSES = 2;
 export const isWeak = (s: ItemStat | undefined): boolean => (s?.lapses ?? 0) >= WEAK_LAPSES;
 
 /** 期限が来ている問題か */
-export const isDue = (s: ItemStat | undefined, now: number): boolean => !!s && s.due <= now;
+export const isDue = (s: ItemStat | undefined, now: number): boolean => !!s && dueOf(s) <= now;
