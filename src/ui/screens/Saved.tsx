@@ -142,6 +142,11 @@ export function Saved({ exam, view, now }: { exam: Exam; view?: ReviewView; now:
                       scenarioOpen={false}
                       lang={lang}
                       learnLink
+                      learnBack={
+                        cur === "saved"
+                          ? { name: "saved", examId: exam.id }
+                          : { name: "saved", examId: exam.id, view: cur }
+                      }
                     />
                   )}
                   <div class="row end">

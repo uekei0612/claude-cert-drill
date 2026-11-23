@@ -28,7 +28,7 @@ import { LangSwitch } from "../LangSwitch";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
 import { optionIndex, optionKeys, useKeys } from "../keys";
-import { type PracticeStart, type Route, href } from "../route";
+import { type PracticeStart, type Route, href, routeLabel } from "../route";
 
 /** 画面で持つ回の状態（記録に残す形から時刻を除いたもの） */
 type Session = Omit<ActivePractice, "updatedAt">;
@@ -128,11 +128,14 @@ export function Practice({
   exam,
   only,
   start,
+  back: from,
   now,
 }: {
   exam: Exam;
   only?: string;
   start?: PracticeStart;
+  /** 来た画面（やめる・終えたときの戻り先。無ければホームか振り返り。#91） */
+  back?: Route;
   now: number;
 }) {
   const lang = langOf(useData(), exam.id);
@@ -167,8 +170,9 @@ export function Practice({
   };
 
   const byId = useMemo(() => new Map(exam.questions.map(q => [q.id, q])), [exam]);
-  const back = href(fromReview(only) ? reviewRoute(exam.id, only) : { name: "home", examId: exam.id });
-  const backLabel = fromReview(only) ? "振り返り" : "ホーム";
+  const backRoute: Route = from ?? (fromReview(only) ? reviewRoute(exam.id, only) : { name: "home", examId: exam.id });
+  const back = href(backRoute);
+  const backLabel = routeLabel(backRoute);
   const label = onlyLabel(exam, only);
 
   if (!queue.length)
@@ -242,7 +246,10 @@ export function Practice({
                 </span>
                 <p>{q.point}</p>
                 {exam.lessons?.[q.tasks[0]] && (
-                  <a class="tap small learn-link" href={href({ name: "learn", examId: exam.id, taskId: q.tasks[0] })}>
+                  <a
+                    class="tap small learn-link"
+                    href={href({ name: "learn", examId: exam.id, taskId: q.tasks[0], back: backRoute })}
+                  >
                     教科書で読む（{q.tasks[0]}）→
                   </a>
                 )}
@@ -253,7 +260,7 @@ export function Practice({
         {missed.length > 0 && (
           <a
             class="btn primary block"
-            href={href({ name: "practice", examId: exam.id, only: idsOnly(missed.map(q => q.id)) })}
+            href={href({ name: "practice", examId: exam.id, only: idsOnly(missed.map(q => q.id)), back: from })}
           >
             {missedLabel} {missed.length} 問をもう一度
           </a>

@@ -31,6 +31,8 @@ import { srcAttrs } from "../src";
 
 export function Home({ exam, now }: { exam: Exam; now: number }) {
   const data = useData();
+  // 教科書の章・細目から戻ってくる先（#91）
+  const home = { name: "home" as const, examId: exam.id };
   const statOf = (id: string) => data.items[itemKey(exam.id, id)];
   const ready = readiness(exam, statOf, now);
   const all = tally(exam.questions, statOf, now);
@@ -186,7 +188,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
           </ol>
           <div class="row wrap">
             {exam.primer && (
-              <a class="btn primary" href={href({ name: "learn", examId: exam.id, taskId: PRIMER_ID })}>
+              <a class="btn primary" href={href({ name: "learn", examId: exam.id, taskId: PRIMER_ID, back: home })}>
                 「はじめに」を読む
               </a>
             )}
@@ -240,7 +242,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
       </a>
 
       {nextRead && (
-        <a class="card tight" href={href({ name: "learn", examId: exam.id, taskId: nextRead })}>
+        <a class="card tight" href={href({ name: "learn", examId: exam.id, taskId: nextRead, back: home })}>
           <div class="row between">
             <span>教科書の続き</span>
             <span class="muted small">
@@ -263,7 +265,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
             const t = findTask(exam, w.taskId);
             return (
               <div key={w.taskId} class="card tight split">
-                <a class="card-main" href={href({ name: "task", examId: exam.id, taskId: w.taskId })}>
+                <a class="card-main" href={href({ name: "task", examId: exam.id, taskId: w.taskId, back: home })}>
                   <div class="row between">
                     <span>
                       <span class="tag">{w.taskId}</span> {t?.ja}
