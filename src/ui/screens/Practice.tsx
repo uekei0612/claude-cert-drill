@@ -390,10 +390,13 @@ export function Practice({
         <a class="btn ghost" href={back}>
           やめる
         </a>
-        <span class="muted small head-label">
-          {label && `${label}・`}
-          {isRetry ? `やり直し ${pos - base + 1} / ${retries}` : `${pos + 1} / ${base}`}
-          {!isRetry && retries > 0 && `（やり直し +${retries}）`}
+        {/* 名前は 1 行に収めて長ければ省略し、問題の位置は折り返さない（#95） */}
+        <span class="muted small head-label" title={label}>
+          {label && <span class="head-name">{label}・</span>}
+          <span class="head-pos">
+            {isRetry ? `やり直し ${pos - base + 1} / ${retries}` : `${pos + 1} / ${base}`}
+            {!isRetry && retries > 0 && `（やり直し +${retries}）`}
+          </span>
         </span>
         <LangSwitch exam={exam} />
       </header>
