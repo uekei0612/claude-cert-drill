@@ -204,7 +204,15 @@ const OUT = process.argv[3] || "/tmp/shots";
     throw new Error("教科書の章から振り返りに戻れない");
   await goto("#/ccar-f/saved");
   await clickText("この 2 問を練習する");
-  if (!/振り返り・1 \/ 2/.test(await text())) throw new Error("振り返りの 2 問だけで練習にならない");
+  if (!/振り返り・\s*1 \/ 2/.test(await text())) throw new Error("振り返りの 2 問だけで練習にならない");
+  // 練習の上の帯：名前が長くても 1 行に収まり、問題の位置は折り返さない（#95）
+  await page.setViewport({ width: 320, height: 700, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const headH = await page.$eval(".head-label", e => [
+    e.getBoundingClientRect().height,
+    e.querySelector(".head-pos").getBoundingClientRect().height,
+  ]);
+  if (headH[0] > 30 || headH[1] > 30) throw new Error(`練習の上の帯が折り返している：${headH}`);
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   // 2 問とも、誤答か勘の正解にする。誤答なら一度取り消して（#44）選び直し、正解なら「勘だった」を付ける（#27）
   for (let n = 0; n < 2; n++) {
     await click(".option");
@@ -232,7 +240,7 @@ const OUT = process.argv[3] || "/tmp/shots";
   await shot("26-practice-result");
   // 間違えた問題だけを解き直せる（#39）
   await clickText("間違えた");
-  if (!/解き直し・1 \/ 2/.test(await text())) throw new Error("練習の結果から間違えた問題だけの練習にならない");
+  if (!/解き直し・\s*1 \/ 2/.test(await text())) throw new Error("練習の結果から間違えた問題だけの練習にならない");
   await goto("#/ccar-f/saved");
   // 印を外しても、その場では一覧から消さない（付け直せる）。次に開くと消えている
   await click(".card .save.on");
@@ -445,7 +453,7 @@ const OUT = process.argv[3] || "/tmp/shots";
   await shot("12-mock-review");
   // 間違えた（未回答を含む）問題だけを練習できる（#39）。60 問中、正解は多くても 2 問
   await clickText("間違えた（未回答を含む）");
-  if (!/解き直し・1 \/ (5[89]|60)\b/.test(await text()))
+  if (!/解き直し・\s*1 \/ (5[89]|60)\b/.test(await text()))
     throw new Error("模擬試験の結果から間違えた問題の練習にならない");
 
   // 下のタブは ホーム / 教科書 / 分野 / 模擬試験 / 振り返り。設定と資格一覧はホームの右上から（#30）

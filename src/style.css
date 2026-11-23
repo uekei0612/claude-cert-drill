@@ -996,9 +996,18 @@ textarea {
 .row.between.drill-head > .head-label {
   flex: 1 1 auto;
   min-width: 0;
-  white-space: normal;
-  text-align: right;
-  overflow-wrap: anywhere;
+  display: flex;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+/* 細目の名前は 1 行に収め、長ければ「…」で省く。問題の位置（1 / 4）は折り返さず、縮めない（#95） */
+.head-label > .head-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.head-label > .head-pos {
+  flex: none;
 }
 /* チェックボックス付きの行（押す所を 44px に） */
 .check {
