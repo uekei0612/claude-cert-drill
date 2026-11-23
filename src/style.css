@@ -214,6 +214,11 @@ a.card {
   border-radius: 5px;
   background: var(--accent);
 }
+/* あと 1 回（#94）：覚えたの先に薄い色で */
+.meter > .fill.sub {
+  background: var(--accent);
+  opacity: 0.3;
+}
 .meter > .mark {
   position: absolute;
   top: -4px;
