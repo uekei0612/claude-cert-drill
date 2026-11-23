@@ -49,6 +49,12 @@ describe("期限は日で数える（#90）", () => {
     const ids = planPractice(fixture, id => stats[id], at(2, 8), seeded(1), { size: 3, maxNew: 0 });
     expect(ids).toContain("s1-01");
   });
+  test("23:30 の正解と 0:30 の正解は同じ日。翌朝 4 時から次の日（#93）", () => {
+    const a = review(undefined, true, new Date(2026, 10, 21, 23, 30).getTime());
+    expect(review(a, true, new Date(2026, 10, 22, 0, 30).getTime()).interval).toBe(1);
+    expect(isDue(a, new Date(2026, 10, 22, 3, 59).getTime())).toBe(false);
+    expect(review(a, true, new Date(2026, 10, 22, 4, 0).getTime()).interval).toBe(3);
+  });
 });
 
 describe("忘れた回数と苦手（#87）", () => {
@@ -335,8 +341,13 @@ describe("続けた日数（#38）", () => {
     expect(streak(days, at(12))).toBe(0);
     expect(streak(new Set([dayKey(at(10)), dayKey(at(8))]), at(10))).toBe(1);
   });
-  test("日付はローカルの暦（夜中の 0 時をまたぐと翌日）", () => {
+  test("日付はローカルの暦で、朝 4 時に翌日になる（0〜4 時は前の日。#93）", () => {
     expect(dayKey(at(10, 23))).toBe("2026-11-10");
-    expect(dayKey(at(11, 0))).toBe("2026-11-11");
+    expect(dayKey(at(11, 0))).toBe("2026-11-10");
+    expect(dayKey(at(11, 3))).toBe("2026-11-10");
+    expect(dayKey(at(11, 4))).toBe("2026-11-11");
+  });
+  test("深夜 0 時すぎに答えた日も、前の日として続けた日数に数える（#93）", () => {
+    expect(streak(new Set(["2026-11-10"]), at(11, 1))).toBe(1);
   });
 });
