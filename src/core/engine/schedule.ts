@@ -28,13 +28,23 @@ export const RETRY_MS = 10 * 60 * 1000;
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
-/** その時刻の日（端末の時刻）の 0 時 */
-export function startOfDay(t: number): number {
-  const d = new Date(t);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+/** 1 日の区切り（時）。0〜4 時に解いた分は前の日として数える（#93）。0 時で区切ると、23:30 と 0:30 の正解が
+    「日をあけて 2 回」になり、1 時間で覚えたに入ってしまう。Anki の既定（Next day starts at 4AM）と同じ */
+export const DAY_START_HOUR = 4;
+
+/** その時刻が属する日（記録上の日）の暦の日付。その日の 0 時の Date（端末の時刻） */
+export function recordDate(t: number): Date {
+  const d = new Date(t - DAY_START_HOUR * 60 * 60 * 1000);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-/** 期限が来る時刻（#90）。1 日以上先の期限（正解のあとの間隔・勘の翌日）は、時刻ではなくその日の 0 時から来たことにする。
+/** その時刻が属する日の始まり（その日の朝 4 時） */
+export function startOfDay(t: number): number {
+  const d = recordDate(t);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), DAY_START_HOUR).getTime();
+}
+
+/** 期限が来る時刻（#90）。1 日以上先の期限（正解のあとの間隔・勘の翌日）は、時刻ではなくその日の始まり（朝 4 時。#93）から来たことにする。
     時刻のままだと、前日の夜 21 時に正解した問題を翌朝 8 時に正解しても「期限前」になり、間隔が延びない
     （夜に解いて朝に解く使い方では、いつまでも覚えたにならない）。誤答の 10 分後のやり直しは時刻のまま。
     保存している期限は変えず、読むときにそろえる（前の記録もそのまま直る） */

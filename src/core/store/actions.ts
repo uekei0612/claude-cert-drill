@@ -1,5 +1,5 @@
 /* 記録を変える操作。画面からはここを呼ぶ */
-import { DAY, type ItemStat, isWeak, review, reviewGuess } from "../engine/schedule";
+import { DAY, DAY_START_HOUR, type ItemStat, isWeak, review, reviewGuess } from "../engine/schedule";
 import type { MockScore } from "../engine/mock";
 import { dayKey, parseDate } from "../engine/plan";
 import type { Exam } from "../exam/types";
@@ -160,7 +160,9 @@ export function exportNudge(d: Data, now: number): { days: number; never: boolea
   // 最初に答えた日：日ごとの回答のいちばん古い日（無ければ、問題の最後に答えた時刻のいちばん古いもの）
   const firstDay = Object.keys(d.days ?? {})
     .map(k => parseDate(k.slice(k.indexOf(":") + 1)))
-    .filter((t): t is number => t !== undefined);
+    .filter((t): t is number => t !== undefined)
+    // 日の始まりは朝 4 時（#93）
+    .map(t => t + DAY_START_HOUR * 60 * 60 * 1000);
   const since = d.exportedAt ?? Math.min(...lasts, ...firstDay);
   const wait = EXPORT_NUDGE_DAYS * DAY;
   if (now - since < wait || now - (d.exportNudgeSnoozedAt ?? 0) < wait) return undefined;
