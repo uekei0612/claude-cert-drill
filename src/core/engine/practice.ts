@@ -5,6 +5,7 @@ import type { Exam, Question } from "../exam/types";
 import { domainOf, shufflesOptions } from "../exam/types";
 import { type StatOf, questionsOfDomain, ratio, tally } from "./progress";
 import { type Rng, pickWeighted, shuffle } from "./rng";
+import { dueOf, isDue } from "./schedule";
 
 export interface PracticeOptions {
   readonly size?: number;
@@ -38,16 +39,13 @@ export function planPractice(
   { size = 10, maxNew = 6, only, ids }: PracticeOptions = {},
 ): string[] {
   const pool = ids ? exam.questions.filter(q => ids.includes(q.id)) : filterQuestions(exam, only);
-  const due = pool
-    .filter(q => statOf(q.id) && statOf(q.id)!.due <= now)
-    .sort((a, b) => statOf(a.id)!.due - statOf(b.id)!.due);
+  const dueAt = (q: Question) => dueOf(statOf(q.id)!);
+  const due = pool.filter(q => isDue(statOf(q.id), now)).sort((a, b) => dueAt(a) - dueAt(b));
   const fresh = shuffle(
     rng,
     pool.filter(q => !statOf(q.id)),
   );
-  const ahead = pool
-    .filter(q => statOf(q.id) && statOf(q.id)!.due > now)
-    .sort((a, b) => statOf(a.id)!.due - statOf(b.id)!.due);
+  const ahead = pool.filter(q => statOf(q.id) && !isDue(statOf(q.id), now)).sort((a, b) => dueAt(a) - dueAt(b));
 
   // 分野の弱さ：配点 ×（1 − 覚えた割合）。全部覚えた分野にも少しは回す
   const weakness = new Map(

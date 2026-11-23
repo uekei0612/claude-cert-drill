@@ -12,12 +12,44 @@ import {
   WEAK_LAPSES,
   isKnown,
   isLearning,
+  isDue,
   isWeak,
   review,
   reviewGuess,
 } from "./schedule";
 
 const NOW = Date.UTC(2026, 10, 4);
+
+describe("期限は日で数える（#90）", () => {
+  // 端末の時刻で、1 日目の 21 時・2 日目の 8 時
+  const at = (day: number, hour: number) => new Date(2026, 10, 20 + day, hour).getTime();
+  test("前日の夜に正解した問題を翌朝に正解すると、間隔が延びて覚えたになる", () => {
+    const a = review(undefined, true, at(1, 21));
+    expect(isDue(a, at(2, 0) - 1)).toBe(false);
+    expect(isDue(a, at(2, 8))).toBe(true);
+    const b = review(a, true, at(2, 8));
+    expect(b.interval).toBe(3);
+    expect(isKnown(b, at(2, 8))).toBe(true);
+  });
+  test("同じ日のうちの 2 回目の正解では延ばさない", () => {
+    const a = review(undefined, true, at(1, 8));
+    expect(review(a, true, at(1, 23)).interval).toBe(1);
+  });
+  test("前の記録（期限が時刻のまま）も日でそろえて読む。誤答のやり直しは時刻のまま", () => {
+    const old: ItemStat = { ease: 2.3, interval: 1, due: at(2, 21), tries: 1, correct: 1, last: at(1, 21) };
+    expect(isDue(old, at(2, 8))).toBe(true);
+    const ng = review(undefined, false, at(1, 21));
+    expect(isDue(ng, at(1, 21) + RETRY_MS - 1)).toBe(false);
+    expect(isDue(ng, at(1, 21) + RETRY_MS)).toBe(true);
+    // 勘の正解の「翌日」も日で数える
+    expect(isDue(reviewGuess(undefined, at(1, 21)), at(2, 8))).toBe(true);
+  });
+  test("練習の組み立ても、その日になった問題を復習として先に出す", () => {
+    const stats: Record<string, ItemStat> = { "s1-01": review(undefined, true, at(1, 21)) };
+    const ids = planPractice(fixture, id => stats[id], at(2, 8), seeded(1), { size: 3, maxNew: 0 });
+    expect(ids).toContain("s1-01");
+  });
+});
 
 describe("忘れた回数と苦手（#87）", () => {
   test("初見の誤答と、同じ回のやり直しでの誤答は数えない", () => {
