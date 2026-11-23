@@ -1,11 +1,12 @@
 /* 細目の要点と、その細目の問題の一覧（覚えた／まだ）。ここからその細目だけを練習できる */
 import { questionsOfTask, tally } from "../../core/engine/progress";
-import { isKnown, isLearning } from "../../core/engine/schedule";
+import { dueOf, isKnown, isLearning } from "../../core/engine/schedule";
 import type { Exam } from "../../core/exam/types";
 import { domainOfTask, findTask } from "../../core/exam/types";
 import { itemKey } from "../../core/store/schema";
 import { useData } from "../../app/store";
 import { HelpTip } from "../HelpTip";
+import { dueDayText } from "../dueDay";
 import { type Route, href, routeLabel } from "../route";
 import { showOfficial, srcAttrs } from "../src";
 
@@ -110,13 +111,19 @@ export function TaskDetail({
                   {q.tasks[0] !== taskId && "（関連）"}
                 </span>
                 <span class={known ? "okc small" : learning ? "small" : "ngc small"}>
-                  {known ? "覚えた" : learning ? "あと 1 回" : "まだ"}
+                  {known ? "覚えた" : learning ? `あと 1 回・${dueDayText(dueOf(s!), now)}から` : "まだ"}
                 </span>
               </div>
               <p class="small">{q.point}</p>
             </div>
           );
         })}
+        {seenQs.some(q => isLearning(statOf(q.id), now)) && (
+          <p class="muted small learning-note">
+            「あと 1
+            回」の問題は、書いてある日から後にもう一度正解すると「覚えた」に入ります。同じ日のうちに何度正解しても進みません（勘で当たった正解を覚えたに数えないため）。
+          </p>
+        )}
         {unseen > 0 && <p class="card tight muted small unseen">未解答 {unseen} 問。解くと、ここに要点が出ます。</p>}
       </section>
     </main>
