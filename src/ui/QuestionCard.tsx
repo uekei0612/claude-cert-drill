@@ -21,7 +21,7 @@ import { noteOf } from "../core/store/actions";
 import { CopyButton } from "./CopyButton";
 import { NoteBox } from "./NoteBox";
 import { hintText, questionText } from "./copyText";
-import { href } from "./route";
+import { type Route, href } from "./route";
 import { RichText, inline } from "./Rich";
 import { srcAttrs } from "./src";
 
@@ -39,6 +39,8 @@ export interface QuestionCardProps {
   readonly lang?: QuestionLang;
   /** 答えを見たあとに、教科書の章へのリンクを出すか */
   readonly learnLink?: boolean;
+  /** 教科書の章から戻る先（この問題カードを出している画面。#91） */
+  readonly learnBack?: Route;
   /** 答える前に、答えを含めない「ヒント用」のコピーを出すか（練習だけ。模擬試験の最中は出さない） */
   readonly hintCopy?: boolean;
 }
@@ -116,6 +118,7 @@ export function QuestionCard({
   scenarioOpen,
   lang = "en",
   learnLink = false,
+  learnBack,
   hintCopy = false,
 }: QuestionCardProps) {
   const scenario = exam.scenarios.find(s => s.id === q.scenario);
@@ -220,7 +223,10 @@ export function QuestionCard({
             {domain?.id.toUpperCase()} {domain?.ja} ／ {task?.id} {task?.ja}
           </p>
           {learnLink && task && exam.lessons?.[task.id] && (
-            <a class="tap small learn-link" href={href({ name: "learn", examId: exam.id, taskId: task.id })}>
+            <a
+              class="tap small learn-link"
+              href={href({ name: "learn", examId: exam.id, taskId: task.id, back: learnBack })}
+            >
               教科書で読む（{task.id}）→
             </a>
           )}

@@ -6,19 +6,33 @@ import { domainOfTask, findTask } from "../../core/exam/types";
 import { itemKey } from "../../core/store/schema";
 import { useData } from "../../app/store";
 import { HelpTip } from "../HelpTip";
-import { href } from "../route";
+import { type Route, href, routeLabel } from "../route";
 import { showOfficial, srcAttrs } from "../src";
 
-export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; now: number }) {
+export function TaskDetail({
+  exam,
+  taskId,
+  back: from,
+  now,
+}: {
+  exam: Exam;
+  taskId: string;
+  /** 来た画面（無ければその細目の分野の位置。#91） */
+  back?: Route;
+  now: number;
+}) {
   const data = useData();
   const task = findTask(exam, taskId);
   const domain = domainOfTask(exam, taskId);
-  const back = href({ name: "domains", examId: exam.id });
+  const backRoute: Route = from ?? { name: "domains", examId: exam.id, ...(domain ? { domainId: domain.id } : {}) };
+  const back = href(backRoute);
+  // この画面（練習・教科書から戻ってくる先。戻り先の戻り先はたどらない）
+  const here: Route = { name: "task", examId: exam.id, taskId };
   if (!task || !domain)
     return (
       <main class="page with-tabs">
         <a class="btn ghost" href={back}>
-          ← 分野
+          ← {routeLabel(backRoute)}
         </a>
         <p>この細目は見つかりません。</p>
       </main>
@@ -34,7 +48,7 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
   return (
     <main class="page with-tabs">
       <a class="btn ghost" href={back}>
-        ← 分野
+        ← {routeLabel(backRoute)}
       </a>
       <header class="stack">
         <span class="muted small">
@@ -46,11 +60,11 @@ export function TaskDetail({ exam, taskId, now }: { exam: Exam; taskId: string; 
         {showOfficial(task) && <p {...srcAttrs(exam, "muted small")}>{task.title}</p>}
       </header>
 
-      <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: taskId })}>
+      <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: taskId, back: here })}>
         この細目を練習する（{qs.length + related.length} 問）
       </a>
       {exam.lessons?.[taskId] && (
-        <a class="btn block" href={href({ name: "learn", examId: exam.id, taskId })}>
+        <a class="btn block" href={href({ name: "learn", examId: exam.id, taskId, back: here })}>
           教科書で読む
         </a>
       )}

@@ -6,6 +6,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { store } from "../../app/store";
 import { answer } from "../../core/store/actions";
+import { type Route, parseRoute } from "../route";
 import { fixture, flatFixture, jaFixture } from "../../core/engine/fixture";
 import { idsOnly } from "../../core/engine/practice";
 import { type Exam, optionLabel, optionText, shufflesOptions, stemText } from "../../core/exam/types";
@@ -351,5 +352,38 @@ describe("書き出しの案内（#89）", () => {
     click(byText("ファイルに書き出す"));
     expect(store.getData().exportedAt).toBeGreaterThan(NOW - 1000);
     expect(root.querySelector(".export-nudge")).toBeNull();
+  });
+});
+
+describe("来た画面へ戻る（#91）", () => {
+  const task = fixture.domains[0]!.tasks[0]!.id;
+
+  test("細目の画面から練習すると、やめる・結果から細目の画面へ戻る。既定の戻り先は細目の分野の位置", () => {
+    mount(<TaskDetail exam={fixture} taskId={task} now={NOW} />);
+    expect(byText("← 分野").getAttribute("href")).toBe(`#/${fixture.id}/domains/d1`);
+    const go = byText("この細目を練習する").getAttribute("href")!;
+    expect(go).toContain("back=");
+    const r = parseRoute(go);
+    expect(r).toMatchObject({ name: "practice", only: task, back: { name: "task", taskId: task } });
+
+    act(() => render(null, root));
+    mount(<Practice exam={fixture} only={task} back={(r as { back: Route }).back} now={NOW} />);
+    expect(byText("やめる").getAttribute("href")).toBe(`#/${fixture.id}/task/${task}`);
+    // 最後まで答えると、結果の画面にも細目へ戻るボタン
+    for (let i = 0; i < 30 && !root.textContent!.includes("おつかれさまでした"); i++) {
+      click(root.querySelector<HTMLButtonElement>("button.option")!);
+      click(byText(root.textContent!.includes("結果を見る") ? "結果を見る" : "次へ"));
+    }
+    expect(byText("細目へ").getAttribute("href")).toBe(`#/${fixture.id}/task/${task}`);
+  });
+
+  test("教科書の章は来た画面へ戻り、無ければ目次へ", () => {
+    mount(<Learn exam={ccarF} taskId="1.1" now={NOW} />);
+    expect(byText("← 目次").getAttribute("href")).toBe(`#/${ccarF.id}/learn`);
+    mount(<Learn exam={ccarF} taskId="1.1" back={{ name: "saved", examId: ccarF.id, view: "weak" }} now={NOW} />);
+    expect(byText("← 振り返り").getAttribute("href")).toBe(`#/${ccarF.id}/saved/weak`);
+    expect(parseRoute(byText("この細目を練習する").getAttribute("href")!)).toMatchObject({
+      back: { name: "learn", taskId: "1.1" },
+    });
   });
 });

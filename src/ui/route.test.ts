@@ -27,6 +27,18 @@ const routes: Route[] = [
   { name: "learn", examId: "ccar-f", taskId: "2.3", section: 2 },
   { name: "search", examId: "ccar-f" },
   { name: "search", examId: "ccar-f", q: "tool_choice PostToolUse" },
+  // 来た画面（#91）
+  { name: "practice", examId: "ccar-f", only: "1.1", back: { name: "task", examId: "ccar-f", taskId: "1.1" } },
+  { name: "practice", examId: "ccar-f", only: "q:s1-01", back: { name: "mock-result", examId: "ccar-f", at: 17 } },
+  { name: "task", examId: "ccar-f", taskId: "1.1", back: { name: "search", examId: "ccar-f", q: "a&b=c?d" } },
+  {
+    name: "learn",
+    examId: "ccar-f",
+    taskId: "2.3",
+    section: 2,
+    back: { name: "saved", examId: "ccar-f", view: "weak" },
+  },
+  { name: "learn", examId: "ccar-f", taskId: "2.3", back: { name: "home", examId: "ccar-f" } },
 ];
 
 test.each(routes.map(r => [href(r), r] as const))("%s を往復できる", (h, r) => {
@@ -43,4 +55,30 @@ test("知らない形は資格のホームか一覧に倒す", () => {
 test("壊れた % の並びでも例外にならない", () => {
   expect(() => parseRoute("#/%E0%A4%A")).not.toThrow();
   expect(parseRoute("#/ccar-f/learn/%E0%A4%A")).toEqual({ name: "learn", examId: "ccar-f", taskId: "%E0%A4%A" });
+});
+
+test("戻り先の戻り先はたどらず、ほかの資格・資格の外の戻り先は捨てる（#91）", () => {
+  const inner = href({ name: "learn", examId: "ccar-f", taskId: "1.1", back: { name: "home", examId: "ccar-f" } });
+  const r = parseRoute(`#/ccar-f/practice?only=1.1&back=${encodeURIComponent(inner)}`);
+  expect(r).toEqual({
+    name: "practice",
+    examId: "ccar-f",
+    only: "1.1",
+    back: { name: "learn", examId: "ccar-f", taskId: "1.1" },
+  });
+  expect(parseRoute(`#/ccar-f/task/1.1?back=${encodeURIComponent("#/fe-a/domains")}`)).toEqual({
+    name: "task",
+    examId: "ccar-f",
+    taskId: "1.1",
+  });
+  expect(parseRoute(`#/ccar-f/task/1.1?back=${encodeURIComponent("#/settings")}`)).toEqual({
+    name: "task",
+    examId: "ccar-f",
+    taskId: "1.1",
+  });
+  expect(parseRoute("#/ccar-f/task/1.1?back=https://example.com")).toEqual({
+    name: "task",
+    examId: "ccar-f",
+    taskId: "1.1",
+  });
 });
