@@ -11,7 +11,7 @@ import { update, useData } from "../../app/store";
 import { CopyButton } from "../CopyButton";
 import { Meter } from "../Meter";
 import { lessonText, sectionText } from "../copyText";
-import { href } from "../route";
+import { type Route, href, routeLabel } from "../route";
 import { inline } from "../Rich";
 import { showOfficial, srcAttrs } from "../src";
 
@@ -175,7 +175,20 @@ const ReadMark = ({ on }: { on: boolean }) =>
     </span>
   ) : null;
 
-export function Learn({ exam, taskId, section, now }: { exam: Exam; taskId?: string; section?: number; now: number }) {
+export function Learn({
+  exam,
+  taskId,
+  section,
+  back: from,
+  now,
+}: {
+  exam: Exam;
+  taskId?: string;
+  section?: number;
+  /** 来た画面（無ければ目次。#91） */
+  back?: Route;
+  now: number;
+}) {
   // 検索から来たら、その節の位置から見せる（画面を移ったときの先頭へのスクロールの後に。#41）
   useEffect(() => {
     if (section === undefined) return;
@@ -275,14 +288,18 @@ export function Learn({ exam, taskId, section, now }: { exam: Exam; taskId?: str
     );
   }
 
-  const toc = href({ name: "learn", examId: exam.id });
+  const backRoute: Route = from ?? { name: "learn", examId: exam.id };
+  const toc = href(backRoute);
+  const backLabel = routeLabel(backRoute);
+  // この章（練習・細目から戻ってくる先）
+  const here: Route = { name: "learn", examId: exam.id, taskId };
   const task = findTask(exam, taskId);
   const domain = domainOfTask(exam, taskId);
   if (!lesson || (!isPrimer && (!task || !domain)))
     return (
       <main class="page with-tabs">
         <a class="btn ghost" href={toc}>
-          ← 目次
+          ← {backLabel}
         </a>
         <p>この章は見つかりません。</p>
       </main>
@@ -295,7 +312,7 @@ export function Learn({ exam, taskId, section, now }: { exam: Exam; taskId?: str
   return (
     <main class="page with-tabs lesson">
       <a class="btn ghost" href={toc}>
-        ← 目次
+        ← {backLabel}
       </a>
       <header class="stack">
         {domain && (
@@ -332,10 +349,10 @@ export function Learn({ exam, taskId, section, now }: { exam: Exam; taskId?: str
 
       {!isPrimer && (
         <div class="stack">
-          <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: taskId })}>
+          <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: taskId, back: here })}>
             この細目を練習する
           </a>
-          <a class="btn block" href={href({ name: "task", examId: exam.id, taskId })}>
+          <a class="btn block" href={href({ name: "task", examId: exam.id, taskId, back: here })}>
             要点と問題の一覧
           </a>
         </div>

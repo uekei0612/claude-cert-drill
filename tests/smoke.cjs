@@ -196,8 +196,12 @@ const OUT = process.argv[3] || "/tmp/shots";
   await shot("24-saved");
   // 答えのあとから、その細目の教科書の章へ行ける（#26）
   await click(".qcard .learn-link");
-  if (!/#\/ccar-f\/learn\/\d\.\d$/.test(await page.evaluate(() => location.hash)))
+  if (!/#\/ccar-f\/learn\/\d\.\d\?back=/.test(await page.evaluate(() => location.hash)))
     throw new Error("振り返りから教科書の章に移れない");
+  // 章の戻るボタンで振り返りへ戻れる（#91）
+  await clickText("← 振り返り");
+  if (!(await page.evaluate(() => location.hash)).endsWith("/saved"))
+    throw new Error("教科書の章から振り返りに戻れない");
   await goto("#/ccar-f/saved");
   await clickText("この 2 問を練習する");
   if (!/振り返り・1 \/ 2/.test(await text())) throw new Error("振り返りの 2 問だけで練習にならない");
@@ -251,6 +255,15 @@ const OUT = process.argv[3] || "/tmp/shots";
   if ((await page.$$(".unseen")).length !== 1 || !/未解答 \d+ 問/.test(await text()))
     throw new Error("細目の未解答が 1 行にまとまらない");
   await shot("07-task");
+  // 細目の画面から練習を始めると、やめたときに細目の画面へ戻る。細目の「← 分野」はその分野の位置へ（#91）
+  await clickText("この細目を練習する");
+  if (!(await text()).includes("1 / ")) throw new Error("細目の画面から練習を始められない");
+  await clickText("やめる");
+  if ((await page.evaluate(() => location.hash)) !== "#/ccar-f/task/1.1")
+    throw new Error("練習をやめても細目の画面に戻らない");
+  await clickText("← 分野");
+  if ((await page.evaluate(() => location.hash)) !== "#/ccar-f/domains/d1")
+    throw new Error("細目からその分野の位置へ戻らない");
 
   // 教科書：目次 → 細目の画面から章へ → 次の章。どの章も横にはみ出さない（コードは枠の中で横に送る）
   await goto("#/ccar-f/learn");

@@ -30,10 +30,13 @@ function Mark({ text, query }: { text: string; query: string }) {
   return <>{parts}</>;
 }
 
-const hitHref = (exam: Exam, h: Hit) =>
-  h.kind === "section"
-    ? href({ name: "learn", examId: exam.id, taskId: h.chapterId, section: h.section })
-    : href({ name: "task", examId: exam.id, taskId: h.taskId });
+/** 検索の結果の行の行き先。戻るボタンで、同じ語の検索に戻れるようにする（#91） */
+const hitHref = (exam: Exam, h: Hit, q: string) => {
+  const back = { name: "search" as const, examId: exam.id, ...(q.trim() ? { q: q.trim() } : {}) };
+  return h.kind === "section"
+    ? href({ name: "learn", examId: exam.id, taskId: h.chapterId, section: h.section, back })
+    : href({ name: "task", examId: exam.id, taskId: h.taskId, back });
+};
 
 export function Search({ exam, q }: { exam: Exam; q: string }) {
   const docs = useMemo(() => buildIndex(exam), [exam]);
@@ -76,7 +79,7 @@ export function Search({ exam, q }: { exam: Exam; q: string }) {
             教科書 <span class="muted small">{sections.length} 件</span>
           </h2>
           {sections.map(h => (
-            <a key={`${h.chapterId}-${h.section}`} class="card tight" href={hitHref(exam, h)}>
+            <a key={`${h.chapterId}-${h.section}`} class="card tight" href={hitHref(exam, h, text)}>
               <span>{h.title}</span>
               <span class="muted small">
                 <Mark text={h.snippet} query={text} />
@@ -91,7 +94,7 @@ export function Search({ exam, q }: { exam: Exam; q: string }) {
             細目の要点 <span class="muted small">{tasks.length} 件</span>
           </h2>
           {tasks.map(h => (
-            <a key={h.taskId} class="card tight" href={hitHref(exam, h)}>
+            <a key={h.taskId} class="card tight" href={hitHref(exam, h, text)}>
               <span>{h.title}</span>
               <span class="muted small">
                 <Mark text={h.snippet} query={text} />

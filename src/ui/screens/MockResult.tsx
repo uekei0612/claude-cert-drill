@@ -8,7 +8,7 @@ import { Meter, pct } from "../Meter";
 import { LangSwitch } from "../LangSwitch";
 import { QuestionCard, stemLang, stemOf } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
-import { href } from "../route";
+import { type Route, href } from "../route";
 
 export function MockResult({ exam, at }: { exam: Exam; at: number }) {
   const data = useData();
@@ -17,6 +17,8 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
   // 全問を並べると長いので、まずは間違えた（未回答を含む）問題だけ
   const [onlyWrong, setOnlyWrong] = useState(true);
   const back = href({ name: "mock", examId: exam.id });
+  // この画面（練習・教科書から戻ってくる先。#91）
+  const here: Route = { name: "mock-result", examId: exam.id, at };
   if (!r)
     return (
       <main class="page with-tabs">
@@ -57,7 +59,10 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
         </p>
       </section>
       {wrong.length > 0 && (
-        <a class="btn primary block" href={href({ name: "practice", examId: exam.id, only: idsOnly(wrong) })}>
+        <a
+          class="btn primary block"
+          href={href({ name: "practice", examId: exam.id, only: idsOnly(wrong), back: here })}
+        >
           間違えた（未回答を含む）{wrong.length} 問を練習する
         </a>
       )}
@@ -68,7 +73,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
           const [c, t] = r.byDomain[d.id] ?? [0, 0];
           if (!t) return null;
           return (
-            <a key={d.id} class="card tight" href={href({ name: "practice", examId: exam.id, only: d.id })}>
+            <a key={d.id} class="card tight" href={href({ name: "practice", examId: exam.id, only: d.id, back: here })}>
               <div class="row between">
                 <span>
                   <span class="tag">{d.id.toUpperCase()}</span> {d.ja}
@@ -124,6 +129,7 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
                       scenarioOpen={false}
                       lang={langOf(data, exam.id)}
                       learnLink
+                      learnBack={here}
                     />
                     <div class="row end">
                       <SaveButton examId={exam.id} questionId={id} />

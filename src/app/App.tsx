@@ -84,15 +84,19 @@ export function App() {
   else if (route.name === "picker" || !meta) screen = <ExamPicker />;
   else if (!exam) screen = <ExamLoading failed={loading.status === "error"} />;
   else if (route.name === "practice")
-    screen = <Practice key={href(route)} exam={exam} only={route.only} start={route.start} now={now} />;
+    screen = (
+      <Practice key={href(route)} exam={exam} only={route.only} start={route.start} back={route.back} now={now} />
+    );
   else if (route.name === "mock") screen = <Mock exam={exam} />;
   else if (route.name === "domains")
     screen = <Domains key={route.domainId ?? ""} exam={exam} domainId={route.domainId} now={now} />;
   else if (route.name === "saved") screen = <Saved key={route.view ?? ""} exam={exam} view={route.view} now={now} />;
   else if (route.name === "task")
-    screen = <TaskDetail key={route.taskId} exam={exam} taskId={route.taskId} now={now} />;
+    screen = <TaskDetail key={href(route)} exam={exam} taskId={route.taskId} back={route.back} now={now} />;
   else if (route.name === "learn")
-    screen = <Learn key={route.taskId ?? ""} exam={exam} taskId={route.taskId} section={route.section} now={now} />;
+    screen = (
+      <Learn key={href(route)} exam={exam} taskId={route.taskId} section={route.section} back={route.back} now={now} />
+    );
   else if (route.name === "search") screen = <Search exam={exam} q={route.q ?? ""} />;
   else if (route.name === "mock-result") screen = <MockResult key={route.at} exam={exam} at={route.at} />;
   else screen = <Home exam={exam} now={now} />;
