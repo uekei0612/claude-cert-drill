@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { idsOnly, optionOrder, orderFor, parseIdsOnly, planPractice } from "../../core/engine/practice";
 import { seeded } from "../../core/engine/rng";
+import { type ItemStat, dueOf, isKnown, isLearning } from "../../core/engine/schedule";
 import type { Exam } from "../../core/exam/types";
 import { findTask } from "../../core/exam/types";
 import {
@@ -25,6 +26,7 @@ import {
 import { type ActivePractice, itemKey } from "../../core/store/schema";
 import { getData, update, useData } from "../../app/store";
 import { LangSwitch } from "../LangSwitch";
+import { dueDayText } from "../dueDay";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
 import { optionIndex, optionKeys, useKeys } from "../keys";
@@ -92,6 +94,25 @@ function resumable(exam: Exam, only: string | undefined): Session | undefined {
   return s;
 }
 
+/** 正解したあとの、覚えたへの進み具合（#92）。同じ日に何度正解しても「覚えた」に進まないので、
+    この正解で何が変わったか・いつ解けば覚えたに入るかを出す（出さないと、解き直しても何も起きないように見える） */
+function KnownNote({ s, prev }: { s?: ItemStat; prev?: ItemStat }) {
+  if (!s) return null;
+  const now = Date.now();
+  if (isKnown(s, now))
+    return (
+      <p class="small known-note okc">
+        {isKnown(prev, now) ? "覚えた問題です。" : "✓「覚えた」に入りました。"}次の復習は {dueDayText(dueOf(s), now)}。
+      </p>
+    );
+  if (!isLearning(s, now)) return null;
+  return (
+    <p class="small known-note">
+      あと 1 回：{dueDayText(dueOf(s), now)} 以降にもう一度正解すると「覚えた」に入ります（同じ日の正解は数えません）
+    </p>
+  );
+}
+
 /** 出せる問題が無いとき：理由と、次に行ける先を出す（行き止まりにしない。#49） */
 function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
   const all = href({ name: "practice", examId: exam.id });
@@ -138,7 +159,9 @@ export function Practice({
   back?: Route;
   now: number;
 }) {
-  const lang = langOf(useData(), exam.id);
+  const data = useData();
+  const lang = langOf(data, exam.id);
+  const statOf = (id: string) => data.items[itemKey(exam.id, id)];
   // キー操作（#40）。今の問題に合わせた処理を、描くたびに下で差し替える（結果の画面などでは無し）
   const onKey = useRef<((key: string) => boolean) | undefined>(undefined);
   onKey.current = undefined;
@@ -224,6 +247,14 @@ export function Practice({
     const guessed = firstTry.filter(d => d.guess).length;
     const missed = firstTry.filter(d => !d.ok || d.guess).map(d => byId.get(d.id)!);
     const missedLabel = guessed ? "間違えた・勘の" : "間違えた";
+    // この回に出た問題の今の状態（#92）。同じ日の正解では「覚えた」に進まないので、次にいつ解けばよいかを出す
+    const ids = [...new Set(done.map(d => d.id))];
+    const knownNow = ids.filter(id => isKnown(statOf(id), Date.now())).length;
+    const learningDues = ids
+      .map(statOf)
+      .filter(s => isLearning(s, Date.now()))
+      .map(s => dueOf(s!));
+    const nextDue = learningDues.length ? Math.min(...learningDues) : undefined;
     return (
       <main class="page">
         <h1>おつかれさまでした</h1>
@@ -234,6 +265,11 @@ export function Practice({
           <p class="muted small">
             {guessed > 0 && `ほかに勘で当たった問題が ${guessed} 問。`}1
             回目の答えで数えています（やり直した問題は数えない）。
+          </p>
+          <p class="small known-summary">
+            この回の {ids.length} 問のうち、覚えた {knownNow} 問
+            {nextDue !== undefined &&
+              `・あと 1 回 ${learningDues.length} 問（${dueDayText(nextDue, Date.now())}から、もう一度正解すると覚えたに入ります）`}
           </p>
         </section>
         {missed.length > 0 && (
@@ -379,33 +415,37 @@ export function Practice({
         キー：{optionKeys(exam, order.length)}で選ぶ・Enter で次へ・S で振り返りに入れる
       </p>
       {revealed && (
-        <div class="sticky-next">
-          <div class="verdict">
-            <strong class={chosen === q.answer ? "okc" : "ngc"}>{chosen === q.answer ? "正解" : "不正解"}</strong>
-            {undo && chosen !== q.answer && (
-              <button
-                class="btn ghost small undo"
-                onClick={cancel}
-                title="押し間違えたときに。記録も答える前に戻します"
-              >
-                ↶ 取り消す
-              </button>
-            )}
-            {undo && chosen === q.answer && (
-              <button
-                class={`btn ghost small guess ${guess ? "on" : ""}`}
-                aria-pressed={guess}
-                onClick={toggleGuess}
-                title="勘で当たった正解は覚えたに数えず、明日もう一度出します"
-              >
-                {guess ? "☑ 勘だった" : "☐ 勘だった"}
-              </button>
-            )}
+        <div class="sticky-next stacked">
+          {/* 正解したあとの、覚えたへの進み具合。画面の下の帯に出して、スクロールしなくても見えるようにする（#92） */}
+          {chosen === q.answer && !guess && <KnownNote s={statOf(id)} prev={undo?.prev} />}
+          <div class="sticky-row">
+            <div class="verdict">
+              <strong class={chosen === q.answer ? "okc" : "ngc"}>{chosen === q.answer ? "正解" : "不正解"}</strong>
+              {undo && chosen !== q.answer && (
+                <button
+                  class="btn ghost small undo"
+                  onClick={cancel}
+                  title="押し間違えたときに。記録も答える前に戻します"
+                >
+                  ↶ 取り消す
+                </button>
+              )}
+              {undo && chosen === q.answer && (
+                <button
+                  class={`btn ghost small guess ${guess ? "on" : ""}`}
+                  aria-pressed={guess}
+                  onClick={toggleGuess}
+                  title="勘で当たった正解は覚えたに数えず、明日もう一度出します"
+                >
+                  {guess ? "☑ 勘だった" : "☐ 勘だった"}
+                </button>
+              )}
+            </div>
+            <SaveButton examId={exam.id} questionId={id} />
+            <button class="btn primary" onClick={next}>
+              {pos + 1 < queue.length ? "次へ" : "結果を見る"}
+            </button>
           </div>
-          <SaveButton examId={exam.id} questionId={id} />
-          <button class="btn primary" onClick={next}>
-            {pos + 1 < queue.length ? "次へ" : "結果を見る"}
-          </button>
         </div>
       )}
     </main>
