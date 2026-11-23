@@ -567,8 +567,21 @@ a.tap {
 .sticky-next .btn {
   white-space: nowrap;
 }
-.sticky-next > .btn {
+.sticky-next > .btn,
+.sticky-row > .btn {
   flex-shrink: 0;
+}
+/* 練習の帯：上に覚えたへの進み具合（#92）、下に正誤とボタンの行 */
+.sticky-next.stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.sticky-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 /* 日ごとの回答のカレンダー（#38）。列が週、行が曜日。濃さは 1 色の 5 段 */
@@ -1404,4 +1417,11 @@ figure.fig {
 .lesson-nav .next {
   grid-column: 2;
   text-align: right;
+}
+/* 正解したあとの、覚えたへの進み具合（#92） */
+.known-note {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--accent-soft);
 }

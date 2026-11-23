@@ -387,3 +387,38 @@ describe("来た画面へ戻る（#91）", () => {
     });
   });
 });
+
+describe("覚えたへの進み具合（#92）", () => {
+  test("同じ日に正解し直しても「あと 1 回」で、いつから解けばよいかが出る。細目の画面と結果の画面にも出る", () => {
+    const only = fixture.domains[0]!.tasks[0]!.id;
+    const solveAll = () => {
+      for (let i = 0; i < 30 && !root.textContent!.includes("おつかれさまでした"); i++) {
+        const q = fixture.questions.find(x => root.querySelector(".stem")?.textContent?.includes(stemText(x.stem)))!;
+        const order = [...root.querySelectorAll<HTMLButtonElement>("button.option")];
+        click(order.find(b => Number(b.dataset.orig) === q.answer)!);
+        expect(root.querySelector(".sticky-next .known-note")?.textContent).toContain("明日");
+        click(byText(root.textContent!.includes("結果を見る") ? "結果を見る" : "次へ"));
+      }
+    };
+    mount(<Practice exam={fixture} only={only} now={NOW} />);
+    solveAll();
+    expect(root.querySelector(".known-summary")?.textContent).toMatch(/覚えた 0 問・あと 1 回 \d+ 問（明日/);
+    // 同じ日にもう一度
+    click(byText("続けてもう 1 回"));
+    solveAll();
+    expect(root.querySelector(".known-summary")?.textContent).toContain("覚えた 0 問");
+
+    act(() => render(null, root));
+    mount(<TaskDetail exam={fixture} taskId={only} now={NOW} />);
+    expect(root.textContent).toMatch(/あと 1 回・明日 \d+\/\d+から/);
+    expect(root.querySelector(".learning-note")).not.toBeNull();
+  });
+});
+
+test("前の日に正解した問題を今日正解すると「覚えた」に入ったと出る（#92）", () => {
+  const q = fixture.questions[0]!;
+  act(() => store.setData(answer(store.getData(), fixture.id, q.id, true, NOW - 2 * 864e5)));
+  mount(<Practice exam={fixture} only={`q:${q.id}`} now={NOW} />);
+  click(root.querySelector<HTMLButtonElement>(`button.option[data-orig="${q.answer}"]`)!);
+  expect(root.querySelector(".sticky-next .known-note")?.textContent).toContain("「覚えた」に入りました");
+});
