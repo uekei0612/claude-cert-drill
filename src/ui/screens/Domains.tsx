@@ -1,6 +1,6 @@
 /* 分野 → 細目の一覧（習熟度）と、この試験について（出どころ・範囲外） */
 import { useEffect } from "preact/hooks";
-import { questionsOfTask, ratio, tally } from "../../core/engine/progress";
+import { learningRatio, questionsOfTask, ratio, tally } from "../../core/engine/progress";
 import type { Exam } from "../../core/exam/types";
 import { itemKey } from "../../core/store/schema";
 import { useData } from "../../app/store";
@@ -40,9 +40,10 @@ export function Domains({ exam, domainId, now }: { exam: Exam; domainId?: string
                   </span>
                   <span class="muted small">
                     {tl.known}/{tl.total}
+                    {tl.learning ? `（あと 1 回 ${tl.learning}）` : ""}
                   </span>
                 </div>
-                <Meter value={ratio(tl)} label={`${t.ja}の習熟`} />
+                <Meter value={ratio(tl)} sub={learningRatio(tl)} label={`${t.ja}の習熟`} />
               </a>
             );
           })}

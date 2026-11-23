@@ -1,6 +1,14 @@
 /* 資格のホーム。いちばん上に合格の目安、次に「今日の練習」、伸ばすと効く細目、分野ごとの習熟 */
 import { dailyPlan, parseDate } from "../../core/engine/plan";
-import { dueCount, questionsOfDomain, readiness, ratio, tally, weakestTasks } from "../../core/engine/progress";
+import {
+  dueCount,
+  learningRatio,
+  questionsOfDomain,
+  readiness,
+  ratio,
+  tally,
+  weakestTasks,
+} from "../../core/engine/progress";
 import type { Exam } from "../../core/exam/types";
 import { PRIMER_ID, findTask, lessonOrder } from "../../core/exam/types";
 import {
@@ -91,6 +99,12 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
           <HelpTip id="known" exam={exam} />
           の割合。線は目安の {pct(target)}。{all.seen < all.total && `未解答 ${all.total - all.seen} 問。`}
         </p>
+        {all.learning > 0 && (
+          <p class="small learning-line">
+            あと 1 回 {all.learning} 問：日をあけてもう一度正解すると、目安に入ります
+            <HelpTip id="learning" exam={exam} />
+          </p>
+        )}
       </section>
 
       {plan && (
@@ -297,6 +311,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
             細目ごとに見る
           </a>
         </div>
+        {all.learning > 0 && <p class="muted small">メーターの濃い色は覚えた、薄い色はあと 1 回。</p>}
         {exam.domains.map(d => {
           const t = tally(questionsOfDomain(exam, d.id), statOf, now);
           return (
@@ -308,9 +323,10 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
                   </span>
                   <span class="muted small">配点 {pct(d.weight)}</span>
                 </div>
-                <Meter value={ratio(t)} label={`${d.ja}の習熟`} />
+                <Meter value={ratio(t)} sub={learningRatio(t)} label={`${d.ja}の習熟`} />
                 <span class="muted small">
-                  覚えた {t.known} / {t.total} 問{t.due ? `・復習待ち ${t.due}` : ""}・細目 ›
+                  覚えた {t.known} / {t.total} 問{t.learning ? `・あと 1 回 ${t.learning}` : ""}
+                  {t.due ? `・復習待ち ${t.due}` : ""}・細目 ›
                 </span>
               </a>
               <a class="btn small go" href={href({ name: "practice", examId: exam.id, only: d.id })}>

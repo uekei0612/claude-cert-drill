@@ -422,3 +422,14 @@ test("前の日に正解した問題を今日正解すると「覚えた」に�
   click(root.querySelector<HTMLButtonElement>(`button.option[data-orig="${q.answer}"]`)!);
   expect(root.querySelector(".sticky-next .known-note")?.textContent).toContain("「覚えた」に入りました");
 });
+
+test("メーターに「あと 1 回」を薄い色で出し、数も添える。合格の目安は覚えただけで数える（#94）", () => {
+  const q = fixture.questions[0]!;
+  act(() => store.setData(answer(store.getData(), fixture.id, q.id, true, NOW)));
+  mount(<Home exam={fixture} now={NOW} />);
+  expect(root.querySelector(".learning-line")?.textContent).toContain("あと 1 回 1 問");
+  expect(root.querySelectorAll(".meter .fill.sub").length).toBe(1);
+  expect(root.querySelector(".big")?.textContent).toBe("0%");
+  mount(<Domains exam={fixture} now={NOW} />);
+  expect(root.textContent).toContain("（あと 1 回 1）");
+});
