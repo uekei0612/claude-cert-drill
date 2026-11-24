@@ -161,6 +161,14 @@ const OUT = process.argv[3] || "/tmp/shots";
   await page.waitForSelector(".size-row .seg button.on", { timeout: 10000 });
   if ((await page.$eval(".size-row .seg button.on", e => e.textContent.trim())) !== "10 問")
     throw new Error("CCAR-F で変えた問題数が FE-B にも効いている");
+  // SAP-C03（シナリオの無い英語の資格。#101）も開いて練習を始められる
+  await goto("#/sap-c03");
+  await page.waitForSelector(".size-row .seg button.on", { timeout: 10000 });
+  if (!(await text()).includes("SAP-C03")) throw new Error("SAP-C03 のホームが出ない");
+  await clickText("練習する");
+  if (!/^1 \/ 10/.test(await page.$eval(".head-label", e => e.textContent)))
+    throw new Error("SAP-C03 の練習が始まらない");
+  await shot("05c-sap-c03-practice");
   await goto("#/ccar-f");
   await page.$$eval(".size-row .seg button", bs => bs.find(b => b.textContent.trim() === "10 問").click());
   // ホームのカード：本体は詳細へ、右端の「練習 ▶」は練習へ。押す前に行き先が分かる（#32・#33）
