@@ -4,6 +4,7 @@
 今載せているのは次の資格。
 
 - **Claude Certified Architect – Foundations（CCAR-F）**：問題・教科書はすべて自作。Anthropic の試験ガイドの本文やサンプル問題は載せていない
+- **AWS Certified Solutions Architect – Professional（SAP-C03）**：問題・解説・要点はすべて自作。本番の複数選択の問題も択一で作る
 - **基本情報技術者試験 科目B（FE-B）**：IPA の公開問題を、出典（年度・問番号、手を加えたものは「一部改変」）を明記して載せる。解説と要点は自作
 
 最初は Claude の資格だけのアプリとして作ったので、リポ名・URL・保存キーは claude-cert-drill のまま（変えると記録やホーム画面のアプリが使えなくなる）。

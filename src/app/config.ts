@@ -9,7 +9,7 @@ export const APP = {
   /** ホーム画面のアイコンの下に出す短い名前 */
   shortName: "cert-drill",
   /** manifest と検索結果の説明 */
-  description: "資格の試験勉強（Claude の資格 CCAR-F・基本情報技術者試験など）",
+  description: "資格の試験勉強（Claude の資格 CCAR-F・AWS SAP・基本情報技術者試験など）",
   /** 資格一覧の見出しの下 */
   tagline: "資格の試験勉強。問題は自作か、公開されている過去問題を出典付きで載せています。",
   /** 使い方・設定の下に出す断り書き（資格によらない文。資格ごとの文は ExamMeta.notice。#61） */
