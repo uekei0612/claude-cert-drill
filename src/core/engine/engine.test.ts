@@ -192,6 +192,42 @@ describe("planPractice", () => {
     const ids = planPractice(fixture, id => stats[id], NOW, seeded(2), { size: 1, maxNew: 0 });
     expect(ids).toEqual(["s3-04"]);
   });
+  test("期限が同じ日の問題どうしはランダムに選ぶ（問題 ID の順にならない。#97）", () => {
+    // 全問を同じ日々に正解して、期限はどれも同じ日（期限は日で数えるので同点）
+    const at = (day: number, hour: number) => new Date(2026, 10, 20 + day, hour).getTime();
+    const stats = Object.fromEntries(
+      fixture.questions.map(q => [q.id, review(review(undefined, true, at(1, 9)), true, at(2, 9))]),
+    );
+    const firsts = new Set<string>();
+    for (let seed = 0; seed < 50; seed++) {
+      const ids = planPractice(fixture, id => stats[id], at(10, 9), seeded(seed), { size: 3, maxNew: 0 });
+      expect(ids).toHaveLength(3);
+      firsts.add([...ids].sort().join());
+    }
+    expect(firsts.size).toBeGreaterThan(10);
+  });
+  test("復習が回の数より多くても、未出題が残っていれば回の 3 分の 1 は新しい問題（#98）", () => {
+    const seen = fixture.questions.slice(0, 8);
+    const stats = Object.fromEntries(seen.map(q => [q.id, review(undefined, false, NOW - DAY)]));
+    const ids = planPractice(fixture, id => stats[id], NOW, seeded(3), { size: 6 });
+    expect(ids).toHaveLength(6);
+    expect(ids.filter(id => !stats[id])).toHaveLength(2);
+    // 未出題が無ければ全部を復習に使う
+    const all = Object.fromEntries(fixture.questions.map(q => [q.id, review(undefined, false, NOW - DAY)]));
+    expect(planPractice(fixture, id => all[id], NOW, seeded(3), { size: 6 })).toHaveLength(6);
+    // maxNew: 0 なら取っておかない
+    expect(planPractice(fixture, id => stats[id], NOW, seeded(3), { size: 6, maxNew: 0 }).every(id => stats[id])).toBe(
+      true,
+    );
+  });
+  test("期限の古い日のほうを先に入れる（同じ日の中だけ混ぜる）", () => {
+    const old = review(undefined, false, NOW - 3 * DAY);
+    const stats = Object.fromEntries(
+      fixture.questions.map(q => [q.id, q.id === "s3-04" ? old : review(undefined, false, NOW - DAY)]),
+    );
+    for (let seed = 0; seed < 20; seed++)
+      expect(planPractice(fixture, id => stats[id], NOW, seeded(seed), { size: 1, maxNew: 0 })).toEqual(["s3-04"]);
+  });
   test("未出題は配点の大きい・弱い分野から多く選ぶ", () => {
     let d1 = 0;
     for (let seed = 0; seed < 200; seed++) {
