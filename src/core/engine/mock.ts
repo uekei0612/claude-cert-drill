@@ -35,16 +35,48 @@ export function planMock(exam: Exam, rng: Rng): MockPlan {
       limitMs: questionIds.length * f.secondsPerQuestion * 1000,
     };
   }
-  const n = Math.min(f.maxQuestions ?? exam.questions.length, exam.questions.length);
-  const picked: Question[] = [];
-  for (const d of exam.domains) {
-    const k = Math.round(n * d.weight);
-    picked.push(...shuffle(rng, questionsOfDomain(exam, d.id)).slice(0, k));
-  }
-  const questionIds = shuffle(rng, picked)
-    .slice(0, n)
-    .map(q => q.id);
+  const pools = exam.domains.map(d => shuffle(rng, questionsOfDomain(exam, d.id)));
+  const n = Math.min(
+    f.maxQuestions ?? exam.questions.length,
+    pools.reduce((a, p) => a + p.length, 0),
+  );
+  const counts = domainCounts(
+    exam.domains.map(d => d.weight),
+    pools.map(p => p.length),
+    n,
+  );
+  const picked: Question[] = pools.flatMap((p, i) => p.slice(0, counts[i]));
+  const questionIds = shuffle(rng, picked).map(q => q.id);
   return { questionIds, scenarioIds: [], limitMs: questionIds.length * f.secondsPerQuestion * 1000 };
+}
+
+/** 分野ごとに何問出すか。合計はちょうど n（n は問題の総数以下）。配点に比例させ、端数は大きい分野から 1 問ずつ足す。
+    問題が足りない分野の不足分は、問題の残っている分野に配点の大きい順で回す（#100。四捨五入だけだと、
+    端数が全部切り捨てられたときや、配点の大きい分野に問題が少ないときに、本番の数より短くなっていた） */
+export function domainCounts(weights: readonly number[], available: readonly number[], n: number): number[] {
+  const sum = weights.reduce((a, w) => a + Math.max(0, w), 0) || 1;
+  const exact = weights.map(w => (n * Math.max(0, w)) / sum);
+  const counts = exact.map((x, i) => Math.min(Math.floor(x), available[i]!));
+  const byRemainder = exact
+    .map((_, i) => i)
+    .sort((a, b) => exact[b]! - Math.floor(exact[b]!) - (exact[a]! - Math.floor(exact[a]!)));
+  const byWeight = weights.map((_, i) => i).sort((a, b) => weights[b]! - weights[a]!);
+  let left = n - counts.reduce((a, c) => a + c, 0);
+  for (const i of byRemainder) {
+    if (left <= 0) break;
+    if (counts[i]! < available[i]! && counts[i]! < Math.ceil(exact[i]!)) {
+      counts[i] = counts[i]! + 1;
+      left--;
+    }
+  }
+  while (left > 0) {
+    const i = byWeight.find(j => counts[j]! < available[j]!);
+    if (i === undefined) break;
+    const add = Math.min(left, available[i]! - counts[i]!);
+    counts[i] = counts[i]! + add;
+    left -= add;
+  }
+  return counts;
 }
 
 /* 時間は模擬試験の画面を開いている間だけ進む（閉じたり中断したりすると止まる）。
