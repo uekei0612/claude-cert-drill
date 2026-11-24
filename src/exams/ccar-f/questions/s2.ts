@@ -523,4 +523,270 @@ export const s2: Question[] = [
     answer: 3,
     point: "読むだけの専門役は、tools を絞ったサブエージェント（.claude/agents/）にする。自分の文脈で動く",
   },
+  {
+    id: "s2-21",
+    scenario: "s2",
+    tasks: ["1.7"],
+    stem: "After Claude Code analyzes the auth module, a developer forks the session twice with --fork-session to try a JWT approach in one fork and OAuth2 in the other, running both at once in the same checkout. Each attempt keeps breaking because files change underneath it. What is the cause, and what is the fix?",
+    options: [
+      {
+        text: "--fork-session also copies the repository state; resume without forking so both attempts share one consistent copy of the files.",
+        why: "逆。分岐が複製するのは会話の履歴だけで、ファイルは複製しない。分岐をやめても同じ場所を 2 つが書き換えることは変わらない。",
+      },
+      {
+        text: "The two forks' histories have diverged; use --continue in both terminals so that they share a single conversation instead.",
+        why: "1 つの会話を 2 か所で続けると、2 つの案の話が混ざる。ファイルを同じ場所で書き換え合う問題も残る。",
+      },
+      {
+        text: "Forking copies only the conversation and not the files; give each fork its own checkout, such as a separate git worktree.",
+        why: "正解。セッションの分岐は会話の履歴のコピーで、ファイルは共有される。同時に別々の変更を試すなら、作業ディレクトリを分ける。",
+      },
+      {
+        text: "The forked sessions still hold the parent's stale context; run /compact in each fork before it starts editing any files.",
+        why: "/compact は会話を要約して縮めるだけ。2 つのセッションが同じファイルを書き換え合う原因には効かない。",
+      },
+    ],
+    answer: 2,
+    point:
+      "セッションの分岐（--fork-session）は会話だけを複製し、ファイルは共有する。同時に別の変更を試すなら作業ディレクトリを分ける",
+  },
+  {
+    id: "s2-22",
+    scenario: "s2",
+    tasks: ["2.4"],
+    stem: "The team's .mcp.json defines a server named tickets that points at the production ticket system. On one developer's machine, Claude Code keeps querying a staging instance instead, while everyone else gets production. Some time ago that developer ran claude mcp add for a server also named tickets. What explains this?",
+    options: [
+      {
+        text: "claude mcp add saved that server in local scope by default, and local scope wins over a project server with the same name.",
+        why: "正解。claude mcp add の既定はローカルのスコープで、同じ名前のサーバーはローカル → プロジェクト → ユーザーの順で優先される。個人の定義を消すか名前を変える。",
+      },
+      {
+        text: "Project servers are used only after each developer approves them, and this developer has not yet approved the tickets server.",
+        why: "承認していなければ、そのサーバーが使われないだけ。別の接続先に向く理由にはならない。原因は同じ名前の定義の優先順位。",
+      },
+      {
+        text: "The project and personal definitions are merged field by field, so the personal url replaced only the url in the team's entry.",
+        why: "定義は項目ごとには混ざらない。優先された場所の定義がまるごと使われる。",
+      },
+      {
+        text: "User-scope settings always take priority over project settings, so the team should move the server to user scope for everyone.",
+        why: "順番が違う。ユーザーのスコープはプロジェクトに負ける。それに、ユーザーのスコープに置くと新しく入った人には見えない。",
+      },
+    ],
+    answer: 0,
+    point:
+      "同じ名前の MCP サーバーはローカル → プロジェクト → ユーザーの順で優先（まるごと）。claude mcp add の既定はローカル",
+  },
+  {
+    id: "s2-23",
+    scenario: "s2",
+    tasks: ["2.5"],
+    stem: "Claude Code needs to rename a variable, tmpTotal, that appears 14 times in a single file; no other identifier contains that name. It is calling Edit once per occurrence and padding each old_string with surrounding lines to make it unique, which is slow and has already failed twice. What is the better approach?",
+    options: [
+      {
+        text: "Read the whole file and rewrite it in full with Write, which avoids the uniqueness problem of Edit altogether.",
+        why: "丸ごとの書き直しは最後の手段。ほかの行を書き損じる危険があり、差分も確かめにくい。",
+      },
+      {
+        text: "Use Glob to find every file that contains tmpTotal first, and then edit each of those files in turn.",
+        why: "Glob はファイル名で探す道具で、中身は探さない。それに対象は 1 ファイルで、問題は探し方ではなく置き換え方。",
+      },
+      {
+        text: "Keep making one Edit per occurrence, but include even more surrounding lines so that every old_string is guaranteed unique.",
+        why: "今の遅くて失敗するやり方を、さらに重くするだけ。すべてを同じに置き換えるなら 1 回で済む方法がある。",
+      },
+      {
+        text: "Make a single Edit call with replace_all set to true, so every occurrence in the file is replaced at once.",
+        why: "正解。同じ文字列をファイルの中ですべて置き換えるなら、Edit の replace_all を使う。一意な目印を作る必要が無い。",
+      },
+    ],
+    answer: 3,
+    point:
+      "1 つのファイルの中の同じ文字列をすべて置き換えるなら Edit の replace_all。Read＋Write での書き直しは最後の手段",
+  },
+  {
+    id: "s2-24",
+    scenario: "s2",
+    tasks: ["3.1"],
+    stem: "A developer wants Claude Code to know details that apply only to their own setup for this repository: a local database on port 5433 and a personal sandbox URL. They added these lines to the project's CLAUDE.md, and now teammates' sessions try to connect to that port. Where should these lines go?",
+    options: [
+      {
+        text: "In ~/.claude/CLAUDE.md, the user-level file, so that the lines stay private and apply only to this one developer.",
+        why: "自分だけには効くが、全プロジェクトに効く。このリポジトリだけの設定が、ほかのプロジェクトの作業にも入り込む。",
+      },
+      {
+        text: "In CLAUDE.local.md in the project root, which applies only to this developer in this project and is never committed.",
+        why: "正解。自分だけ・このプロジェクトだけの設定は CLAUDE.local.md に書き、.gitignore に入れる。",
+      },
+      {
+        text: "In .claude/rules/local.md, with a paths pattern that matches only the database configuration files of the project.",
+        why: ".claude/rules はリポジトリに入り、チーム全員に効く。paths は「いつ読むか」を絞るだけで、「誰に効くか」は変わらない。",
+      },
+      {
+        text: "In a packages/db/CLAUDE.md file, so that the lines are loaded only when Claude is working with the database code.",
+        why: "ディレクトリの CLAUDE.md もリポジトリに入り、チーム全員に効く。同僚の作業に入り込む問題は直らない。",
+      },
+    ],
+    answer: 1,
+    point:
+      "自分だけ・このプロジェクトだけの設定は CLAUDE.local.md（コミットしない）。~/.claude/CLAUDE.md は全プロジェクトに効く",
+  },
+  {
+    id: "s2-25",
+    scenario: "s2",
+    tasks: ["3.2"],
+    stem: 'The team has a deploy skill in .claude/skills/deploy/SKILL.md that builds the app and pushes it to staging. Claude has started invoking it on its own when a developer says things like "looks good, ship it" in conversation. The team wants it to run only when someone explicitly types /deploy. What should they change?',
+    options: [
+      {
+        text: "Add allowed-tools: Read to the skill, so that it cannot run the deploy commands when Claude loads it on its own.",
+        why: "allowed-tools は「承認なしで使ってよい」という許可で、ほかのツールを禁止しない。自分から呼ばれることも止めない。",
+      },
+      {
+        text: "Move the skill to ~/.claude/skills/deploy, so that it applies only to the developer who originally wrote it.",
+        why: "置き場所は誰に見えるかを決めるだけで、Claude が自分から呼ぶかどうかは変わらない。チームの人は使えなくなる。",
+      },
+      {
+        text: "Set disable-model-invocation: true in the skill's frontmatter, so it runs only when someone types /deploy.",
+        why: "正解。disable-model-invocation: true のスキルは Claude が自分では読み込まず、人が /名前 で呼んだときだけ動く。副作用のある操作に向く。",
+      },
+      {
+        text: "Add context: fork, so that the deploy runs in a separate context and cannot affect the main conversation.",
+        why: "context: fork は別の文脈で動かすだけ。Claude が自分から呼ぶことは止めない。",
+      },
+    ],
+    answer: 2,
+    point:
+      "副作用のあるスキル（デプロイなど）は disable-model-invocation: true にし、人が /名前 で呼んだときだけ動かす",
+  },
+  {
+    id: "s2-26",
+    scenario: "s2",
+    tasks: ["3.3"],
+    stem: 'The team put its SQL migration conventions in .claude/rules/migrations.md with paths: ["migrations/*.sql"]. Migrations actually live in nested folders such as migrations/2026/03/add_index.sql, and Claude ignores the conventions when it writes them. What is the fix?',
+    options: [
+      {
+        text: 'Change the pattern to "migrations/**/*.sql", so that it also matches the files that sit inside nested folders.',
+        why: "正解。* は 1 つのフォルダの中だけに合う。下のフォルダまで含めるなら ** を使う。合うファイルを触るときだけ読まれる利点はそのまま。",
+      },
+      {
+        text: "Remove the paths field, so that the rule is always loaded and is guaranteed to apply whenever migrations are written.",
+        why: "効くようにはなるが、マイグレーションと関係ない作業でも毎回読まれ、文脈を使う。原因はパターンの書き方。",
+      },
+      {
+        text: "Put the conventions in a CLAUDE.md inside every migrations subfolder, because rules cannot match nested folders.",
+        why: "ルールは ** で入れ子にも合わせられる。全フォルダに同じ CLAUDE.md を置くと、規約を変えるたびに全部を直す必要がある。",
+      },
+      {
+        text: "Reference the rule file from the root CLAUDE.md with an @import line, so that it is loaded on every startup.",
+        why: "@ で読み込むと起動時にいつも入る。節約にならず、パターンの誤りも残る。",
+      },
+    ],
+    answer: 0,
+    point: ".claude/rules の paths は glob。入れ子のフォルダまで合わせるには **（migrations/**/*.sql）",
+  },
+  {
+    id: "s2-27",
+    scenario: "s2",
+    tasks: ["3.4"],
+    stem: "A developer asked Claude Code to rename a configuration option, expecting a two-line change. Partway through, Claude reports that the option is read in 30 files across three services, and that two of the services parse it differently. What should the developer do?",
+    options: [
+      {
+        text: "Let Claude keep editing directly, since the task has already started and switching modes would waste the work done so far.",
+        why: "見積もりが外れたと分かった時点が切り替えどき。解釈の違いを決めないまま進めると、途中でやり直すことになる。",
+      },
+      {
+        text: "Ask Claude to finish the edits quickly, and then rely on the CI test suite to catch any problems that the change causes.",
+        why: "設計の判断（2 つの解釈をどうそろえるか）はテストでは決まらない。テストで見つかるのは壊れた後。",
+      },
+      {
+        text: "Drop Claude Code for this task and do the rename by hand with a global find-and-replace across all three services.",
+        why: "一括の置換では、サービスごとの解釈の違いを扱えない。必要なのは道具を替えることではなく、先に計画すること。",
+      },
+      {
+        text: "Stop and switch to plan mode, so Claude investigates the usages and the team agrees on an approach before any more edits.",
+        why: "正解。多くのファイルにまたがり、設計の判断が要ると分かったら、プランモードで調べて計画を立て、合意してから実装する。",
+      },
+    ],
+    answer: 3,
+    point: "小さいと思った作業が広く・判断が要ると分かったら、途中でもプランモードに切り替えて計画してから進める",
+  },
+  {
+    id: "s2-28",
+    scenario: "s2",
+    tasks: ["3.4"],
+    stem: "A developer wants Claude Code to propose how to split a 2,000-line module into smaller ones. They want to review and adjust the proposal before any file is touched, and then have Claude carry it out. What is the best way to work?",
+    options: [
+      {
+        text: "Ask for a proposal only in the prompt, and tell Claude not to edit anything until the developer gives explicit permission.",
+        why: "指示は確率的で、編集しない保証にならない。読むだけで計画する仕組みが別にある。",
+      },
+      {
+        text: "Start in plan mode, review and adjust the plan Claude proposes, and then approve it so that Claude goes on to implement it.",
+        why: "正解。プランモードでは、読んで調べて計画するが編集はしない。承認すると実装に進む。この流れのための仕組み。",
+      },
+      {
+        text: "Add Edit and Write to the denied tools in the project settings, and remove them again once the plan has been reviewed.",
+        why: "チームで共有する設定を、一人の作業のために書き換えて戻すことになる。手間がかかり、戻し忘れも起きる。",
+      },
+      {
+        text: "Have the Explore subagent write the plan to a file, then start a fresh session that reads the file and performs the split.",
+        why: "Explore は読むだけの探索役で、ファイルを書かない。新しいセッションでは調べた内容も失われる。",
+      },
+    ],
+    answer: 1,
+    point: "変更の前に案を確かめたいならプランモード（読んで計画し、編集しない）。承認すると実装に進む",
+  },
+  {
+    id: "s2-29",
+    scenario: "s2",
+    tasks: ["3.5"],
+    stem: "Claude Code's first version of a form validator has three problems: the email rule rejects valid addresses, the order of error messages changes when the email rule fails, and the submit button's state depends on both. Fixing them one message at a time keeps bringing back earlier problems. How should the developer proceed?",
+    options: [
+      {
+        text: "Describe all three problems together in one message, since they interact, and ask for a fix that addresses them as a whole.",
+        why: "正解。影響し合う問題はまとめて伝え、まとめて直させる。1 つずつだと、ほかの問題を知らないまま直すので、別の所を壊す。独立した問題なら 1 つずつでよい。",
+      },
+      {
+        text: "Keep sending one problem per message, but ask Claude to be especially careful not to change any code it fixed earlier.",
+        why: "「気をつけて」は効かない。問題どうしが影響し合う以上、前のコードに触れずには直せないこともある。",
+      },
+      {
+        text: "Start a fresh session for each of the problems, so that earlier fixes do not confuse Claude's understanding of the code.",
+        why: "影響し合う問題を別々の文脈で直すと、互いを知らないまま直すので、また壊し合う。",
+      },
+      {
+        text: "Rewrite the validator by hand, because iterative refinement with Claude does not work when problems depend on each other.",
+        why: "反復が効かないのではなく、伝え方の問題。影響し合う問題はまとめて伝えれば直せる。",
+      },
+    ],
+    answer: 0,
+    point: "影響し合う問題はまとめて伝えて直させる。独立した問題は 1 つずつでよい",
+  },
+  {
+    id: "s2-30",
+    scenario: "s2",
+    tasks: ["5.4"],
+    stem: "Two hours into tracing how a payment ID flows through a large monorepo, the context is nearly full. The developer wants to continue in the same session without losing the call sites and conclusions found so far. What should they do?",
+    options: [
+      {
+        text: "Run /clear to free up the context, and then ask Claude to continue the investigation from where it left off.",
+        why: "/clear は会話を消す。見つけた呼び出し箇所も結論も消え、どこで中断したかも分からなくなる。",
+      },
+      {
+        text: "Keep working and let the session compact automatically when it needs to, since every detail is preserved that way.",
+        why: "自動の要約では、何を残すかを選べない。要約は細かな事実（ファイル名や行）から落ちる。",
+      },
+      {
+        text: "Run /compact with instructions saying to keep the call sites and the conclusions found so far, then carry on.",
+        why: "正解。/compact は会話を要約して文脈を縮め、何を残すかを指示できる。見つけた事実をファイルに書き出しておけば、さらに確実。",
+      },
+      {
+        text: "Paste the whole transcript into a new session, so that Claude has every detail from the investigation available again.",
+        why: "同じ量を貼れば、新しいセッションもすぐに埋まる。必要なのは要点を選んで残すこと。",
+      },
+    ],
+    answer: 2,
+    point:
+      "文脈が埋まったら /compact に「何を残すか」を指示して縮める（/clear は全部消える、自動の要約は細部から落ちる）",
+  },
 ];

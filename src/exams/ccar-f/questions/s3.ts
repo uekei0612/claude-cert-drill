@@ -523,4 +523,266 @@ export const s3: Question[] = [
     answer: 2,
     point: "サブエージェントの重複と抜けは、コーディネーターが範囲（切り口・情報源）をはっきり分けて渡して防ぐ",
   },
+  {
+    id: "s3-21",
+    scenario: "s3",
+    tasks: ["1.2"],
+    stem: 'The coordinator evaluates each synthesized draft and sends any gaps back for more research. On broad topics it keeps finding "possible gaps," and on one request it has run 14 rounds without ever producing a report. What is the best fix?',
+    options: [
+      {
+        text: "Remove the evaluation step, so that the coordinator passes the first synthesis straight to the report writing agent.",
+        why: "評価をやめると、抜けがそのままレポートに出る。問題は評価することではなく、止める基準が無いこと。",
+      },
+      {
+        text: "Allow the synthesis agent to call the web search agent directly whenever it finds a gap, without involving the coordinator.",
+        why: "サブエージェント同士を直接話させると、流れが見えなくなる。しかも止める基準が無いのは同じで、ループは止まらない。",
+      },
+      {
+        text: "Switch the coordinator to a larger model, which can judge more reliably when a report is thorough enough to publish.",
+        why: "「十分」の基準が書かれていないことは、モデルを大きくしても解けない。判断の材料が無いまま。",
+      },
+      {
+        text: "Give the coordinator explicit completion criteria and a round limit, and have it list the remaining gaps when it stops.",
+        why: "正解。評価して差し戻す仕組みには、何をもって十分とするかの基準と、安全装置としての上限が要る。止めたときは残った抜けを隠さず報告に書く。",
+      },
+    ],
+    answer: 3,
+    point: "評価と差し戻しのループには、終わりの基準（何を満たせば十分か）と回数の上限を置き、残った抜けは報告に書く",
+  },
+  {
+    id: "s3-22",
+    scenario: "s3",
+    tasks: ["1.2"],
+    stem: 'Every request runs through all four subagents in a fixed order, even a narrow question such as "What year was this standard first published?" Such questions take minutes and come back as multi-page reports. How should the coordinator be changed?',
+    options: [
+      {
+        text: "Keep the fixed order for consistency, but instruct each subagent to keep its output short when the request is simple.",
+        why: "出力が短くなっても、要らない工程を全部通る時間はそのまま。どの工程が要るかを決める所が無いのが問題。",
+      },
+      {
+        text: "Have the coordinator analyze each request and invoke only the subagents that the request actually needs.",
+        why: "正解。どの専門役を使うかを依頼に応じて決めるのが、コーディネーターの役目。狭い質問なら検索だけで答えられる。",
+      },
+      {
+        text: 'Route requests with a keyword list in code, so that questions starting with "what year" or "who" go only to search.',
+        why: "言い回しのリストは、少し違う聞き方ですぐ外れる。依頼の中身で判断するのはコーディネーターのモデルに任せる。",
+      },
+      {
+        text: "Let each subagent decide by itself whether to skip its own step, based on the output handed over by the previous one.",
+        why: "各サブエージェントは依頼全体を見ていない。どの工程が要るかの判断は、全体を見ているコーディネーターがする。",
+      },
+    ],
+    answer: 1,
+    point: "コーディネーターは依頼ごとに要るサブエージェントだけを選んで呼ぶ（毎回すべてを固定順で通さない）",
+  },
+  {
+    id: "s3-23",
+    scenario: "s3",
+    tasks: ["1.3"],
+    stem: "You defined the four subagents in the agents option of the Agent SDK, each with a clear description, prompt, and tool list. Yet the coordinator never delegates: it answers from its own knowledge, and the logs show no subagent invocations at all. The coordinator's allowedTools lists only Read and Write. What is most likely missing?",
+    options: [
+      {
+        text: "The Agent tool is not in the coordinator's allowedTools, so it has no way of invoking any of the subagents.",
+        why: "正解。Claude はサブエージェントを Agent ツール（旧名 Task）で起動する。コーディネーターの allowedTools に Agent を入れないと、定義があっても呼べない。",
+      },
+      {
+        text: "Each subagent definition must also include the coordinator's full system prompt, so that it knows it may be called.",
+        why: "サブエージェントが呼ばれるかどうかは、コーディネーターの側の問題。サブエージェントの定義に親のプロンプトは要らない。",
+      },
+      {
+        text: "Subagents have to be started by your application code; the coordinator model cannot start them on its own.",
+        why: "誤り。agents に定義したサブエージェントは、モデルが Agent ツールを呼んで起動する。コードで呼ぶ仕組みではない。",
+      },
+      {
+        text: "The descriptions must be moved into the coordinator's system prompt, because the model never reads agent descriptions.",
+        why: "モデルは description を見てどのサブエージェントに振るかを決める。説明はそのままでよく、足りないのは起動の手段。",
+      },
+    ],
+    answer: 0,
+    point: "サブエージェントを起動させるには、コーディネーターの allowedTools に Agent（旧 Task）を入れる",
+  },
+  {
+    id: "s3-24",
+    scenario: "s3",
+    tasks: ["1.6"],
+    stem: "A request asks for a comparison of the five largest vendors in a market. The coordinator immediately launches five parallel search subagents, guessing the vendor names, and two of its guesses turn out to be wrong. How should this work be decomposed?",
+    options: [
+      {
+        text: "Keep launching all five in parallel, but tell each subagent to swap its vendor if it finds that vendor is not in the top five.",
+        why: "各サブエージェントは全体の順位も、ほかの担当も知らない。替えた先が重なったり、抜けたりする。",
+      },
+      {
+        text: "Hand the whole comparison to a single search subagent, so that it can find the vendors and research each one in turn.",
+        why: "依存関係は解けるが、独立して並列にできる部分まで 1 つの文脈に詰め込み、遅く、文脈も埋まる。",
+      },
+      {
+        text: "First run one step that identifies the five vendors, and only then fan out one subagent per vendor in parallel.",
+        why: "正解。後の作業が前の結果に依存するなら、その部分は順に、独立した部分は並列にする。先に対象を確定させてから広げる。",
+      },
+      {
+        text: "Let the five subagents message each other to agree on which vendors to cover before any of them starts the research.",
+        why: "サブエージェントどうしは直接話さない。担当を決めるのはコーディネーターの役目。",
+      },
+    ],
+    answer: 2,
+    point: "前の結果に依存する部分は順に（対象の特定）、独立した部分は並列に（対象ごとの調査）分解する",
+  },
+  {
+    id: "s3-25",
+    scenario: "s3",
+    tasks: ["2.2"],
+    stem: 'The document analysis agent\'s fetch_document tool returns the same generic error, "Fetch failed," for every problem. When a source is behind a paywall, the agent retries it again and again; when a server is briefly overloaded, it gives up at once. How should fetch_document report errors?',
+    options: [
+      {
+        text: "Return a successful result with empty content for every failure, so the agent never gets caught in a loop of retries.",
+        why: "失敗を空の成功に見せる典型的な誤り。エージェントは「その文書には何も書かれていない」と受け取る。",
+      },
+      {
+        text: "Retry inside the tool until the fetch succeeds, so that the agent never sees any error from fetch_document at all.",
+        why: "有料の壁のような権限の失敗は、何度やっても直らない。ツールが止まらなくなる。",
+      },
+      {
+        text: 'Add a rule to the agent\'s prompt: "If a fetch fails, try it at most twice more before moving on to other sources."',
+        why: "種類が分からないまま一律に扱うだけ。権限の失敗には無駄な再試行が残り、一時的な失敗には足りないこともある。",
+      },
+      {
+        text: "Return isError with a category such as access_denied or transient, and say whether retrying could help.",
+        why: "正解。種類と再試行の可否が分かれば、エージェントは一時的な失敗は再試行し、権限の失敗はほかの情報源に切り替えられる。",
+      },
+    ],
+    answer: 3,
+    point: "失敗は種類（権限・一時的など）と再試行の可否を付けて返す。一律の「失敗しました」では次の手を選べない",
+  },
+  {
+    id: "s3-26",
+    scenario: "s3",
+    tasks: ["2.3"],
+    stem: "The web search agent sometimes answers from its own knowledge without searching, which produces claims with no sources. You want it to always search at least once, but after that to decide freely whether to search more or to finish. How should tool_choice be set?",
+    options: [
+      {
+        text: "Force the search tool by name on the first request only, then switch to auto for all of the turns that follow.",
+        why: "正解。必ずやらせたい最初の 1 回だけを tool で強制し、その後は auto で任せる。強制し続けると終われない。",
+      },
+      {
+        text: "Force the search tool by name on every request, so that the agent is never able to respond without searching first.",
+        why: "毎回強制すると、毎回検索を呼ぶしかなく、答えを返して終えることができない。",
+      },
+      {
+        text: "Set tool_choice to any on every request, so the agent must call some tool but can still choose which one it uses.",
+        why: "毎回何かのツールを呼ぶので、やはり終えられない。最初の回にも検索以外のツールを選べてしまう。",
+      },
+      {
+        text: 'Leave tool_choice on auto, and add a system prompt line saying "Always search before answering, without exception."',
+        why: "指示は確率的で、今の失敗（ときどき検索しない）がそのまま残る。確実に呼ばせたい回は tool_choice で強制する。",
+      },
+    ],
+    answer: 0,
+    point:
+      "必ず呼ばせたいのが最初の 1 回なら、その回だけ tool_choice で名指しし、以降は auto に戻す（強制し続けると終われない）",
+  },
+  {
+    id: "s3-27",
+    scenario: "s3",
+    tasks: ["5.3"],
+    stem: "The web search agent forwards every failed request to the coordinator as soon as it happens, including brief timeouts that would succeed on a second try. The coordinator's context fills up with error reports, and it spends turns re-delegating trivial retries. What is the best change?",
+    options: [
+      {
+        text: "Have the web search agent drop failed requests silently and report only the results that it did manage to retrieve.",
+        why: "失敗を握りつぶすと、コーディネーターは抜けに気づけない。レポートが穴に気づかないまま書かれる。",
+      },
+      {
+        text: "Have the coordinator ignore every error report from its subagents, and treat the missing results as simply not found.",
+        why: "「調べられなかった」と「調べて無かった」を混同する。解決できない失敗まで消える。",
+      },
+      {
+        text: "Retry transient failures inside the subagent, and escalate only unresolved ones with what was tried and any partial results.",
+        why: "正解。一時的な失敗は下で再試行して片付け、上には解決できなかったものだけを、判断に要る情報と一緒に上げる。",
+      },
+      {
+        text: "Stop the whole research run whenever any subagent reports an error, so that the final report never rests on partial data.",
+        why: "一部の失敗で全体を止めるのも誤り。分かったことで進め、穴は報告に明記する。",
+      },
+    ],
+    answer: 2,
+    point: "一時的な失敗は下（サブエージェント）で再試行し、解決できないものだけを試したこと・途中の結果を添えて上へ",
+  },
+  {
+    id: "s3-28",
+    scenario: "s3",
+    tasks: ["5.3"],
+    stem: "The document analysis agent could not access any of the academic papers on a topic, and it said so in its report to the coordinator. Yet the final report reads as if the literature had been fully reviewed: the gap was lost somewhere between the stages. What is the best fix?",
+    options: [
+      {
+        text: "Have the report writing agent search for the academic papers itself whenever it suspects that something might be missing.",
+        why: "役割の外の仕事をさせ、しかも「感じたら」という推測に頼る。分かっている抜けを確実に伝える仕組みにならない。",
+      },
+      {
+        text: "Carry known gaps as a structured field through every stage, and have the final report state them in a limitations section.",
+        why: "正解。抜けの情報も結果の一部として、構造化して次の段階へ渡し続ける。最後に読者に見える形で書く。",
+      },
+      {
+        text: "Have the coordinator retry the document analysis agent until it gets the papers, and hold back the report until then.",
+        why: "アクセスできない論文は再試行しても取れない。レポートがいつまでも出ない。",
+      },
+      {
+        text: "Ask the synthesis agent to write more cautiously in general, so that readers do not assume the coverage was complete.",
+        why: "全体を控えめにしても、何が抜けたのかは伝わらない。具体的な抜けを運ぶ必要がある。",
+      },
+    ],
+    answer: 1,
+    point: "分かっている抜けは構造化した欄として全段階に運び、最終の出力で明記する（途中で落とさない）",
+  },
+  {
+    id: "s3-29",
+    scenario: "s3",
+    tasks: ["5.5"],
+    stem: "Editors can fact-check only about 10% of the claims in each report. The team plans to send them the claims for which the synthesis agent reports a confidence below 0.7. In a pilot, however, many claims rated 0.9 turned out to be wrong. How should claims be selected for review?",
+    options: [
+      {
+        text: "Lower the threshold to 0.5 so that fewer claims are sent, since editors have very limited time for each report.",
+        why: "当てにならない数字の閾値を動かしても、0.9 の誤りは捕まらない。むしろ見逃しが増える。",
+      },
+      {
+        text: "Ask the synthesis agent to think harder before rating its confidence, so that the 0.7 threshold becomes trustworthy.",
+        why: "自己申告の確信度は、考えさせても較正されない。正解つきのデータで確かめない限り、閾値の根拠にならない。",
+      },
+      {
+        text: "Choose the claims for review purely at random, since no available signal can tell which claims are more likely to be wrong.",
+        why: "無作為の抜き取りは監視には役立つが、それだけでは誤りやすい主張を優先できない。手がかりは確かめられる形で存在する。",
+      },
+      {
+        text: "Prioritize by observable signals such as single-source or conflicting claims, calibrated on a fact-checked sample.",
+        why: "正解。自己申告の確信度ではなく、確かめられる手がかりで優先順位を付け、それが本当に誤りを捕まえるかを正解つきの見本で確かめる。",
+      },
+    ],
+    answer: 3,
+    point:
+      "人の確認に回すものは、自己申告の確信度でなく、確かめられる手がかり（単一出典・食い違い）で選び、正解つきの見本で較正する",
+  },
+  {
+    id: "s3-30",
+    scenario: "s3",
+    tasks: ["5.6"],
+    stem: 'A source says a new regulation "may take effect as early as 2027, pending review." The final report states, "The regulation takes effect in 2027," citing that source. Spot checks find many similar cases. What is the best fix?',
+    options: [
+      {
+        text: "Pass each claim along with the source's exact qualifying wording, and require the report to keep that level of certainty.",
+        why: "正解。出典を保つとは、出典の URL だけでなく、出典がどこまで言っているか（可能性・条件付き）も保つこと。主張と一緒に運ぶ。",
+      },
+      {
+        text: "Drop citations from statements about future events, since such statements are uncertain by nature and cannot be sourced.",
+        why: "出典を外すと、読者は確かめる手段を失う。問題は出典ではなく、言い切りに変わったこと。",
+      },
+      {
+        text: "Add a general disclaimer at the end of every report saying that some statements may be less certain than they appear.",
+        why: "どの文が言い過ぎなのか分からない。具体的な主張ごとに確かさを保つ必要がある。",
+      },
+      {
+        text: "Have the report writing agent leave out every mention of dates, so that no timing claim can ever be overstated.",
+        why: "読者に要る情報を捨てるだけ。日付は出典の確かさのまま書けばよい。",
+      },
+    ],
+    answer: 0,
+    point: "出典の保持には確かさの度合いも含む。「可能性がある」「審査しだい」を言い切りに変えず、主張と一緒に運ぶ",
+  },
 ];

@@ -522,4 +522,264 @@ export const s6: Question[] = [
     answer: 3,
     point: "重要な項目は独立した 2 回目のパスで抜き出し、食い違いを確認に回す",
   },
+  {
+    id: "s6-21",
+    scenario: "s6",
+    tasks: ["4.1"],
+    stem: 'The invoice_date field is often filled with the due date or with the end of the service period instead. The schema describes the field only as "The date of the invoice." What is the most effective fix?',
+    options: [
+      {
+        text: "Ask the model to be especially careful with every date field, because dates are the most error-prone part of the record.",
+        why: "「注意して」は効かない。何が請求日で何がそうでないかの基準が無いのが原因。",
+      },
+      {
+        text: "Define invoice_date precisely in its description, naming the dates that must not be used, such as the due date.",
+        why: "正解。あいまいな定義は誤検出の元。何を入れるかと、似ているが入れないものを具体的に書く。",
+      },
+      {
+        text: "Drop invoice_date from the schema and compute it later from the due date minus the vendor's usual payment terms.",
+        why: "原文にある値を捨てて、推定の値を作る。支払条件が違う請求書では誤る。",
+      },
+      {
+        text: "Have the model return every date found on the invoice as a list, and let downstream systems decide which one is which.",
+        why: "判断を、文脈を持たない下流に押しつけるだけ。抽出の役目を果たしていない。",
+      },
+    ],
+    answer: 1,
+    point: "欄の定義はあいまいにしない。入れるものと、似ているが入れないもの（支払期日など）を説明に書く",
+  },
+  {
+    id: "s6-22",
+    scenario: "s6",
+    tasks: ["4.3"],
+    stem: "The schema's document_type field is an enum of invoice, contract, and report. When the pipeline receives purchase orders and shipping notices, the model labels them invoice, and they flow into invoice processing downstream. What is the best fix?",
+    options: [
+      {
+        text: "Add every document type you can think of to the enum, so that no document will ever fall outside the list.",
+        why: "どれだけ足しても、いずれ一覧に無い文書が来る。そのときにまた近いものに押し込まれる。",
+      },
+      {
+        text: "Make document_type a free-text string, so that the model can describe any type of document it encounters.",
+        why: "表記が揺れ、下流で振り分けられなくなる。決まった値で扱える利点を捨てる。",
+      },
+      {
+        text: "Instruct the model to choose the closest type in the enum whenever a document does not fit any of them exactly.",
+        why: "今の誤り（注文書を請求書にする）をそのまま公認するだけ。",
+      },
+      {
+        text: 'Add an "other" value plus a string field that describes the actual type, and route such documents to review.',
+        why: "正解。列挙型には、どれにも当てはまらないときの逃げ道を用意する。逃げ道が無いと、モデルは近い値に押し込む。",
+      },
+    ],
+    answer: 3,
+    point: "列挙型には逃げ道（other ＋詳細の文字列）を用意する。無いと近い値に押し込まれる",
+  },
+  {
+    id: "s6-23",
+    scenario: "s6",
+    tasks: ["4.3"],
+    stem: 'The extraction tool\'s input_schema is well designed, but about 1 in 200 responses still breaks it: an amount arrives as the string "1200" instead of a number, or a required field is missing. What is the most direct fix?',
+    options: [
+      {
+        text: "Add strict: true to the tool definition, so that the tool input is guaranteed to match the schema.",
+        why: "正解。strict の無いツールは、ほぼスキーマどおりになるだけ。strict: true を付けると、型の違いや必須の欄の抜けが起きなくなる。",
+      },
+      {
+        text: "Add few-shot examples that show amounts written as numbers and every required field filled in.",
+        why: "率は下がるかもしれないが、保証にはならない。形の保証は設定でできる。",
+      },
+      {
+        text: "Remove the required fields from the schema, so that responses missing one of them no longer fail validation.",
+        why: "検証を緩めて問題を見えなくするだけ。下流に欠けたレコードが流れる。",
+      },
+      {
+        text: "Retry every response three times and keep whichever attempt happens to pass schema validation.",
+        why: "費用が何倍にもなり、3 回とも外れることもある。形は設定で保証できる。",
+      },
+    ],
+    answer: 0,
+    point: "ツールの入力の形を保証したいなら strict: true（strict の無いツールは「ほぼ」形どおりなだけ）",
+  },
+  {
+    id: "s6-24",
+    scenario: "s6",
+    tasks: ["4.4"],
+    stem: "Reviewers correct hundreds of extracted fields each week in the review queue, but the same kinds of mistakes keep coming back, because the corrections are saved only to the final records. What is the best way to use the corrections?",
+    options: [
+      {
+        text: "Ask reviewers to add a short note to each correction, and paste all the notes into the extraction prompt every week.",
+        why: "メモが溜まるほどプロンプトが膨らみ、整理されない指示の山になる。どの誤りが多いかも分からない。",
+      },
+      {
+        text: "Fine-tune a custom model on the corrected records every month, so that it learns directly from the reviewers' fixes.",
+        why: "重い手で、この試験の範囲の外。まずは誤りの型を見つけて、プロンプトと例を直す。",
+      },
+      {
+        text: "Log each correction with its field and document type, find recurring patterns, and fix the prompt or examples for them.",
+        why: "正解。人の修正を、欄・文書の種類と結びつけて記録すれば、どこが弱いかが分かる。型ごとに直し、効いたかも測れる。",
+      },
+      {
+        text: "Automatically apply each reviewer's past corrections to new documents from the same vendor before they reach review.",
+        why: "前の文書の値を機械的に当てはめると、内容の違う文書で誤る。誤りの原因も直らない。",
+      },
+    ],
+    answer: 2,
+    point: "人の修正は欄・文書の種類と結びつけて記録し、繰り返す型を見つけてプロンプトや例を直す",
+  },
+  {
+    id: "s6-25",
+    scenario: "s6",
+    tasks: ["4.4", "5.6"],
+    stem: "Some extracted contract records contain party names and amounts that appear nowhere in the source document, yet these records pass schema validation. What is the most effective way to catch them automatically?",
+    options: [
+      {
+        text: "Ask the model to rate its confidence in each field, and drop any field whose self-rated confidence is below 0.8.",
+        why: "作り出した値にも、モデルは高い確信度を付けることがある。自己申告は確かめる手段にならない。",
+      },
+      {
+        text: "Require a verbatim source quote for each field, and check in code that every quote actually appears in the document.",
+        why: "正解。値の出どころを引用で示させれば、文書にあるかをコードで機械的に確かめられる。無ければ再試行か確認へ回す。",
+      },
+      {
+        text: "Run the same extraction twice with the same prompt and model, and accept a field only if both runs agree exactly.",
+        why: "同じ条件では同じ思い込みを繰り返すことがある。一致しても、文書にあるとは限らない。",
+      },
+      {
+        text: 'Add "Do not make up any values" to the prompt in capital letters, both at the very beginning and at the end.',
+        why: "強調しても確率的。作り出した値を検出する仕組みにはならない。",
+      },
+    ],
+    answer: 1,
+    point: "値の作り話は、欄ごとに原文の引用を付けさせ、引用が文書にあるかをコードで確かめて捕まえる",
+  },
+  {
+    id: "s6-26",
+    scenario: "s6",
+    tasks: ["4.5"],
+    stem: "After a nightly batch of 5,000 extraction requests, about 3% of records end up attached to the wrong source documents. The pipeline pairs each result with the request at the same position in the submitted list. What is the fix?",
+    options: [
+      {
+        text: "Submit smaller batches of 100 requests each, since the results of a small batch always come back in their original order.",
+        why: "そういう保証は無い。バッチの結果の順番は、大きさに関わらず保証されない。",
+      },
+      {
+        text: "Sort the results alphabetically by vendor name before pairing them, so that they line up with the sorted requests.",
+        why: "取引先の名前は抽出された値で、誤ることも重なることもある。結びつけの鍵にならない。",
+      },
+      {
+        text: "Switch to synchronous calls, since the Message Batches API is not suited to any job where result order matters.",
+        why: "順番に頼らずに対応させる手段がある。費用が半分になる利点を捨てる必要は無い。",
+      },
+      {
+        text: "Give every request a unique custom_id, such as the document ID, and match each result by that ID rather than by position.",
+        why: "正解。バッチの結果の順番は保証されない。リクエストと結果は custom_id で対応させる。",
+      },
+    ],
+    answer: 3,
+    point: "バッチの結果の順番は保証されない。位置ではなく custom_id（文書の ID など）で対応させる",
+  },
+  {
+    id: "s6-27",
+    scenario: "s6",
+    tasks: ["4.6"],
+    stem: "A verification pass checks each extracted record against its document. It receives the document, the record, and the extraction pass's full reasoning, and it almost always agrees, even with records that later turn out to be wrong. What is the best change?",
+    options: [
+      {
+        text: "Give the verifier only the document and the record, not the extractor's reasoning, so it judges each field on its own.",
+        why: "正解。前のパスの考えを見せると、その筋道に引っ張られて同じ誤りを認めてしまう。独立に判断できる材料だけを渡す。",
+      },
+      {
+        text: "Run the verifier in the same conversation as the extraction, so that it can ask the extractor about its choices.",
+        why: "同じ文脈では、自分の判断を疑いにくい。独立した確認の意味がさらに薄れる。",
+      },
+      {
+        text: "Tell the verifier that the extractor is frequently wrong, so that it approaches every record with more suspicion.",
+        why: "偏りを逆向きに入れるだけで、正しいレコードまで疑い、確認に回る件数が増える。",
+      },
+      {
+        text: "Remove the verification pass entirely, since a pass that always agrees adds cost without catching any errors.",
+        why: "役に立っていないのは、渡し方が悪いから。独立に判断させれば誤りを捕まえられる。",
+      },
+    ],
+    answer: 0,
+    point: "確認のパスには前のパスの考えを渡さない。文書と結果だけで独立に判断させる",
+  },
+  {
+    id: "s6-28",
+    scenario: "s6",
+    tasks: ["5.1"],
+    stem: "To save setup effort, the pipeline extracts 50 invoices one after another in a single long conversation. Records near the end sometimes contain vendor names and amounts that belong to earlier invoices. What is the best fix?",
+    options: [
+      {
+        text: "Restate at the top of each new invoice that the model must ignore all of the invoices that came before it.",
+        why: "前の請求書は文脈に残ったまま。「無視して」は確率的で、混ざる元を取り除かない。",
+      },
+      {
+        text: "Switch to a model with a larger context window, so that all 50 invoices fit with plenty of room to spare.",
+        why: "入るかどうかの問題ではない。関係ない請求書が同じ文脈にあることが、混ざる原因。",
+      },
+      {
+        text: "Extract each invoice in its own request, passing only the shared instructions and the schema each time.",
+        why: "正解。互いに独立した文書は、別々の文脈で処理する。ほかの文書が文脈に無ければ、混ざりようがない。",
+      },
+      {
+        text: "Ask the model to summarize the earlier invoices every ten documents, so that the conversation stays short.",
+        why: "要約にも前の請求書の値が残る。そもそも前の請求書の情報は要らない。",
+      },
+    ],
+    answer: 2,
+    point: "独立した文書は 1 つずつ別のリクエスト（文脈）で処理する。同じ会話に並べると値が混ざる",
+  },
+  {
+    id: "s6-29",
+    scenario: "s6",
+    tasks: ["5.5"],
+    stem: "Field-level confidence thresholds were calibrated on a labeled set of domestic invoices, and records above the thresholds skip human review. The company is now starting to receive invoices from overseas suppliers, with new layouts. What should happen before those invoices are allowed to skip review?",
+    options: [
+      {
+        text: "Nothing needs to change, since the thresholds were calibrated on labeled data and therefore apply to any invoice.",
+        why: "較正は、測ったデータに似たものにしか効かない。新しい種類では、同じ確信度でも誤りの率が違い得る。",
+      },
+      {
+        text: "Send them all to review at first, and calibrate thresholds on a labeled sample of the new type before automating.",
+        why: "正解。確信度は種類ごとに較正し直す。新しい種類は、正解つきのデータで測ってから確認を減らす。",
+      },
+      {
+        text: "Raise the thresholds for every invoice type by 0.1, so that the whole system becomes more cautious across the board.",
+        why: "根拠の無い一律の調整。新しい種類で足りるかも分からず、国内の請求書の自動化まで減る。",
+      },
+      {
+        text: "Ask the model to report a lower confidence whenever an invoice looks unfamiliar, so the existing thresholds still work.",
+        why: "自己申告の調整は較正にならない。下げ方が正しいかを確かめる手段が無い。",
+      },
+    ],
+    answer: 1,
+    point: "確信度の閾値は種類ごとに較正する。新しい種類の文書は、正解つきの見本で測ってから確認を減らす",
+  },
+  {
+    id: "s6-30",
+    scenario: "s6",
+    tasks: ["5.6"],
+    stem: 'A contract states its fee as "$12,000" in the payment table but as "ten thousand dollars" in the body text. The current pipeline silently takes the value from the table. How should conflicts like this be handled?',
+    options: [
+      {
+        text: "Always prefer the number written in figures, since figures are more precise than amounts written out in words.",
+        why: "一律の規則で片方を選ぶと、それが誤りのときに黙って誤る。どちらが正しいかは文書だけでは決まらない。",
+      },
+      {
+        text: "Average the two values and record the result, so that the error is at most half of the difference between them.",
+        why: "どちらの文書にも無い値を作る。平均は答えにならない。",
+      },
+      {
+        text: "Take whichever value appears first in the document, since earlier statements usually define the contract's terms.",
+        why: "勝手な規則で選ぶのは同じ。食い違いがあったこと自体が隠れる。",
+      },
+      {
+        text: "Record both values along with their locations, mark the field as conflicting, and route the contract to review.",
+        why: "正解。食い違いは選ばず、混ぜず、両方を出典（場所）つきで残して人に判断させる。",
+      },
+    ],
+    answer: 3,
+    point: "文書の中の食い違いは選ばない・混ぜない。両方を場所つきで残し、食い違いとして確認に回す",
+  },
 ];
