@@ -1,5 +1,6 @@
 /* 練習の 1 回分の組み立て。
    期限切れ（古い順）→ 未出題（配点 ×（1 − その分野の覚えた割合）で重み付けして選ぶ）→ 期限前（近い順）。
+   期限が同じ日の問題どうしはランダムに選ぶ（#97）。
    問題が少ない資格なので、同じ回に同じ問題は入れない（足りなければ短い回になる） */
 import type { Exam, Question } from "../exam/types";
 import { domainOf, shufflesOptions } from "../exam/types";
@@ -38,7 +39,9 @@ export function planPractice(
   rng: Rng,
   { size = 10, maxNew = 6, only, ids }: PracticeOptions = {},
 ): string[] {
-  const pool = ids ? exam.questions.filter(q => ids.includes(q.id)) : filterQuestions(exam, only);
+  // 先に混ぜておく。期限は日で数える（#90）ので同じ日の問題は期限が同点になり、
+  // 混ぜないと並べ替えで問題 ID の順が残って、毎回同じ問題から選ばれる（#97）
+  const pool = shuffle(rng, ids ? exam.questions.filter(q => ids.includes(q.id)) : filterQuestions(exam, only));
   const dueAt = (q: Question) => dueOf(statOf(q.id)!);
   const due = pool.filter(q => isDue(statOf(q.id), now)).sort((a, b) => dueAt(a) - dueAt(b));
   const fresh = shuffle(
@@ -60,7 +63,9 @@ export function planPractice(
     return out;
   };
 
-  const picked: Question[] = due.slice(0, size);
+  // 復習が溜まっても新しい問題に進めるよう、未出題が残っているあいだは回の 3 分の 1 を未出題に取っておく（#98）
+  const reserved = Math.min(maxNew, fresh.length, Math.ceil(size / 3));
+  const picked: Question[] = due.slice(0, size - reserved);
   picked.push(...takeFresh(Math.min(maxNew, size - picked.length)));
   picked.push(...ahead.slice(0, Math.max(0, size - picked.length)));
   picked.push(...takeFresh(size - picked.length));
