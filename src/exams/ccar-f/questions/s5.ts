@@ -524,4 +524,267 @@ export const s5: Question[] = [
     answer: 3,
     point: "確信度で出し先を分ける：確かなものは行ごとのコメント、低いものは控えめな要約に残す",
   },
+  {
+    id: "s5-21",
+    scenario: "s5",
+    tasks: ["3.1", "3.6"],
+    stem: "To make startup faster and more predictable, the CI review job was switched to claude -p --bare. Since then, reviews ignore the conventions in the repository's CLAUDE.md, although the job still runs without errors. What is the cause, and what is the right fix?",
+    options: [
+      {
+        text: "CI runners have no home directory, so CLAUDE.md cannot be found; copy it into ~/.claude/CLAUDE.md on the runner.",
+        why: "プロジェクトの CLAUDE.md はホームディレクトリと関係なく見つかる。変えたのは --bare で、それが原因。",
+      },
+      {
+        text: "CLAUDE.md is read only in interactive sessions and -p never loads it, so the conventions must be moved into a skill.",
+        why: "-p でも CLAUDE.md は読まれる。読まれなくなったのは --bare を付けたから。",
+      },
+      {
+        text: "--bare skips loading CLAUDE.md; pass the conventions explicitly, for example with --append-system-prompt-file.",
+        why: "正解。--bare は CLAUDE.md などを読まずに速く、毎回同じ条件で起動する。効かせたい基準は明示して渡す（または --bare を外す）。",
+      },
+      {
+        text: "The CLAUDE.md is over 200 lines long, so -p truncates it; split it with @imports so that every part gets loaded.",
+        why: "200 行は守られやすさの目安で、切られる上限ではない。しかも変わったのは --bare を付けたことだけ。",
+      },
+    ],
+    answer: 2,
+    point:
+      "claude -p は CLAUDE.md を読むが、--bare は読まない。--bare で動かすなら基準は --append-system-prompt-file などで明示して渡す",
+  },
+  {
+    id: "s5-22",
+    scenario: "s5",
+    tasks: ["3.3"],
+    stem: 'Security review rules for request handlers live in .claude/rules/handlers.md with paths: ["**/*.handler.ts"]. A teammate argues that the CI review job never edits files, so the rule will never load there, and proposes copying it into the root CLAUDE.md. What is correct?',
+    options: [
+      {
+        text: "Path rules also load when Claude reads a matching file, so they apply when the review reads the changed handlers.",
+        why: "正解。paths 付きのルールは、合うファイルを読む・書く・編集するときに読み込まれる。読むだけのレビューでも効く。",
+      },
+      {
+        text: "The teammate is right: path rules load only on edits, so the root CLAUDE.md is the only way to reach the review job.",
+        why: "誤り。読むときにも読み込まれる。ルートに写すと、ハンドラーと関係ないレビューでも毎回読まれる。",
+      },
+      {
+        text: "Path rules never load in -p mode, so the rule must be passed with --append-system-prompt on every CI run instead.",
+        why: "-p でもルールは読まれる（--bare を付けた場合は別）。毎回すべてを渡すと、関係ない変更のレビューにも入る。",
+      },
+      {
+        text: "Copy it into the root CLAUDE.md while keeping the rule file as well, since loading the same rule twice makes it stronger.",
+        why: "同じ規則を 2 か所に置くと、文脈を余分に使い、片方だけ直したときに食い違いの元になる。",
+      },
+    ],
+    answer: 0,
+    point: "paths 付きのルールは、合うファイルを読むときにも読み込まれる（編集しないレビューでも効く）",
+  },
+  {
+    id: "s5-23",
+    scenario: "s5",
+    tasks: ["3.5"],
+    stem: "The CI job asks Claude to propose new unit tests for each pull request. About a third of the proposed tests do not compile or fail for trivial reasons, and developers have started ignoring them. What is the most effective improvement?",
+    options: [
+      {
+        text: "Ask Claude in the prompt to double-check that every test it writes compiles before including it in the output.",
+        why: "頭の中の見直しで、実際には走らせていない。コンパイラーやテストの実行が返す本物のエラーには及ばない。",
+      },
+      {
+        text: "Post only the test names and descriptions, and let developers write the actual test code themselves if they want it.",
+        why: "提案の価値の大半を捨てる。直すべきは、出す前に確かめていないこと。",
+      },
+      {
+        text: "Switch to a larger model for test generation, since compile errors mostly come from limited reasoning ability.",
+        why: "大きいモデルでも、走らせずに書いたテストは外れる。確かめて直す仕組みが要る。",
+      },
+      {
+        text: "Run the proposed tests in CI, feed the real errors back to Claude for a fix, and post only the tests that then run cleanly.",
+        why: "正解。実行の結果という具体的な手がかりを返して反復させると、確実に直る。確かめたものだけを出せば信頼も戻る。",
+      },
+    ],
+    answer: 3,
+    point: "生成したテストは実際に走らせ、本物のエラーを返して直させる。確かめたものだけを出す",
+  },
+  {
+    id: "s5-24",
+    scenario: "s5",
+    tasks: ["3.6"],
+    stem: "The CI job runs claude -p with --output-format json and --json-schema, then reads .structured_output.findings with jq to post comments. Occasionally the job crashes because structured_output is missing; in those runs Claude did not produce output that matched the schema. What should the job do?",
+    options: [
+      {
+        text: "Drop --json-schema and parse the free-text review with a regular expression, since free text is always present.",
+        why: "形の保証を捨てて、壊れやすい文章の解析に戻る。欄が無いときを扱えば済む。",
+      },
+      {
+        text: "Check that the run succeeded and that structured_output exists before parsing, and handle failed runs separately.",
+        why: "正解。スキーマに合う出力が得られないと structured_output の欄は無くなる。使う前に有無を確かめ、無ければ再実行するか、失敗として知らせる。",
+      },
+      {
+        text: "Raise --max-turns to a very large value, so that runs never stop early and structured_output is always present.",
+        why: "欄が無くなる理由は上限だけではない（依頼に応じなかったときなど）。どんな上限でも、無い場合に備える必要がある。",
+      },
+      {
+        text: "Tell Claude in the prompt to always output the JSON no matter what happens, so that the field is never missing.",
+        why: "指示は確率的で、無くなる場合をゼロにできない。受け取る側で確かめる。",
+      },
+    ],
+    answer: 1,
+    point:
+      "--json-schema でも structured_output が無いことがある。読む前に実行の成否と欄の有無を確かめ、失敗は別に扱う",
+  },
+  {
+    id: "s5-25",
+    scenario: "s5",
+    tasks: ["3.6", "5.4"],
+    stem: "The CI review job's prompt says only \"Review this pull request.\" Claude spends many turns exploring the repository to work out what changed, and on large repositories it often hits the job's time limit before posting anything. What is the best fix?",
+    options: [
+      {
+        text: "Raise the CI timeout and --max-turns substantially, so that Claude has enough time to explore the whole repository.",
+        why: "変更を探すという無駄な作業に、もっと時間とお金を使わせるだけ。",
+      },
+      {
+        text: "Paste the contents of the entire repository into the prompt, so that Claude never spends turns searching for anything.",
+        why: "文脈が埋まり、変更に注意が向かない。大きなリポジトリでは入りきらない。",
+      },
+      {
+        text: "Pass the PR's diff and its changed-file list in the prompt, so that Claude starts from the change and reads only related code.",
+        why: "正解。CI 側ですでに分かっている情報（差分・変わったファイル）は、探させずに渡す。そこから関係する所だけを読ませる。",
+      },
+      {
+        text: "Run the review on the main branch nightly instead of on each pull request, so that timeouts no longer block merges.",
+        why: "マージの前にレビューするという目的を捨てる。探索の無駄はそのまま。",
+      },
+    ],
+    answer: 2,
+    point: "CI では差分と変わったファイルの一覧をプロンプトで渡し、変更から読み始めさせる（探させない）",
+  },
+  {
+    id: "s5-26",
+    scenario: "s5",
+    tasks: ["4.1"],
+    stem: "Many review comments point out formatting and import-order problems that the project's linter and formatter already enforce in the same CI run. Developers say these comments bury the useful ones. What is the best change to the review prompt?",
+    options: [
+      {
+        text: "State that issues the linter and formatter already check are out of scope, and list what to report instead.",
+        why: "正解。報告しないもの（ほかの仕組みが見ているもの）と、報告するものを具体的に書く。基準がはっきりすれば雑音が消える。",
+      },
+      {
+        text: "Ask Claude to report only the issues it is highly confident about, so that the weaker comments are left out.",
+        why: "整形の問題には高い確信を持てるので、むしろ残る。「確信の高いものだけ」はあいまいで効かない。",
+      },
+      {
+        text: "Limit the review to five comments per pull request, so that the noise is capped no matter what Claude finds.",
+        why: "数で切ると、整形のコメントが先に枠を取り、大事な指摘が落ちることがある。",
+      },
+      {
+        text: "Ask Claude to keep its comments more concise, so that each formatting comment takes up less space on the page.",
+        why: "短くなっても数は同じで、役立つコメントが埋もれる問題は残る。",
+      },
+    ],
+    answer: 0,
+    point: "報告しないもの（linter など他の仕組みが見ているもの）をはっきり書き、報告するものを並べる",
+  },
+  {
+    id: "s5-27",
+    scenario: "s5",
+    tasks: ["4.2"],
+    stem: "To teach the review comment style, the prompt includes four few-shot examples, all about SQL injection in Python. Reviews now mention SQL injection on many pull requests that contain no database code, while comments on other kinds of issue come out in inconsistent styles. What should change?",
+    options: [
+      {
+        text: "Add ten more SQL injection examples, so that the model learns more precisely when that issue actually applies.",
+        why: "偏りがさらに強まる。ほかの種類の問題の書き方は相変わらず示されない。",
+      },
+      {
+        text: "Remove all the examples and describe the style in prose, since examples always pull the model toward their topic.",
+        why: "例は書き方を揃える最も効く手段。問題は例を使うことではなく、場面が偏っていること。",
+      },
+      {
+        text: 'Keep the same examples but add "Do not over-report SQL injection" to the instructions to correct the bias.',
+        why: "例が示す偏りに、指示で逆らわせるだけ。ほかの種類の書き方の手本が無いことも直らない。",
+      },
+      {
+        text: "Use a few examples covering varied issue types and languages, each with a short note on why it was flagged.",
+        why: "正解。例は場面を散らし、理由を添える。モデルは話題ではなく書き方と判断の仕方を学ぶ。",
+      },
+    ],
+    answer: 3,
+    point: "few-shot の例は場面（種類・言語）を散らし、理由を添える。同じ話題の例ばかりだと話題ごと真似る",
+  },
+  {
+    id: "s5-28",
+    scenario: "s5",
+    tasks: ["4.2"],
+    stem: "Some review comments mention files, such as billing/invoice.py, that do not exist in the pull request. These names come from the few-shot examples, which sit in the prompt as plain text directly after the instructions and before the diff. What is the best fix?",
+    options: [
+      {
+        text: "Strip all file names out of the examples, so that nothing from them can be copied into the real comments.",
+        why: "例の具体性が落ち、手本としての効き目も落ちる。原因は、例と実際の入力の境目が無いこと。",
+      },
+      {
+        text: "Wrap each example in <example> tags, and state that the examples show format only and are not part of the PR.",
+        why: "正解。例は <example> タグで指示や入力と分ける。何のための例かを書けば、中身を実際の入力と混同しにくくなる。",
+      },
+      {
+        text: "Move the examples to the end of the prompt, after the diff, so that the model reads them last and treats them separately.",
+        why: "置く場所を変えても、境目が無いことは同じ。差分と地続きになり、かえって混ざりやすい。",
+      },
+      {
+        text: "Add a post-processing step that deletes any comment mentioning a file that does not appear in the diff.",
+        why: "症状を消すだけで、例と入力が混ざる原因は残る。ファイル名以外の形で混ざったものは捕まらない。",
+      },
+    ],
+    answer: 1,
+    point: "few-shot の例は <example> タグで指示・入力と分け、何のための例かを書く（中身が出力に混ざらないように）",
+  },
+  {
+    id: "s5-29",
+    scenario: "s5",
+    tasks: ["4.5"],
+    stem: "A weekly audit reviews every service in the monorepo using the Message Batches API, and its summary must be ready by 09:00 on Monday. The batch is submitted at 23:00 on Sunday. Most weeks it finishes overnight, but in some weeks the summary is late. What is the best fix?",
+    options: [
+      {
+        text: "Move the whole audit to synchronous API calls, since the batch API is unreliable and unsuitable for any scheduled work.",
+        why: "バッチは当てにならないのではなく、終わる時刻の保証が無いだけ。間に合うように送れば、費用が半分の利点を保てる。",
+      },
+      {
+        text: "Split the work into many small batches, since small batches are guaranteed to complete within one hour.",
+        why: "そういう保証は無い。どのバッチも、最大 24 時間かかり得る。",
+      },
+      {
+        text: "Submit the batch at least 24 hours before the deadline, since a batch can take up to 24 hours to finish.",
+        why: "正解。バッチは最大 24 時間で、それより早く終わる保証は無い。期限のある処理は、その分の余裕をとって送る。",
+      },
+      {
+        text: "Poll the batch for its status more often, so that the results are collected as soon as processing finishes.",
+        why: "問い合わせを増やしても、処理そのものは速くならない。遅れるのは処理の終わりが遅い週。",
+      },
+    ],
+    answer: 2,
+    point:
+      "Message Batches API は最大 24 時間で、終わる時刻の保証は無い。期限のある処理は 24 時間以上の余裕をとって送る",
+  },
+  {
+    id: "s5-30",
+    scenario: "s5",
+    tasks: ["4.6"],
+    stem: "A single review pass checks each pull request for correctness, security, performance, test coverage, and documentation all at once. Audits show it catches style and documentation issues well but misses many security problems. What is the best restructuring?",
+    options: [
+      {
+        text: "Run focused passes, such as a dedicated security pass, in separate instances, then merge and deduplicate the findings.",
+        why: "正解。観点を詰め込んだ 1 回のパスは注意が散る。観点ごとに焦点を絞ったパスに分け、最後にまとめる。",
+      },
+      {
+        text: "Move security to the top of the single prompt's checklist, so that the model gives it the most attention.",
+        why: "並べ替えても、1 回のパスに観点を詰め込んで注意が散ることは変わらない。",
+      },
+      {
+        text: "Ask the same pass to review each pull request twice in one conversation, the second time focusing on security.",
+        why: "同じ文脈の 2 回目は、1 回目の判断に引っ張られる。焦点を絞るなら、別のインスタンスで。",
+      },
+      {
+        text: "Remove documentation and style from the review entirely, so that the single pass has fewer things to think about.",
+        why: "見つけられていた価値を捨てる。観点を分けて走らせれば、どれも捨てずに済む。",
+      },
+    ],
+    answer: 0,
+    point: "観点を詰め込んだ 1 回のレビューは注意が散る。観点ごとの別のパス（別インスタンス）に分け、最後にまとめる",
+  },
 ];

@@ -524,4 +524,268 @@ export const s1: Question[] = [
     answer: 2,
     point: "特定のツールを確実に呼ばせる回は tool_choice で名指し（{type: tool, name}）。any は「何かのツール」",
   },
+  {
+    id: "s1-21",
+    scenario: "s1",
+    tasks: ["1.1"],
+    stem: "A customer asks about two orders, and the model's response contains two tool_use blocks for lookup_order. Your loop runs only the first block and sends back its result, and the API rejects the next request. How should the loop handle such a response?",
+    options: [
+      {
+        text: "Run only the first tool_use block in each turn, and let the model request the second one again on the next iteration of the loop.",
+        why: "応答に含まれる tool_use には、すべて結果を返す決まり。片方だけ返すとリクエストが拒否され、往復も無駄に増える。",
+      },
+      {
+        text: "Run every tool_use block, then return all of the results together in one user message, each matched to its block by tool_use_id.",
+        why: "正解。1 回の応答に複数の tool_use があれば、すべて実行し、結果は直後の 1 つの user メッセージに tool_use_id 付きで並べる。並列の呼び出しは無駄な往復を減らす正しい振る舞い。",
+      },
+      {
+        text: "Add a system prompt rule that the model must request at most one lookup_order call per response, so the loop never receives two blocks.",
+        why: "並列の呼び出しはモデルの正しい振る舞いで、止める理由が無い。しかも指示は確率的なので、ループ側の扱いの誤りはいずれまた表に出る。",
+      },
+      {
+        text: "Send each tool_result back in its own separate user message, one after another, in the same order as the tool_use blocks appeared.",
+        why: "結果は 1 つの user メッセージにまとめて返す。別々のメッセージで返すと並列の呼び出しが減る、と公式に注意されている。",
+      },
+    ],
+    answer: 1,
+    point: "1 回の応答の tool_use はすべて実行し、結果は tool_use_id 付きで 1 つの user メッセージにまとめて返す",
+  },
+  {
+    id: "s1-22",
+    scenario: "s1",
+    tasks: ["1.4"],
+    stem: "To enforce identity verification, the team added an identity_verified field to process_refund's input, and a gate rejects any call where it is false. Audits still find refunds issued to unverified customers: in those calls the model set identity_verified to true without ever calling get_customer. What should change?",
+    options: [
+      {
+        text: "Make identity_verified a required boolean in the process_refund input schema, so that the model can never leave it out of a call.",
+        why: "必須にしても、モデルが true と書けば通る。値を決めるのがモデルである限り、前提の保証にならない。",
+      },
+      {
+        text: "State in the process_refund tool description that identity_verified may be set to true only after get_customer has succeeded.",
+        why: "説明はモデルへのお願いで、確率的にしか守られない。今まさに守られていないものを、文で重ねても保証にならない。",
+      },
+      {
+        text: "Require the model to copy the get_customer result into the process_refund input as evidence, and let the gate accept only calls that include it.",
+        why: "写した「証拠」もモデルが書く文字列なので、作り出せてしまう。ゲートはモデルの申告ではなく、実際の呼び出しの記録を見る必要がある。",
+      },
+      {
+        text: "Have the gate check your own code's record of which get_customer calls actually succeeded, instead of trusting the flag the model fills in.",
+        why: "正解。前提のゲートは、モデルが書いた値ではなく、コードが見た事実（その会話で get_customer が成功し、同じ顧客 ID を返したこと）で判定する。",
+      },
+    ],
+    answer: 3,
+    point: "前提のゲートはモデルが書く値（verified: true）ではなく、コードが記録した実際のツールの結果で判定する",
+  },
+  {
+    id: "s1-23",
+    scenario: "s1",
+    tasks: ["1.4"],
+    stem: "After escalate_to_human returns successfully, the agent sometimes keeps working the case: it calls process_refund while the human agent is already handling it, and the customer receives two refunds. What is the most reliable way to prevent this?",
+    options: [
+      {
+        text: "Once escalate_to_human succeeds, have your code end the agent loop for that case and block any further process_refund calls on it.",
+        why: "正解。引き継いだ後に手を出さないことは必ず守らせたい手順なので、プログラムで強制する。ループを終え、同じ案件の返金をゲートで止める。",
+      },
+      {
+        text: "Add to the system prompt that, after escalating, the agent should only tell the customer that a human will follow up and must take no other action.",
+        why: "指示は確率的。お金が二重に動くような失敗は、ゼロにできる仕組みで防ぐ。",
+      },
+      {
+        text: 'Make escalate_to_human return a message reading "A human now owns this case. Do not call any more tools." so the model sees it.',
+        why: "ツールの結果の文も、モデルへのお願いにすぎない。読まれやすくはなるが、呼び出しを止める仕組みにはならない。",
+      },
+      {
+        text: "Ask human agents to check the refund history before acting on any escalated case, so that duplicate refunds are caught and reversed by hand.",
+        why: "起きた後の手当てで、二重の返金そのものは防げない。担当者が確かめる前にエージェントが返金することもある。",
+      },
+    ],
+    answer: 0,
+    point: "引き継いだ後に手を出させないのも、プロンプトでなくコード（ループを終える・ゲートで止める）で強制する",
+  },
+  {
+    id: "s1-24",
+    scenario: "s1",
+    tasks: ["1.5"],
+    stem: 'lookup_order accepts only IDs in the form ORD-004512. Customers type them in many ways ("ord 4512", "#4512"), and the model often passes them through as typed, so lookups fail and the agent tells customers the order does not exist. Which fix is most reliable?',
+    options: [
+      {
+        text: 'Add a PostToolUse hook that detects "not found" results and rewrites them into a request asking the customer to re-enter the ID.',
+        why: "PostToolUse は実行の後。誤った ID で調べた結果を言い換えるだけで、正しい ID で調べ直すことにはならず、顧客の手間も増える。",
+      },
+      {
+        text: "Explain the ID format in the system prompt and include several examples of converting what customers type into it.",
+        why: "守る率は上がるが確率的。決まった規則で直せる変換は、コードで確実にやる。",
+      },
+      {
+        text: "Add a PreToolUse hook that rewrites the order ID into the canonical form via updatedInput before the call runs.",
+        why: "正解。PreToolUse フックは実行の前に入力を書き換えられる（updatedInput）。決まった形への正規化を、モデルに頼らず確実にできる。",
+      },
+      {
+        text: "Make lookup_order fall back to a fuzzy search across all orders whenever an exact match fails, returning the closest match it finds.",
+        why: "一番近いものを返すと、別の顧客の注文を見せる危険がある。形の揺れは正規化で直し、あいまいな一致で埋めない。",
+      },
+    ],
+    answer: 2,
+    point:
+      "ツールの入力の決まった形への直しは、PreToolUse フックの updatedInput で実行前に行う（PostToolUse では遅い）",
+  },
+  {
+    id: "s1-25",
+    scenario: "s1",
+    tasks: ["1.6"],
+    stem: "For billing disputes the agent always follows the same steps: classify the dispute, gather the relevant orders and charges, apply the refund policy, and draft a reply. All of this happens in one long prompt, and when a reply is wrong the team cannot tell which step failed. What is the best restructuring?",
+    options: [
+      {
+        text: "Switch to a model with a larger context window, so the single prompt has room for more detailed instructions on each step.",
+        why: "大きい文脈は注意が散る問題を解かない。どの段階で誤ったかも分からないまま。",
+      },
+      {
+        text: "Split the work into a fixed chain of steps, each with its own focused prompt and an intermediate output that can be checked.",
+        why: "正解。手順が毎回同じなら固定のプロンプトチェーンにする。段階ごとに出力を確かめられるので、誤りの場所が分かり、そこだけ直せる。",
+      },
+      {
+        text: "Have a coordinator agent decide dynamically, for each dispute, which subagents to create and in which order to run them.",
+        why: "動的な分解は、調べないと手順が分からない作業のためのもの。毎回同じ手順の作業では、予測しにくく検証もしにくくなるだけ。",
+      },
+      {
+        text: "Keep the single prompt, but ask the model to explain its reasoning for each step at the end of the reply it drafts.",
+        why: "顧客への返事に内部の考えが混ざる。自分で書いた説明は、どの段階で誤ったかの確かな手がかりにもならない。",
+      },
+    ],
+    answer: 1,
+    point:
+      "手順が毎回同じ作業は、段階ごとのプロンプトに分けた固定のチェーンにし、段階ごとの出力を確かめられるようにする",
+  },
+  {
+    id: "s1-26",
+    scenario: "s1",
+    tasks: ["2.1"],
+    stem: "Customers ask whether their refund has gone through. The agent calls lookup_order, finds no refund information in the result, and tells them no refund exists, even when one was issued. Refund status lives in a separate billing system that lookup_order does not query. What should you change first?",
+    options: [
+      {
+        text: "Instruct the agent to tell customers to wait five to seven business days whenever it cannot see a refund in the order data.",
+        why: "事実を確かめないまま定型文で答えるだけ。済んでいる返金も、本当に無い返金も区別できない。",
+      },
+      {
+        text: "Add few-shot examples in which the agent replies that it cannot see refund status and suggests the customer check their bank.",
+        why: "誤答は減るが、確かめる手段が無いままで、顧客の用件は解決しない。",
+      },
+      {
+        text: "Tell the model in the system prompt that missing data in any tool result never means that the thing being asked about does not exist.",
+        why: "一般的な注意は確率的で、どこを調べればよいかも示さない。原因はツールの説明と、手段が無いこと。",
+      },
+      {
+        text: "Add a tool that returns refund status from billing, and state in lookup_order's description that it does not return any refund data.",
+        why: "正解。モデルはツールの説明でしか中身を知れない。返さないものを説明に書き、必要な情報を返すツールを用意する。",
+      },
+    ],
+    answer: 3,
+    point:
+      "ツールの説明には「返さないもの」も書き、その情報は別のツールで取れるようにする（無いことと見えないことを混同させない）",
+  },
+  {
+    id: "s1-27",
+    scenario: "s1",
+    tasks: ["2.2"],
+    stem: "When the order database times out, lookup_order returns the raw exception text, including a stack trace and internal hostnames. The agent sometimes repeats parts of it to customers and never retries, even though these timeouts usually clear within seconds. How should lookup_order report this failure?",
+    options: [
+      {
+        text: "Return isError with a transient category, a flag saying it can be retried, and a short safe description; keep the stack trace in logs.",
+        why: "正解。モデルに要るのは、失敗の種類と、再試行してよいかと、短い説明。内部の詳細はモデルにも顧客にも要らないので、ログに残す。",
+      },
+      {
+        text: "Keep returning the full exception text, so that the model has as much information as possible for diagnosing the problem.",
+        why: "モデルはデータベースを直せない。生の例外は次の手（再試行か、待つか）を示さず、内部の情報が顧客に漏れる。",
+      },
+      {
+        text: "Return an empty order list, so that the agent can continue the conversation without exposing any internal details to the customer.",
+        why: "失敗を空の成功に見せる典型的な誤り。エージェントは「注文はありません」と答えてしまう。",
+      },
+      {
+        text: "Throw the exception at the protocol level, so that the MCP client aborts the call and the agent loop stops cleanly.",
+        why: "ツールの実行の失敗は、結果の isError でモデルに見える形で返す。ループを止めると、数秒で直る失敗のために会話全体が失われる。",
+      },
+    ],
+    answer: 0,
+    point:
+      "一時的な失敗は isError ＋種類（一時的）＋再試行の可否＋短い説明で返す。生の例外やスタックトレースはモデルに渡さずログへ",
+  },
+  {
+    id: "s1-28",
+    scenario: "s1",
+    tasks: ["5.1"],
+    stem: "The full 60-page returns policy is pasted into the system prompt of every conversation. The agent handles common cases well but often misses rules buried in the middle sections, such as the exception for opened electronics. What is the most effective improvement?",
+    options: [
+      {
+        text: "Move to a model with a larger context window, so that the entire policy fits into the prompt with plenty of room to spare.",
+        why: "全文はすでに入っている。文脈を大きくしても、長い入力の真ん中が落ちやすい問題は解けない。",
+      },
+      {
+        text: "Repeat the full policy a second time at the end of the system prompt, so that each of the rules appears in two positions.",
+        why: "文脈が倍になり、注意はさらに散る。埋もれる場所が変わるだけ。",
+      },
+      {
+        text: "Supply only the sections relevant to the request, with the key rules summarized at the top under clear headings.",
+        why: "正解。長い入力の真ん中は落ちやすい。渡す量を絞り、大事な規則を先頭に、区切りをはっきり付けて置く。",
+      },
+      {
+        text: "Instruct the agent to reread the whole policy carefully before it answers any question that is related to a return.",
+        why: "「注意深く」は効かない。モデルは同じ長い入力を同じように読むだけ。",
+      },
+    ],
+    answer: 2,
+    point: "長い資料を全部貼ると真ん中が落ちる。関係する部分だけを渡し、要点は見出し付きで先頭に置く",
+  },
+  {
+    id: "s1-29",
+    scenario: "s1",
+    tasks: ["5.2"],
+    stem: "A customer sends an angry, all-caps message about a late delivery. The case itself is simple: under policy the order qualifies for a standard shipping refund. The agent currently escalates any message it rates as highly negative. What should the agent do here?",
+    options: [
+      {
+        text: "Escalate immediately, since strong negative sentiment is a reliable sign that a human is needed.",
+        why: "感情の強さは引き継ぎの基準にならない。方針の範囲で解決できる用件を人に回すと、最初の対応での解決率が下がる。",
+      },
+      {
+        text: "Ask the customer to rate their frustration on a scale from 1 to 10, and escalate only if the score they give is above 7.",
+        why: "怒っている顧客に採点を頼むのは逆効果で、点数も引き継ぎの基準として意味が無い。",
+      },
+      {
+        text: "Apologize, then offer the customer a choice between the refund and a human agent before taking any action on the case.",
+        why: "丁寧に見えるが、解決できる用件で毎回人を勧めると引き継ぎが増える。人を求められたら、そのとき引き継げばよい。",
+      },
+      {
+        text: "Acknowledge the frustration and resolve the case under policy, escalating only if the customer asks for a human.",
+        why: "正解。引き継ぐのは、人をはっきり求めたとき・方針の外のとき・先に進めないとき。怒っていても、方針で解決できるなら解決する。",
+      },
+    ],
+    answer: 3,
+    point: "感情の強さでは引き継がない。方針で解決できるなら解決し、人をはっきり求められたら引き継ぐ",
+  },
+  {
+    id: "s1-30",
+    scenario: "s1",
+    tasks: ["5.2"],
+    stem: 'A customer writes, "I want to return the shoes." lookup_order shows two shoe orders in the past month: running shoes delivered last week and boots delivered three weeks ago. Both are eligible for return. What should the agent do?',
+    options: [
+      {
+        text: "Start a return for the most recent order, because customers usually mean the item that they received most recently.",
+        why: "推測で選ぶと、違う品物の返品を始めてしまう。1 問聞けば確実に分かる。",
+      },
+      {
+        text: "Ask which order they mean, listing both of them with the item name and the delivery date so they can pick quickly.",
+        why: "正解。対象があいまいなら推測せずに聞く。候補を具体的に示すと、顧客はすぐ答えられる。",
+      },
+      {
+        text: "Start returns for both orders, since both are eligible, and let the customer cancel the one they actually want to keep.",
+        why: "望まれていない操作をして、取り消しを顧客に押しつける。",
+      },
+      {
+        text: "Escalate to a human, because the request is ambiguous and a wrong return could upset an already unhappy customer.",
+        why: "あいまいさは 1 問聞けば解ける。人に回すほどのことではなく、解決率を下げるだけ。",
+      },
+    ],
+    answer: 1,
+    point: "依頼の対象があいまいなら推測で選ばず、候補を具体的に（品物・日付）示して聞く",
+  },
 ];
