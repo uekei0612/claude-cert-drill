@@ -524,4 +524,266 @@ export const s4: Question[] = [
     answer: 0,
     point: "サブエージェントのツールは役割に要るものだけに絞る（読む役なら Read・Grep・Glob）",
   },
+  {
+    id: "s4-21",
+    scenario: "s4",
+    tasks: ["1.1"],
+    stem: 'The developer assistant runs chores through the Agent SDK with maxTurns set to 30. On large repositories, users are sometimes told "Done!" even though the chore is only half finished. The wrapper treats the arrival of the final result message as success. What should the wrapper do?',
+    options: [
+      {
+        text: "Raise maxTurns to 300, so that even the largest chores always finish well before the limit is ever reached.",
+        why: "上限は安全装置で、いずれ当たる。当たったかを確かめない限り、同じ誤報が起きる。",
+      },
+      {
+        text: "Check the result message's subtype, and report error_max_turns as an unfinished run rather than a success.",
+        why: "正解。result の subtype は終わり方を示す。success と、上限で止まった error_max_turns などを区別して扱う。",
+      },
+      {
+        text: "Ask the model to end every final message with the word DONE, and count the run as successful only when that word appears.",
+        why: "言い回しで終わりを判定するのは典型的な誤り。上限で止まったかは、SDK が返す終わり方で分かる。",
+      },
+      {
+        text: "Count the tool calls in the transcript, and treat the run as successful if more than half of them returned no error.",
+        why: "ツールが失敗しなかったことと、雑務が終わったことは別。途中で止まっても、それまでの呼び出しは成功している。",
+      },
+    ],
+    answer: 1,
+    point: "SDK の実行の終わり方は result の subtype で見る。error_max_turns を成功と扱わない",
+  },
+  {
+    id: "s4-22",
+    scenario: "s4",
+    tasks: ["1.3"],
+    stem: 'You added a custom subagent, test-runner, in .claude/agents/ with the description "Test helper." It works well when invoked by name, but Claude never delegates to it on its own, even right after making code changes. What is the most effective fix?',
+    options: [
+      {
+        text: "Also copy the test-runner into every engineer's ~/.claude/agents, so that it is registered in two places at once.",
+        why: "置き場所を増やしても、いつ使うべきかの手がかりは増えない。同じ定義が 2 つになり、管理が面倒になるだけ。",
+      },
+      {
+        text: "Give the test-runner access to every available tool, so that Claude sees it as able to handle more kinds of tasks.",
+        why: "ツールを増やしても、振るかどうかの判断材料にはならない。役割に要らないツールを与えるのは危険でもある。",
+      },
+      {
+        text: "Add a line to CLAUDE.md telling Claude to remember that a subagent called test-runner exists in this project.",
+        why: "存在を知らせても、いつ使うべきかは分からない。Claude が振る先を選ぶ手がかりは description。",
+      },
+      {
+        text: "Rewrite the description to say what it does and when to use it, for example to run the tests after code changes.",
+        why: "正解。Claude は description を見て、どのサブエージェントに振るかを決める。何をするかと、使う場面を具体的に書く。",
+      },
+    ],
+    answer: 3,
+    point: "サブエージェントに自動で振らせるには、description に何をするか・いつ使うかを具体的に書く",
+  },
+  {
+    id: "s4-23",
+    scenario: "s4",
+    tasks: ["1.5"],
+    stem: "Claude often leaves lint errors in the files it edits, and they are discovered only later in CI. You want every edit to be checked right away and any errors shown to Claude, so that it fixes them in the same session. What should you add?",
+    options: [
+      {
+        text: "A PostToolUse hook on Edit|Write that runs the linter on the changed file and returns any errors to Claude.",
+        why: "正解。PostToolUse は実行の後に動き、結果に情報を足せる。編集の直後に確かめ、エラーをその場で Claude に見せられる。",
+      },
+      {
+        text: "A PreToolUse hook on Edit|Write that runs the linter on the file before Claude's change is applied to it.",
+        why: "変更前のファイルを調べても、これから入る変更の誤りは分からない。確かめるのは編集の後。",
+      },
+      {
+        text: "A line in CLAUDE.md that tells Claude to run the linter after every edit and to fix anything that it reports.",
+        why: "CLAUDE.md の指示は確率的で、今まさに守られていない。毎回確実に走らせるならフック。",
+      },
+      {
+        text: "A stricter lint step in CI that blocks merging, so that Claude's lint errors can never reach the main branch.",
+        why: "main は守れるが、見つかるのは後になってから。同じセッションですぐ直させる目的に合わない。",
+      },
+    ],
+    answer: 0,
+    point: "編集の直後の確認と結果の返却は PostToolUse フック（Edit|Write）。確実に毎回走る",
+  },
+  {
+    id: "s4-24",
+    scenario: "s4",
+    tasks: ["1.7"],
+    stem: "An engineer ran a long onboarding analysis of a repository on their laptop. They now want a CI job to continue from that analysis, so the job runs claude -p with --resume and the laptop's session ID, but it fails because the session cannot be found. What should they do?",
+    options: [
+      {
+        text: "Use --continue instead of --resume, since --continue picks up the most recent session no matter which machine created it.",
+        why: "--continue は、その端末の今のディレクトリの一番新しいセッションを続ける。別の端末のセッションは見えない。",
+      },
+      {
+        text: "Add --fork-session to the --resume call, since a forked copy of a session can be opened from any machine.",
+        why: "分岐も、手元にある履歴をコピーするだけ。元のセッションが無ければ分岐もできない。",
+      },
+      {
+        text: "Save the analysis results that the job needs, and pass them into a new session's prompt on the CI machine.",
+        why: "正解。セッションのファイルは作った端末にしか無い。別の環境で続けるなら、要る結果をアプリの側で持っておき、新しいセッションに渡す。",
+      },
+      {
+        text: "Retry --resume with a longer timeout, since the session is probably still being uploaded from the laptop.",
+        why: "セッションはどこにも送られない。作った端末のディスクに保存されるだけなので、待っても見つからない。",
+      },
+    ],
+    answer: 2,
+    point:
+      "セッションは作った端末にしか無い。別の環境で続けるなら、要る結果を持ち出して新しいセッションのプロンプトに入れる",
+  },
+  {
+    id: "s4-25",
+    scenario: "s4",
+    tasks: ["2.1"],
+    stem: 'An MCP tool, run_tests, is described simply as "Runs the tests." It always runs the full suite, which takes about 20 minutes, and Claude calls it after almost every small edit. What is the best fix?',
+    options: [
+      {
+        text: "Make run_tests return an error whenever it is called less than 20 minutes after its previous call has finished.",
+        why: "理由の分からない拒否になり、本当に全部のテストが要るときにも走らない。Claude には使い分けの手がかりが無いまま。",
+      },
+      {
+        text: "Describe its cost and when to use it, and add another tool that runs only the tests for a single file.",
+        why: "正解。説明には、何をするかだけでなく、重さと使う場面・使わない場面を書く。小さな確認のための軽い手段も用意する。",
+      },
+      {
+        text: "Remove run_tests from the assistant entirely, and ask engineers to run the test suite themselves before committing.",
+        why: "テストで確かめる手段そのものを失う。問題は使い方の手がかりが無いことで、ツールがあることではない。",
+      },
+      {
+        text: "Speed up the suite by stripping out most of its assertions, so that frequent calls to run_tests become much cheaper.",
+        why: "テストを弱めて速さを買う、本末転倒の手。何をいつ使うかを伝えれば済む。",
+      },
+    ],
+    answer: 1,
+    point: "ツールの説明には重さ（時間・費用）と使う場面・使わない場面を書き、軽い用途には別の手段を用意する",
+  },
+  {
+    id: "s4-26",
+    scenario: "s4",
+    tasks: ["2.3"],
+    stem: "A docs-summarizer subagent was defined with a description and a prompt but no tools field. During one run it executed a Bash command that rewrote a configuration file. The subagent only needs to read code and documentation. What is the best fix?",
+    options: [
+      {
+        text: "Give it a tools allowlist of Read, Grep, and Glob, because leaving out tools means it inherits every tool.",
+        why: "正解。tools を書かないと、サブエージェントは使えるツールをすべて引き継ぐ。読む役なら、読むツールだけを許可リストで渡す。",
+      },
+      {
+        text: "Add disallowedTools: Bash to the definition, which removes the only tool that is able to change files.",
+        why: "ファイルを変えられるのは Bash だけではない。Write や Edit、MCP のツールも引き継いだまま残る。",
+      },
+      {
+        text: 'Add "You are read-only. Never modify files." to its prompt, and keep the rest of the definition unchanged.',
+        why: "指示は確率的。使わせたくないツールは、そもそも渡さない。",
+      },
+      {
+        text: "Add a PreToolUse hook that blocks Bash for every agent in the project, including the main agent.",
+        why: "本体の作業に要る Bash まで止まる。原因は、このサブエージェントにツールを渡しすぎていること。",
+      },
+    ],
+    answer: 0,
+    point: "サブエージェントの tools を書かないと全ツールを引き継ぐ。役割に要るツールを許可リストで渡す",
+  },
+  {
+    id: "s4-27",
+    scenario: "s4",
+    tasks: ["2.4"],
+    stem: 'You want the assistant to ask for approval before it creates GitHub issues through the github MCP server. You added a PreToolUse hook with the matcher "create_issue", but it never fires, even though the logs show issues being created. What is wrong?',
+    options: [
+      {
+        text: "PreToolUse hooks never apply to MCP tools; approval for MCP tools can only be configured inside each MCP server.",
+        why: "誤り。フックは MCP のツールにもかかる。名前の形を合わせれば止めたり確認したりできる。",
+      },
+      {
+        text: 'Change the matcher to "mcp__github", so that the hook catches every tool that the github server provides.',
+        why: '記号の無い matcher は名前の完全一致として扱われ、"mcp__github" という名前のツールは無いので何にも合わない。サーバーの全ツールなら mcp__github__.* と書く。',
+      },
+      {
+        text: "The hook must be registered inside the github MCP server's own configuration, not in the client's settings.",
+        why: "フックはクライアント（Claude Code や Agent SDK）の側の仕組み。サーバーの設定に書くものではない。",
+      },
+      {
+        text: "MCP tools are named mcp__<server>__<tool>, so the matcher has to be the full name, mcp__github__create_issue.",
+        why: "正解。MCP のツールは mcp__<サーバー名>__<ツール名> という名前になり、フックの matcher や権限の規則もこの名前で書く。",
+      },
+    ],
+    answer: 3,
+    point:
+      "MCP のツール名は mcp__<サーバー>__<ツール>。フックの matcher もこの名前で書く（サーバー全体なら mcp__github__.*）",
+  },
+  {
+    id: "s4-28",
+    scenario: "s4",
+    tasks: ["2.5"],
+    stem: "Logs show the assistant using Bash for routine lookups: cat to view files, find to locate files by name, and grep -r to search their contents. Engineers have to approve each Bash command, and the large outputs flood the context. What should the assistant do instead?",
+    options: [
+      {
+        text: "Approve Bash permanently for all commands, so that these lookups can run without interrupting the engineers.",
+        why: "何でも実行できる状態になり危険。大きな出力で文脈が埋まる問題も残る。",
+      },
+      {
+        text: "Pipe every Bash command through head -n 50, so that no single command is able to flood the context with output.",
+        why: "一律に切ると、要る結果まで落とす。承認の手間も残る。",
+      },
+      {
+        text: "Use the dedicated tools instead: Read to view files, Glob to find them by name, and Grep to search contents.",
+        why: "正解。読む・名前で探す・中身で探すには専用の組み込みツールがある。読むだけなので承認も要らず、出力の量も絞れる。",
+      },
+      {
+        text: "Use Write to save each command's output to a temporary file, and then read only the parts that are needed later.",
+        why: "Write は書くための道具で、回り道になる。専用の検索と読み込みのツールを使えば済む。",
+      },
+    ],
+    answer: 2,
+    point: "見る・名前で探す・中身で探すは Read・Glob・Grep。Bash の cat・find・grep で代用しない",
+  },
+  {
+    id: "s4-29",
+    scenario: "s4",
+    tasks: ["3.2"],
+    stem: "The team updated its project skill, .claude/skills/review/SKILL.md, with a new checklist. One engineer keeps getting the old behavior when running /review, while everyone else gets the new checklist. That engineer once copied the skill to ~/.claude/skills/review/ to experiment with it. What explains this?",
+    options: [
+      {
+        text: "Project skills are cached on each machine, and the engineer must clear that cache before the update takes effect.",
+        why: "そういう仕組みではない。原因は同じ名前のスキルの優先順位。",
+      },
+      {
+        text: "A personal skill with the same name takes precedence over the project skill, so the old copy is used.",
+        why: "正解。同じ名前のスキルは、個人がプロジェクトより優先される。試した写しを消すか、名前を変える。",
+      },
+      {
+        text: "Skills are merged by name, so the engineer's copy and the team's version are combined into a single checklist.",
+        why: "混ざらない。優先されたほうがまるごと使われる。",
+      },
+      {
+        text: "The project skill is overridden by an older .claude/commands/review.md in the repository, which always runs first.",
+        why: "同じ名前ならスキルがコマンドより優先される。それにリポジトリのものなら全員に同じことが起きるはず。",
+      },
+    ],
+    answer: 1,
+    point: "同じ名前のスキルは個人 ＞ プロジェクト（まるごと）。スキル ＞ 同名のコマンド",
+  },
+  {
+    id: "s4-30",
+    scenario: "s4",
+    tasks: ["5.4"],
+    stem: "An engineer asks the assistant to inventory how 400 files use a deprecated API. Midway through, the session crashes, and the restarted run begins again from the first file. Even before the crash, findings from the early files were fading as the context filled up. What is the best way to structure this task?",
+    options: [
+      {
+        text: "Have the agent record its findings and progress in a file as it goes, and read that file to resume after any interruption.",
+        why: "正解。状態をファイルに書き出しておけば、文脈が埋まっても事実は読み直せ、落ちても続きから再開できる。",
+      },
+      {
+        text: "Switch to a model with a larger context window, so that all 400 files fit and every finding stays in view to the end.",
+        why: "大きい文脈でも埋もれる問題は残り、落ちたときに最初からになる問題も解けない。",
+      },
+      {
+        text: "Ask the agent to work faster by skimming the files, so that the whole inventory is finished before the context fills.",
+        why: "流し読みは見落としを増やす。棚卸しの正確さを落とすだけ。",
+      },
+      {
+        text: "Give the agent the whole list of 400 files up front, and tell it to keep all of its findings in mind until it finishes.",
+        why: "「覚えておいて」では、文脈が埋まって薄れることも、落ちて消えることも防げない。",
+      },
+    ],
+    answer: 0,
+    point: "長い作業は見つけたことと進み具合をファイルに書き出す。文脈が埋まっても読み直せ、落ちても続きから再開できる",
+  },
 ];
