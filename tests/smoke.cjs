@@ -122,8 +122,10 @@ const OUT = process.argv[3] || "/tmp/shots";
     const headLabel = await page.$eval(".head-label", e => e.textContent);
     if (!new RegExp(`^${i + 1} / 10`).test(headLabel)) throw new Error(`練習の問題数の表示が変わる：${headLabel}`);
     if ((await page.$(".option.ng")) && !headLabel.includes("やり直し +")) throw new Error("やり直しの数が出ない");
-    // 練習の途中では章へのリンクを出さない（移ると練習の残りが消える。#26）
-    if (await page.$(".qcard .learn-link")) throw new Error("練習の途中に教科書へのリンクが出ている");
+    // 練習の途中でも、答えたあとは章番号から教科書の章を開ける。戻ると続きから（#102。#26 の制限は外した）
+    const chapter = await page.$eval(".qcard .chapter-link", a => a.getAttribute("href")).catch(() => null);
+    if (!chapter || !chapter.includes("start%3Dresume"))
+      throw new Error(`練習の途中の章番号が章へのリンクでない：${chapter}`);
     // 1・2 問目に「後で振り返る」の印を付ける（#23）
     if (i < 2) {
       await click(".sticky-next .save");
