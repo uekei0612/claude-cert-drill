@@ -4,7 +4,7 @@
    間違えたときは、押し間違いなら次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44）。
    正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27） */
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { idsOnly, optionOrder, orderFor, parseIdsOnly, planPractice } from "../../core/engine/practice";
+import { NEW_ONLY, idsOnly, optionOrder, orderFor, parseIdsOnly, planPractice } from "../../core/engine/practice";
 import { seeded } from "../../core/engine/rng";
 import { type ItemStat, dueOf, isKnown, isLearning } from "../../core/engine/schedule";
 import type { Exam } from "../../core/exam/types";
@@ -40,6 +40,7 @@ export function onlyLabel(exam: Exam, only?: string): string | undefined {
   if (only === "saved") return "振り返り";
   if (only === "weak") return "苦手";
   if (only === "notes") return "メモ";
+  if (only === NEW_ONLY) return "新しい問題";
   if (parseIdsOnly(only)) return "解き直し";
   if (/^d\d+$/.test(only)) return exam.domains.find(d => d.id === only)?.ja;
   if (/^s\d+$/.test(only)) return exam.scenarios.find(s => s.id === only)?.ja;
@@ -56,9 +57,15 @@ const reviewRoute = (examId: string, only?: string): Route =>
 
 /** 1 回分を組む。印を付けた問題（only が "saved"）・苦手な問題（"weak"。#87）・メモのある問題（"notes"。#88）・
     名指しの問題（"q:…"）は、
-    回の長さで切らずに全部出す */
+    回の長さで切らずに全部出す。
+    新しい問題（"new"。#104）は、まだ解いていない問題だけから回の長さの分を選ぶ（復習が溜まっても新しい問題に進めるように） */
 function plan(exam: Exam, only: string | undefined, now: number, seed: number): string[] {
   const d = getData();
+  if (only === NEW_ONLY) {
+    const size = practiceSizeOf(d, exam.id);
+    const ids = exam.questions.filter(q => !d.items[itemKey(exam.id, q.id)]).map(q => q.id);
+    return planPractice(exam, id => d.items[itemKey(exam.id, id)], now, seeded(seed), { size, maxNew: size, ids });
+  }
   const ids =
     only === "saved"
       ? savedIds(d, exam.id)
@@ -123,11 +130,13 @@ function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
         ? "苦手な問題はありません。一度覚えた問題を 2 回以上間違えると、ここで練習できます。"
         : only === "notes"
           ? "メモを書いた問題がありません。答えたあとの「✎ メモを書く」で書いた問題を、ここで練習できます。"
-          : parseIdsOnly(only)
-            ? "解き直す問題が見つかりません（問題が入れ替わった可能性があります）。"
-            : only
-              ? `「${onlyLabel(exam, only) ?? only}」に当てはまる問題がありません。`
-              : "この資格には、まだ問題がありません。";
+          : only === NEW_ONLY
+            ? "まだ解いていない問題はありません。全部の問題を一度は解きました。復習の溜まった問題から練習しましょう。"
+            : parseIdsOnly(only)
+              ? "解き直す問題が見つかりません（問題が入れ替わった可能性があります）。"
+              : only
+                ? `「${onlyLabel(exam, only) ?? only}」に当てはまる問題がありません。`
+                : "この資格には、まだ問題がありません。";
   return (
     <section class="card stack">
       <p>{reason}</p>
@@ -136,7 +145,7 @@ function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
           全部の問題から練習する
         </a>
       )}
-      {only && !fromReview(only) && !parseIdsOnly(only) && (
+      {only && only !== NEW_ONLY && !fromReview(only) && !parseIdsOnly(only) && (
         <a class="btn block" href={href({ name: "domains", examId: exam.id })}>
           分野と細目を選び直す
         </a>
