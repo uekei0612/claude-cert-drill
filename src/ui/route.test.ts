@@ -82,3 +82,26 @@ test("戻り先の戻り先はたどらず、ほかの資格・資格の外の�
     taskId: "1.1",
   });
 });
+
+test("練習を戻り先にするときは、練習の戻り先を 1 段だけ残す（#102）", () => {
+  const practice: Route = {
+    name: "practice",
+    examId: "ccar-f",
+    only: "1.1",
+    start: "resume",
+    back: { name: "task", examId: "ccar-f", taskId: "1.1", back: { name: "home", examId: "ccar-f" } },
+  };
+  const r = parseRoute(href({ name: "learn", examId: "ccar-f", taskId: "1.1", back: practice }));
+  expect(r).toEqual({
+    name: "learn",
+    examId: "ccar-f",
+    taskId: "1.1",
+    back: {
+      name: "practice",
+      examId: "ccar-f",
+      only: "1.1",
+      start: "resume",
+      back: { name: "task", examId: "ccar-f", taskId: "1.1" },
+    },
+  });
+});

@@ -85,10 +85,18 @@ export function routeLabel(r: Route): string {
   }
 }
 
-/** URL の back（来た画面）を読む。同じ資格の、戻り先を持たない形にそろえる。資格一覧などほかの資格の外は捨てる */
+/** 戻り先として持つ形。戻り先の戻り先はたどらない。
+    ただし練習は、途中で教科書の章を開いて戻ってきても、やめる・終えたときの戻り先を失わないように、
+    自分の戻り先を 1 段だけ持ったままにする（#102） */
+export function asBack(r: Route): Route {
+  if (r.name === "practice" && r.back) return { ...r, back: withoutBack(r.back) };
+  return withoutBack(r);
+}
+
+/** URL の back（来た画面）を読む。同じ資格の、戻り先として持つ形（asBack）にそろえる。資格一覧などほかの資格の外は捨てる */
 function parseBack(value: string | null, examId: string): Route | undefined {
   if (!value || !value.startsWith("#/")) return undefined;
-  const r = withoutBack(parseRoute(value));
+  const r = asBack(parseRoute(value));
   return "examId" in r && r.examId === examId ? r : undefined;
 }
 
@@ -197,7 +205,7 @@ function query(items: Record<string, string | undefined>): string {
   return q ? `?${q}` : "";
 }
 
-const backHref = (b?: Route): string | undefined => (b ? href(withoutBack(b)) : undefined);
+const backHref = (b?: Route): string | undefined => (b ? href(asBack(b)) : undefined);
 
 export function useRoute(): Route {
   const [route, setRoute] = useState(() => parseRoute(location.hash));

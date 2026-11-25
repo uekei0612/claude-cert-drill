@@ -8,8 +8,9 @@
    答える前は、hintCopy のときだけ、問題と選択肢だけ（答え・解説なし）でヒントを頼む文を写すボタンを出す（#36）。
    答えを見たあとは、問題ごとのメモ（なぜ間違えたか）を書ける。コピーにもメモを入れる（#88）。
    答えを見たあと、苦手な問題（覚えたあとに何度も間違えた。#87）には、忘れた回数を出す。
-   learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出す（間違えた直後に読めるように。#26）。
-   練習の途中では出さない（章へ移ると練習の残りが消えるため、練習は結果の画面から読む） */
+   learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出し、細目の番号も章へのリンクにする
+   （間違えた直後に読めるように。#26・#102）。練習の途中でも出す（答えるたびに回を記録に残しているので、
+   章から戻れば同じ問題の解説から続けられる。戻り先は練習の側で learnBack に渡す） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { APP } from "../app/config";
 import { getData, useData } from "../app/store";
@@ -127,6 +128,11 @@ export function QuestionCard({
   const ja = exam.translations?.ja;
   const tq = ja?.questions[q.id];
   const lapses = useData().items[itemKey(exam.id, q.id)]?.lapses ?? 0;
+  // その細目の教科書の章（章があって、リンクを出すときだけ）
+  const lesson =
+    learnLink && task && exam.lessons?.[task.id]
+      ? href({ name: "learn", examId: exam.id, taskId: task.id, back: learnBack })
+      : undefined;
   // 訳を開いた問題の ID（同じカードのまま次の問題に変わったら閉じた状態に戻す）
   const [openedId, setOpenedId] = useState<string | undefined>();
   const peeking = lang === "peek";
@@ -220,14 +226,18 @@ export function QuestionCard({
             <strong>覚えること</strong>　{q.point}
           </p>
           <p class="muted small">
-            {domain?.id.toUpperCase()} {domain?.ja} ／ {task?.id} {task?.ja}
+            {domain?.id.toUpperCase()} {domain?.ja} ／{" "}
+            {lesson ? (
+              <a class="chapter-link" href={lesson}>
+                {task?.id} {task?.ja}
+              </a>
+            ) : (
+              `${task?.id} ${task?.ja}`
+            )}
           </p>
-          {learnLink && task && exam.lessons?.[task.id] && (
-            <a
-              class="tap small learn-link"
-              href={href({ name: "learn", examId: exam.id, taskId: task.id, back: learnBack })}
-            >
-              教科書で読む（{task.id}）→
+          {lesson && (
+            <a class="tap small learn-link" href={lesson}>
+              教科書で読む（{task!.id}）→
             </a>
           )}
         </div>
