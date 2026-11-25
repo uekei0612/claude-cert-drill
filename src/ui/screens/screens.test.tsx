@@ -512,3 +512,34 @@ describe("回の終わりの解いた問題の一覧（#103）", () => {
     expect(root.querySelector(".solved-list .option.ok")?.getAttribute("data-orig")).toBe(String(second.q.answer));
   });
 });
+
+describe("新しい問題だけの練習（#104）", () => {
+  test("復習が溜まっていても、ホームの「新しい問題を解く」からはまだ解いていない問題だけが出る", () => {
+    // 半分を間違えて答えた（10 分後に復習の期限が来る）ことにし、期限が来たあとで開く
+    const seen = ccarF.questions.slice(0, 90).map(q => q.id);
+    store.update(d => seen.reduce((x, id) => answer(x, ccarF.id, id, false, NOW - 60 * 60 * 1000), d));
+    mount(<Home exam={ccarF} now={NOW} />);
+    const link = byText("新しい問題を解く");
+    expect(link.textContent).toContain(`未解答 ${ccarF.questions.length - 90} 問`);
+    const r = parseRoute(link.getAttribute("href")!);
+    expect(r).toEqual({ name: "practice", examId: ccarF.id, only: "new" });
+
+    act(() => render(null, root));
+    mount(<Practice exam={ccarF} only="new" now={NOW} />);
+    expect(root.textContent).toContain("新しい問題・");
+    // 答えると回が記録に残る。回の 10 問はすべてまだ解いていなかった問題
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    const queue = store.getData().practices![ccarF.id]!.queue;
+    expect(new Set(queue).size).toBe(10);
+    for (const id of queue) expect(seen).not.toContain(id);
+  });
+
+  test("復習が無ければ出さない。全部解いたあとの「新しい問題」は理由を出す", () => {
+    mount(<Home exam={fixture} now={NOW} />);
+    expect(root.textContent).not.toContain("新しい問題を解く");
+    store.update(d => fixture.questions.reduce((x, q) => answer(x, fixture.id, q.id, true, NOW), d));
+    act(() => render(null, root));
+    mount(<Practice exam={fixture} only="new" now={NOW} />);
+    expect(root.textContent).toContain("まだ解いていない問題はありません");
+  });
+});

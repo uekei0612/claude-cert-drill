@@ -9,7 +9,7 @@ export type Route =
   | { readonly name: "help" }
   | { readonly name: "home"; readonly examId: string }
   /** only は出題の絞り込み（細目 "1.1"、分野 "d1"、シナリオ "s1"、後で振り返る印を付けた問題 "saved"、
-      苦手な問題 "weak"（#87）、メモのある問題 "notes"（#88）、問題を名指し "q:s1-01,s2-03"） */
+      苦手な問題 "weak"（#87）、メモのある問題 "notes"（#88）、まだ解いていない問題 "new"（#104）、問題を名指し "q:s1-01,s2-03"） */
   /** start は途中の回があるときの始め方（resume＝続きから、new＝捨てて新しく。無ければ画面で選ぶ。#86）。
       back は来た画面（やめる・終えたときの戻り先。#91） */
   | {

@@ -18,6 +18,9 @@ export interface PracticeOptions {
   readonly ids?: readonly string[];
 }
 
+/** まだ解いていない問題だけの絞り込み（#104）。復習が溜まっても新しい問題に進めるように */
+export const NEW_ONLY = "new";
+
 /** 問題を名指しする絞り込み（"q:s1-01,s2-03"）。間違えた問題だけを解き直すときに使う（#39） */
 export const idsOnly = (ids: readonly string[]): string => `q:${ids.join(",")}`;
 
