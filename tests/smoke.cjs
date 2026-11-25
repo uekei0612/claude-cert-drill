@@ -122,8 +122,10 @@ const OUT = process.argv[3] || "/tmp/shots";
     const headLabel = await page.$eval(".head-label", e => e.textContent);
     if (!new RegExp(`^${i + 1} / 10`).test(headLabel)) throw new Error(`練習の問題数の表示が変わる：${headLabel}`);
     if ((await page.$(".option.ng")) && !headLabel.includes("やり直し +")) throw new Error("やり直しの数が出ない");
-    // 練習の途中では章へのリンクを出さない（移ると練習の残りが消える。#26）
-    if (await page.$(".qcard .learn-link")) throw new Error("練習の途中に教科書へのリンクが出ている");
+    // 練習の途中でも、答えたあとは章番号から教科書の章を開ける。戻ると続きから（#102。#26 の制限は外した）
+    const chapter = await page.$eval(".qcard .chapter-link", a => a.getAttribute("href")).catch(() => null);
+    if (!chapter || !chapter.includes("start%3Dresume"))
+      throw new Error(`練習の途中の章番号が章へのリンクでない：${chapter}`);
     // 1・2 問目に「後で振り返る」の印を付ける（#23）
     if (i < 2) {
       await click(".sticky-next .save");
@@ -161,6 +163,14 @@ const OUT = process.argv[3] || "/tmp/shots";
   await page.waitForSelector(".size-row .seg button.on", { timeout: 10000 });
   if ((await page.$eval(".size-row .seg button.on", e => e.textContent.trim())) !== "10 問")
     throw new Error("CCAR-F で変えた問題数が FE-B にも効いている");
+  // SAP-C03（シナリオの無い英語の資格。#101）も開いて練習を始められる
+  await goto("#/sap-c03");
+  await page.waitForSelector(".size-row .seg button.on", { timeout: 10000 });
+  if (!(await text()).includes("SAP-C03")) throw new Error("SAP-C03 のホームが出ない");
+  await clickText("練習する");
+  if (!/^1 \/ 10/.test(await page.$eval(".head-label", e => e.textContent)))
+    throw new Error("SAP-C03 の練習が始まらない");
+  await shot("05c-sap-c03-practice");
   await goto("#/ccar-f");
   await page.$$eval(".size-row .seg button", bs => bs.find(b => b.textContent.trim() === "10 問").click());
   // ホームのカード：本体は詳細へ、右端の「練習 ▶」は練習へ。押す前に行き先が分かる（#32・#33）
@@ -237,6 +247,10 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 結果の画面：勘の正解は正解に数えない。間違えた・勘の問題ごとに、教科書の章へのリンクがある（#26）
   if (!/^0 \/ 2 問/m.test(await text())) throw new Error("勘の正解を正解に数えている");
   if ((await page.$$(".learn-link")).length !== 2) throw new Error("練習の結果に教科書へのリンクが無い");
+  // 解いた問題の一覧（#103）：2 問並び、押すと自分の答えと解説が開く
+  if ((await page.$$(".solved-list .review-row")).length !== 2) throw new Error("練習の結果に解いた問題の一覧が無い");
+  await click(".solved-list .review-row");
+  if (!(await page.$(".solved-list .why"))) throw new Error("解いた問題の一覧を押しても解説が開かない");
   await shot("26-practice-result");
   // 間違えた問題だけを解き直せる（#39）
   await clickText("間違えた");

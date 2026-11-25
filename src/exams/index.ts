@@ -5,9 +5,11 @@ import { createCatalog } from "../core/exam/catalog";
 import { meta as ccarF } from "./ccar-f/meta";
 import { meta as feA } from "./fe-a/meta";
 import { meta as feB } from "./fe-b/meta";
+import { meta as sapC03 } from "./sap-c03/meta";
 
 export const catalog = createCatalog([
   { meta: ccarF, load: () => import("./ccar-f/exam").then(m => m.ccarF) },
   { meta: feA, load: () => import("./fe-a/exam").then(m => m.feA) },
   { meta: feB, load: () => import("./fe-b/exam").then(m => m.feB) },
+  { meta: sapC03, load: () => import("./sap-c03/exam").then(m => m.sapC03) },
 ]);

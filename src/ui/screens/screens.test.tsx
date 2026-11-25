@@ -114,6 +114,10 @@ describe.each([
     expect(result.total).toBe(active.questionIds.length);
     mount(<MockResult exam={exam} at={result.finishedAt} />);
     expect(root.textContent).toContain(`${result.total}`);
+    // 解いた問題は最初から全部並ぶ。間違えた問題だけに絞れる（#103）
+    expect(root.querySelectorAll(".solved-list .review-row").length).toBe(result.total);
+    click(root.querySelector<HTMLInputElement>(".check input")!);
+    expect(root.querySelectorAll(".solved-list .review-row").length).toBe(result.total - result.correct);
   });
 });
 
@@ -432,6 +436,81 @@ test("メーターに「あと 1 回」を薄い色で出し、数も添える�
   expect(root.querySelector(".big")?.textContent).toBe("0%");
   mount(<Domains exam={fixture} now={NOW} />);
   expect(root.textContent).toContain("（あと 1 回 1）");
+});
+
+describe("練習の途中で教科書の章を開く（#102）", () => {
+  test("答えたあとの細目の番号から章を開き、「← 練習」で同じ問題の解説に戻る。やめる先も失わない", () => {
+    const from: Route = { name: "domains", examId: ccarF.id, domainId: "d1" };
+    mount(<Practice exam={ccarF} only="1.1" back={from} now={NOW} />);
+    // 答える前は出さない
+    expect(root.querySelector(".chapter-link")).toBeNull();
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    const stem = root.querySelector(".stem")!.textContent;
+    const link = root.querySelector<HTMLAnchorElement>(".chapter-link")!;
+    expect(link.textContent).toContain("1.1");
+    expect(byText("教科書で読む（1.1）").getAttribute("href")).toBe(link.getAttribute("href"));
+
+    const learn = parseRoute(link.getAttribute("href")!);
+    expect(learn).toEqual({
+      name: "learn",
+      examId: ccarF.id,
+      taskId: "1.1",
+      back: { name: "practice", examId: ccarF.id, only: "1.1", start: "resume", back: from },
+    });
+    if (learn.name !== "learn") throw new Error("learn ではない");
+
+    act(() => render(null, root));
+    mount(<Learn exam={ccarF} taskId="1.1" back={learn.back} now={NOW} />);
+    const back = parseRoute(byText("← 練習").getAttribute("href")!);
+    if (back.name !== "practice") throw new Error("練習に戻らない");
+
+    act(() => render(null, root));
+    mount(<Practice exam={ccarF} only={back.only} start={back.start} back={back.back} now={NOW} />);
+    expect(root.textContent).not.toContain("練習の途中です");
+    expect(root.querySelector(".stem")!.textContent).toBe(stem);
+    expect(root.querySelectorAll(".why").length).toBeGreaterThan(0);
+    expect(byText("やめる").getAttribute("href")).toBe("#/ccar-f/domains/d1");
+  });
+
+  test("教科書の無い資格では、細目の番号は文字のまま", () => {
+    mount(<Practice exam={flatFixture} now={NOW} />);
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    expect(root.querySelectorAll(".why").length).toBeGreaterThan(0);
+    expect(root.querySelector(".chapter-link")).toBeNull();
+    expect(root.textContent).not.toContain("教科書で読む");
+  });
+});
+
+describe("回の終わりの解いた問題の一覧（#103）", () => {
+  test("練習の終わりに、1 回目の答えで ○・× を付けて並べ、押すと自分の答えと解説が開く", () => {
+    const [q1, q2] = fixture.questions;
+    mount(<Practice exam={fixture} only={idsOnly([q1!.id, q2!.id])} now={NOW} />);
+    const pick = (right: boolean) => {
+      const q = fixture.questions.find(x => root.querySelector(".stem")!.textContent!.includes(stemText(x.stem)))!;
+      const b = [...root.querySelectorAll<HTMLButtonElement>("button.option")].find(
+        x => (Number(x.dataset.orig) === q.answer) === right,
+      )!;
+      click(b);
+      return { q, orig: Number(b.dataset.orig) };
+    };
+    const first = pick(false);
+    click(byText("次へ"));
+    const second = pick(true);
+    click(byText("次へ"));
+    // やり直し（1 問目）は正解しても、一覧は 1 回目の答えで付ける
+    pick(true);
+    click(byText("結果を見る"));
+
+    const rows = [...root.querySelectorAll<HTMLElement>(".solved-list .review-row")];
+    expect(rows.map(r => r.textContent!.slice(0, 1))).toEqual(["×", "○"]);
+    expect(rows[0]!.textContent).toContain(stemText(first.q.stem).slice(0, 10));
+    click(rows[0]!);
+    expect(root.querySelector(".solved-list .option.ng")?.getAttribute("data-orig")).toBe(String(first.orig));
+    expect(root.querySelectorAll(".solved-list .why").length).toBe(first.q.options.length);
+    click(rows[1]!);
+    expect(root.querySelector(".solved-list .option.ng")).toBeNull();
+    expect(root.querySelector(".solved-list .option.ok")?.getAttribute("data-orig")).toBe(String(second.q.answer));
+  });
 });
 
 describe("新しい問題だけの練習（#104）", () => {
