@@ -235,7 +235,13 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
         </div>
       </div>
       <a class="btn primary block" href={href({ name: "practice", examId: exam.id })}>
-        {due ? `今日の練習（復習 ${due} 問から）` : all.seen < all.total ? "練習する（新しい問題から）" : "練習する"}
+        {due
+          ? unseen > 0
+            ? `今日の練習（復習 ${due} 問と新しい問題を半分ずつ）`
+            : `今日の練習（復習 ${due} 問から）`
+          : unseen > 0
+            ? "練習する（新しい問題から）"
+            : "練習する"}
       </a>
       {/* 復習が溜まると回の大半が復習になり、新しい問題に進みにくい。新しい問題だけの回も選べるようにする（#104） */}
       {due > 0 && unseen > 0 && (

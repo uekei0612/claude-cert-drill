@@ -4,7 +4,7 @@
 import { describe, expect, test } from "vitest";
 import type { Exam, Question } from "../exam/types";
 import { fixture } from "./fixture";
-import { planPractice } from "./practice";
+import { NEW_SHARE, planPractice } from "./practice";
 import { type Rng, seeded } from "./rng";
 import { type ItemStat, dueOf, isDue, review } from "./schedule";
 
@@ -41,8 +41,8 @@ function violations(exam: Exam, { ids, stats, now, size, maxNew }: Check): strin
   if (picked.size !== ids.length) out.push("同じ回に同じ問題がある");
   if (ids.length !== Math.min(size, exam.questions.length)) out.push(`回の長さ ${ids.length}（${size} のはず）`);
 
-  // #98：未出題が残っていれば、回の 3 分の 1（maxNew と残りの数まで）は新しい問題
-  const reserved = Math.min(maxNew, fresh.length, Math.ceil(size / 3));
+  // #98・#104：未出題が残っていれば、回の半分（maxNew と残りの数まで）は新しい問題
+  const reserved = Math.min(maxNew, fresh.length, Math.ceil(size * NEW_SHARE));
   if (pickedFresh < reserved) out.push(`新しい問題が ${pickedFresh} 問（${reserved} 問は入るはず）`);
   if (pickedFresh > Math.max(maxNew, size - due.length - pickedAhead.length))
     out.push(`新しい問題が多すぎる（${pickedFresh}）`);
