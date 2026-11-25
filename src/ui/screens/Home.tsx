@@ -24,6 +24,7 @@ import {
   snoozeExportNudge,
   weakIds,
 } from "../../core/store/actions";
+import { NEW_ONLY } from "../../core/engine/practice";
 import { PRACTICE_SIZES, itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
 import { Activity } from "../Activity";
@@ -236,6 +237,12 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
       <a class="btn primary block" href={href({ name: "practice", examId: exam.id })}>
         {due ? `今日の練習（復習 ${due} 問から）` : all.seen < all.total ? "練習する（新しい問題から）" : "練習する"}
       </a>
+      {/* 復習が溜まると回の大半が復習になり、新しい問題に進みにくい。新しい問題だけの回も選べるようにする（#104） */}
+      {due > 0 && unseen > 0 && (
+        <a class="btn block" href={href({ name: "practice", examId: exam.id, only: NEW_ONLY })}>
+          新しい問題を解く（未解答 {unseen} 問）
+        </a>
+      )}
 
       <a
         class="card tight"
