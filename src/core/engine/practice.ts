@@ -1,5 +1,6 @@
 /* 練習の 1 回分の組み立て。
-   期限切れ（古い順）→ 未出題（配点 ×（1 − その分野の覚えた割合）で重み付けして選ぶ）→ 期限前（近い順）。
+   復習（期限切れ・古い順）と新しい問題（未出題。配点 ×（1 − その分野の覚えた割合）で重み付けして選ぶ）を
+   半分ずつ（#104）。どちらかが足りなければ、もう片方で埋め、それでも足りなければ期限前（近い順）。
    期限が同じ日の問題どうしはランダムに選ぶ（#97）。
    問題が少ない資格なので、同じ回に同じ問題は入れない（足りなければ短い回になる） */
 import type { Exam, Question } from "../exam/types";
@@ -10,7 +11,7 @@ import { dueOf, isDue } from "./schedule";
 
 export interface PracticeOptions {
   readonly size?: number;
-  /** 1 回に入れる未出題の上限 */
+  /** 1 回に入れる未出題の上限（無ければ回の長さ） */
   readonly maxNew?: number;
   /** 出題を絞る（細目 "1.1"、分野 "d1"、シナリオ "s1"） */
   readonly only?: string;
@@ -35,12 +36,15 @@ export function filterQuestions(exam: Exam, only?: string): Question[] {
   return exam.questions.filter(q => q.tasks.includes(only));
 }
 
+/** 回のうち新しい問題に取っておく割合（#104） */
+export const NEW_SHARE = 0.5;
+
 export function planPractice(
   exam: Exam,
   statOf: StatOf,
   now: number,
   rng: Rng,
-  { size = 10, maxNew = 6, only, ids }: PracticeOptions = {},
+  { size = 10, maxNew = size, only, ids }: PracticeOptions = {},
 ): string[] {
   // 先に混ぜておく。期限は日で数える（#90）ので同じ日の問題は期限が同点になり、
   // 混ぜないと並べ替えで問題 ID の順が残って、毎回同じ問題から選ばれる（#97）
@@ -66,8 +70,9 @@ export function planPractice(
     return out;
   };
 
-  // 復習が溜まっても新しい問題に進めるよう、未出題が残っているあいだは回の 3 分の 1 を未出題に取っておく（#98）
-  const reserved = Math.min(maxNew, fresh.length, Math.ceil(size / 3));
+  // 復習と新しい問題を半分ずつ。復習が溜まっても、未出題が残っているあいだは回の半分を未出題に取っておく
+  // （#98 では 3 分の 1 だったが、新しい問題は答えるとすぐ復習に回るので、復習が溜まると新しい問題に進めなかった。#104）
+  const reserved = Math.min(maxNew, fresh.length, Math.ceil(size * NEW_SHARE));
   const picked: Question[] = due.slice(0, size - reserved);
   picked.push(...takeFresh(Math.min(maxNew, size - picked.length)));
   picked.push(...ahead.slice(0, Math.max(0, size - picked.length)));
