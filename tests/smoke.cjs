@@ -245,6 +245,10 @@ const OUT = process.argv[3] || "/tmp/shots";
   // 結果の画面：勘の正解は正解に数えない。間違えた・勘の問題ごとに、教科書の章へのリンクがある（#26）
   if (!/^0 \/ 2 問/m.test(await text())) throw new Error("勘の正解を正解に数えている");
   if ((await page.$$(".learn-link")).length !== 2) throw new Error("練習の結果に教科書へのリンクが無い");
+  // 解いた問題の一覧（#103）：2 問並び、押すと自分の答えと解説が開く
+  if ((await page.$$(".solved-list .review-row")).length !== 2) throw new Error("練習の結果に解いた問題の一覧が無い");
+  await click(".solved-list .review-row");
+  if (!(await page.$(".solved-list .why"))) throw new Error("解いた問題の一覧を押しても解説が開かない");
   await shot("26-practice-result");
   // 間違えた問題だけを解き直せる（#39）
   await clickText("間違えた");

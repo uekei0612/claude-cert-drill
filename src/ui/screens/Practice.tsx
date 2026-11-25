@@ -2,7 +2,8 @@
    解いている途中の回も記録に残し、同じ絞り込みで開けば続きから（ホームのカードからも。#86）。
    間違えた問題は、その回の最後にもう一度出す（1 回だけ）。
    間違えたときは、押し間違いなら次の問題へ進むまでは答えを取り消せる（記録も答える前に戻す。#44）。
-   正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27） */
+   正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27）。
+   回の終わりには、解いた問題の一覧を出す（#103） */
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { idsOnly, optionOrder, orderFor, parseIdsOnly, planPractice } from "../../core/engine/practice";
 import { seeded } from "../../core/engine/rng";
@@ -29,6 +30,7 @@ import { LangSwitch } from "../LangSwitch";
 import { dueDayText } from "../dueDay";
 import { QuestionCard } from "../QuestionCard";
 import { SaveButton } from "../SaveButton";
+import { SolvedList } from "../SolvedList";
 import { optionIndex, optionKeys, useKeys } from "../keys";
 import { type PracticeStart, type Route, href, routeLabel } from "../route";
 
@@ -307,6 +309,21 @@ export function Practice({
         <a class="btn block" href={back}>
           {backLabel}へ
         </a>
+        {/* この回で解いた問題（#103）。1 回目の答えで印を付け、押すと問題・自分の答え・解説を開く。
+            章へのリンクは出さない（章から戻るとこの画面は残っていない。章は上の「覚えること」から） */}
+        <section class="stack">
+          <h2>解いた問題</h2>
+          <SolvedList
+            exam={exam}
+            items={firstTry.map((d, i) => ({
+              id: d.id,
+              no: i + 1,
+              result: d.guess ? "guess" : d.ok ? "ok" : "ng",
+              ...(d.chosen !== undefined ? { chosen: d.chosen } : {}),
+              order: orderFor(exam, byId.get(d.id)!, s.orders[d.id]),
+            }))}
+          />
+        </section>
       </main>
     );
   }
@@ -333,7 +350,7 @@ export function Practice({
     commit({
       ...plain,
       chosen: orig,
-      done: [...done, { id, ok }],
+      done: [...done, { id, ok, chosen: orig }],
       undo: { ...(prevStat ? { prev: prevStat } : {}), requeued: requeue, at },
       ...(requeue ? { queue: [...queue, id], requeued: [...s.requeued, id] } : {}),
     });
@@ -344,7 +361,14 @@ export function Practice({
     if (!undo) return;
     const on = !guess;
     update(d => markGuess(d, exam.id, id, undo.prev, on, Date.now()));
-    commit({ ...s, done: [...done.slice(0, -1), { id, ok: true, ...(on ? { guess: true } : {}) }], guess: on });
+    commit({
+      ...s,
+      done: [
+        ...done.slice(0, -1),
+        { id, ok: true, ...(on ? { guess: true } : {}), ...(chosen !== undefined ? { chosen } : {}) },
+      ],
+      guess: on,
+    });
   };
 
   /** 答えを取り消して、選び直せるようにする */
