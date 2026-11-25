@@ -515,6 +515,26 @@ describe("途中の練習（#86）", () => {
     expect(Object.keys(back.practices!)).toEqual(["ok"]);
     expect(parseData(emptyData()).practices).toBeUndefined();
   });
+  test("答えごとに選んだ選択肢を読み戻す。範囲外の添字は捨て、選択肢の無い前の記録もそのまま読む（#103）", () => {
+    const id = fixture.questions[0]!.id;
+    const back = parseData({
+      practices: {
+        a: {
+          ...p,
+          done: [
+            { id, ok: true, guess: true, chosen: 1 },
+            { id, ok: false, chosen: 99 },
+            { id, ok: false },
+          ],
+        },
+      },
+    });
+    expect(back.practices!.a!.done).toEqual([
+      { id, ok: true, guess: true, chosen: 1 },
+      { id, ok: false },
+      { id, ok: false },
+    ]);
+  });
   test("捨てる・資格の記録を消すと一緒に消える。ほかの資格の回は残る", () => {
     let d = savePractice(savePractice(emptyData(), fixture.id, p), "other", p);
     expect(Object.keys(resetExam(d, fixture.id).practices!)).toEqual(["other"]);

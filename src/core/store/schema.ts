@@ -76,6 +76,8 @@ export interface PracticeDone {
   readonly ok: boolean;
   /** 勘で当たった */
   readonly guess?: boolean;
+  /** 選んだ元の選択肢の添字（回の終わりの一覧で自分の答えを見せる。#103 より前の記録には無い） */
+  readonly chosen?: number;
 }
 
 /** 練習で答えを取り消すときに戻す先：答える前の記録と、この答えでやり直しに足したかどうか */
@@ -297,7 +299,8 @@ const int = (x: unknown): x is number => num(x) && Number.isInteger(x) && x >= 0
 
 function practiceDone(x: unknown): PracticeDone | undefined {
   if (!isObj(x) || typeof x.id !== "string" || typeof x.ok !== "boolean") return undefined;
-  return x.guess === true && x.ok ? { id: x.id, ok: true, guess: true } : { id: x.id, ok: x.ok };
+  const chosen = int(x.chosen) && x.chosen < MAX_OPTIONS ? { chosen: x.chosen } : {};
+  return x.guess === true && x.ok ? { id: x.id, ok: true, guess: true, ...chosen } : { id: x.id, ok: x.ok, ...chosen };
 }
 
 /** 途中の練習。形が崩れていれば丸ごと捨てる（中途半端に直すと回の数え方が合わなくなる） */

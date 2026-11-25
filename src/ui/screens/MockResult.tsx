@@ -1,21 +1,18 @@
-/* 模擬試験の結果と見直し。分野ごとの正答率、配点で重み付けした正答率と目安線、1 問ずつの見直し */
+/* 模擬試験の結果と見直し。分野ごとの正答率、配点で重み付けした正答率と目安線、解いた問題の一覧（#103）で 1 問ずつ見直す */
 import { useState } from "preact/hooks";
 import { idsOnly, orderFor } from "../../core/engine/practice";
 import type { Exam } from "../../core/exam/types";
-import { langOf } from "../../core/store/actions";
 import { useData } from "../../app/store";
 import { Meter, pct } from "../Meter";
 import { LangSwitch } from "../LangSwitch";
-import { QuestionCard, stemLang, stemOf } from "../QuestionCard";
-import { SaveButton } from "../SaveButton";
 import { type Route, href } from "../route";
+import { SolvedList } from "../SolvedList";
 
 export function MockResult({ exam, at }: { exam: Exam; at: number }) {
   const data = useData();
   const r = data.mocks[exam.id]?.find(x => x.finishedAt === at);
-  const [open, setOpen] = useState<string | undefined>();
-  // 全問を並べると長いので、まずは間違えた（未回答を含む）問題だけ
-  const [onlyWrong, setOnlyWrong] = useState(true);
+  // 最初は解いた問題を全部並べる（#103）。間違えた（未回答を含む）問題だけに絞れる
+  const [onlyWrong, setOnlyWrong] = useState(false);
   const back = href({ name: "mock", examId: exam.id });
   // この画面（練習・教科書から戻ってくる先。#91）
   const here: Route = { name: "mock-result", examId: exam.id, at };
@@ -91,54 +88,27 @@ export function MockResult({ exam, at }: { exam: Exam; at: number }) {
       {ids.length > 0 && (
         <section class="stack">
           <div class="row between">
-            <h2>見直し</h2>
+            <h2>解いた問題</h2>
             <LangSwitch exam={exam} />
           </div>
           <label class="check">
             <input type="checkbox" checked={onlyWrong} onChange={e => setOnlyWrong(e.currentTarget.checked)} />
             間違えた問題だけ
           </label>
-          {shown.map(id => {
-            const q = byId.get(id)!;
-            const chosen = r.answers?.[id];
-            const ok = chosen === q.answer;
-            const i = ids.indexOf(id);
-            return (
-              <div key={id} class="card tight">
-                <button
-                  class="review-row"
-                  onClick={() => setOpen(open === id ? undefined : id)}
-                  aria-expanded={open === id}
-                >
-                  <span class={ok ? "okc" : "ngc"}>{ok ? "○" : chosen === undefined ? "－" : "×"}</span>
-                  <span>
-                    {i + 1}. <span class="tag">{q.tasks[0]}</span>
-                    <span class="small row-stem" lang={stemLang(exam, langOf(data, exam.id))}>
-                      {stemOf(exam, q, langOf(data, exam.id))}
-                    </span>
-                  </span>
-                </button>
-                {open === id && (
-                  <>
-                    <QuestionCard
-                      exam={exam}
-                      q={q}
-                      order={orderFor(exam, q, r.orders?.[id])}
-                      chosen={chosen}
-                      reveal={true}
-                      scenarioOpen={false}
-                      lang={langOf(data, exam.id)}
-                      learnLink
-                      learnBack={here}
-                    />
-                    <div class="row end">
-                      <SaveButton examId={exam.id} questionId={id} />
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
+          <SolvedList
+            exam={exam}
+            items={shown.map(id => {
+              const chosen = r.answers?.[id];
+              return {
+                id,
+                no: ids.indexOf(id) + 1,
+                result: chosen === undefined ? "none" : chosen === byId.get(id)!.answer ? "ok" : "ng",
+                ...(chosen !== undefined ? { chosen } : {}),
+                order: orderFor(exam, byId.get(id)!, r.orders?.[id]),
+              };
+            })}
+            learnBack={here}
+          />
         </section>
       )}
     </main>
