@@ -942,6 +942,12 @@ mark {
   align-self: flex-start;
   padding: 0;
 }
+/* 解説の下の細目の番号。押すと教科書の章が開く（#102）。地の文と見分けられるよう下線を引く */
+.chapter-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 ul.small,
 .points {
   margin: 0;

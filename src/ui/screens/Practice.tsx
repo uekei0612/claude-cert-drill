@@ -411,6 +411,15 @@ export function Practice({
         reveal={revealed}
         onChoose={choose}
         hintCopy
+        learnLink
+        // 章から戻ったら、この回の続き（同じ問題の解説）から。やめる・終えたときの戻り先も持っていく（#102）
+        learnBack={{
+          name: "practice",
+          examId: exam.id,
+          ...(only ? { only } : {}),
+          start: "resume",
+          ...(from ? { back: from } : {}),
+        }}
         scenarioOpen={!prev || prev.scenario !== q.scenario}
         lang={lang}
       />
