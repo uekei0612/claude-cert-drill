@@ -206,12 +206,16 @@ describe("planPractice", () => {
     }
     expect(firsts.size).toBeGreaterThan(10);
   });
-  test("復習が回の数より多くても、未出題が残っていれば回の 3 分の 1 は新しい問題（#98）", () => {
+  test("復習が回の数より多くても、未出題が残っていれば回の半分は新しい問題（#98・#104）", () => {
     const seen = fixture.questions.slice(0, 8);
     const stats = Object.fromEntries(seen.map(q => [q.id, review(undefined, false, NOW - DAY)]));
     const ids = planPractice(fixture, id => stats[id], NOW, seeded(3), { size: 6 });
     expect(ids).toHaveLength(6);
-    expect(ids.filter(id => !stats[id])).toHaveLength(2);
+    expect(ids.filter(id => !stats[id])).toHaveLength(3);
+    // 奇数の回は新しい問題を 1 問多く
+    expect(planPractice(fixture, id => stats[id], NOW, seeded(3), { size: 5 }).filter(id => !stats[id])).toHaveLength(
+      3,
+    );
     // 未出題が無ければ全部を復習に使う
     const all = Object.fromEntries(fixture.questions.map(q => [q.id, review(undefined, false, NOW - DAY)]));
     expect(planPractice(fixture, id => all[id], NOW, seeded(3), { size: 6 })).toHaveLength(6);
