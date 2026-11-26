@@ -5,7 +5,15 @@
    正解したときは「勘だった」を付けられる。勘の正解は覚えたに数えず、1 日後にもう一度出す（#27）。
    回の終わりには、解いた問題の一覧を出す（#103） */
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { NEW_ONLY, idsOnly, optionOrder, orderFor, parseIdsOnly, planPractice } from "../../core/engine/practice";
+import {
+  HARD_ONLY,
+  NEW_ONLY,
+  idsOnly,
+  optionOrder,
+  orderFor,
+  parseIdsOnly,
+  planPractice,
+} from "../../core/engine/practice";
 import { seeded } from "../../core/engine/rng";
 import { type ItemStat, dueOf, isKnown, isLearning } from "../../core/engine/schedule";
 import type { Exam } from "../../core/exam/types";
@@ -43,6 +51,7 @@ export function onlyLabel(exam: Exam, only?: string): string | undefined {
   if (only === "weak") return "苦手";
   if (only === "notes") return "メモ";
   if (only === NEW_ONLY) return "新しい問題";
+  if (only === HARD_ONLY) return "難しい問題";
   if (parseIdsOnly(only)) return "解き直し";
   if (/^d\d+$/.test(only)) return exam.domains.find(d => d.id === only)?.ja;
   if (/^s\d+$/.test(only)) return exam.scenarios.find(s => s.id === only)?.ja;
@@ -147,7 +156,7 @@ function EmptyPractice({ exam, only }: { exam: Exam; only?: string }) {
           全部の問題から練習する
         </a>
       )}
-      {only && only !== NEW_ONLY && !fromReview(only) && !parseIdsOnly(only) && (
+      {only && only !== NEW_ONLY && only !== HARD_ONLY && !fromReview(only) && !parseIdsOnly(only) && (
         <a class="btn block" href={href({ name: "domains", examId: exam.id })}>
           分野と細目を選び直す
         </a>
