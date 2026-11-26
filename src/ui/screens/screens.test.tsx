@@ -448,7 +448,8 @@ describe("練習の途中で教科書の章を開く（#102）", () => {
     const stem = root.querySelector(".stem")!.textContent;
     const link = root.querySelector<HTMLAnchorElement>(".chapter-link")!;
     expect(link.textContent).toContain("1.1");
-    expect(byText("教科書で読む（1.1）").getAttribute("href")).toBe(link.getAttribute("href"));
+    // 同じ行き先のリンクを二重に出さない（#105）
+    expect(root.querySelector(".qcard")!.textContent).not.toContain("教科書で読む");
 
     const learn = parseRoute(link.getAttribute("href")!);
     expect(learn).toEqual({
