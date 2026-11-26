@@ -544,3 +544,26 @@ describe("新しい問題だけの練習（#104）", () => {
     expect(root.textContent).toContain("まだ解いていない問題はありません");
   });
 });
+
+describe("難しい問題だけの練習（#106）", () => {
+  test("ホームの「難しい問題を解く」からは、難しい印の付いた問題だけが出る", () => {
+    const hard = ccarF.questions.filter(q => q.hard).map(q => q.id);
+    mount(<Home exam={ccarF} now={NOW} />);
+    const link = byText("難しい問題を解く");
+    expect(link.textContent).toContain(`${hard.length} 問`);
+    expect(parseRoute(link.getAttribute("href")!)).toEqual({ name: "practice", examId: ccarF.id, only: "hard" });
+
+    act(() => render(null, root));
+    mount(<Practice exam={ccarF} only="hard" now={NOW} />);
+    expect(root.textContent).toContain("難しい問題・");
+    click(root.querySelector<HTMLButtonElement>("button.option")!);
+    const queue = store.getData().practices![ccarF.id]!.queue;
+    expect(new Set(queue).size).toBe(10);
+    for (const id of queue) expect(hard).toContain(id);
+  });
+
+  test("難しい問題の無い資格には入り口を出さない", () => {
+    mount(<Home exam={fixture} now={NOW} />);
+    expect(root.textContent).not.toContain("難しい問題を解く");
+  });
+});

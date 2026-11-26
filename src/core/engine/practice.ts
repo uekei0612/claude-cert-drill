@@ -13,7 +13,7 @@ export interface PracticeOptions {
   readonly size?: number;
   /** 1 回に入れる未出題の上限（無ければ回の長さ） */
   readonly maxNew?: number;
-  /** 出題を絞る（細目 "1.1"、分野 "d1"、シナリオ "s1"） */
+  /** 出題を絞る（細目 "1.1"、分野 "d1"、シナリオ "s1"、難しい問題 "hard"） */
   readonly only?: string;
   /** 出題をこの問題に絞る（後で振り返る印を付けた問題など。only より優先） */
   readonly ids?: readonly string[];
@@ -29,8 +29,12 @@ export const idsOnly = (ids: readonly string[]): string => `q:${ids.join(",")}`;
 export const parseIdsOnly = (only?: string): string[] | undefined =>
   only?.startsWith("q:") ? only.slice(2).split(",").filter(Boolean) : undefined;
 
+/** 難しい問題だけの絞り込み（#106） */
+export const HARD_ONLY = "hard";
+
 export function filterQuestions(exam: Exam, only?: string): Question[] {
   if (!only) return [...exam.questions];
+  if (only === HARD_ONLY) return exam.questions.filter(q => q.hard);
   if (/^d\d+$/.test(only)) return questionsOfDomain(exam, only);
   if (/^s\d+$/.test(only)) return exam.questions.filter(q => q.scenario === only);
   return exam.questions.filter(q => q.tasks.includes(only));

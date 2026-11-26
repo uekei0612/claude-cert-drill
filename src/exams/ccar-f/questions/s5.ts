@@ -787,4 +787,139 @@ export const s5: Question[] = [
     answer: 0,
     point: "観点を詰め込んだ 1 回のレビューは注意が散る。観点ごとの別のパス（別インスタンス）に分け、最後にまとめる",
   },
+  {
+    id: "s5-31",
+    scenario: "s5",
+    tasks: ["3.5"],
+    hard: true,
+    stem: "CI reports three failing tests in the date parser. A developer pastes them into Claude Code one at a time. Each fix makes its own test pass but breaks one of the others, because all three depend on how the parser handles time zones. What is the most effective way to proceed?",
+    options: [
+      {
+        text: "Keep fixing one test at a time, but rerun the full suite after each change so the regressions show up immediately.",
+        why: "壊れたことは早く分かるが、互いに絡む問題を別々に直す限り、行ったり来たりは止まらない。",
+      },
+      {
+        text: "Before fixing anything, ask Claude to interview you about edge cases such as daylight-saving changes and missing offsets.",
+        why: "仕様の漏れを洗うには良い手だが、ここでは期待する動きはテストで決まっている。問題は直し方の分け方。",
+      },
+      {
+        text: "Put all three failures in one detailed message, note their shared time-zone handling, and ask for one fix.",
+        why: "正解。互いに影響する問題は、まとめて 1 つのメッセージで渡し、全部を満たす直しを考えさせる。独立した問題なら 1 つずつでよい。",
+      },
+      {
+        text: "Fix the simplest test first and then mark the other two as expected failures until the parser can be redesigned.",
+        why: "失敗を隠すだけで、壊れた振る舞いはそのまま出荷される。まとめて直せる問題を先送りしている。",
+      },
+    ],
+    answer: 2,
+    point: "互いに影響する複数の失敗は 1 つの詳しいメッセージにまとめて直させる。独立した問題だけを 1 つずつ",
+  },
+  {
+    id: "s5-32",
+    scenario: "s5",
+    tasks: ["3.6"],
+    hard: true,
+    stem: "Each push to a pull request re-runs the review on the whole PR. Developers complain that the same issues are posted again after every push, while issues they have already fixed are sometimes flagged again in new wording. What is the best change?",
+    options: [
+      {
+        text: "Before posting, drop any new comment whose text exactly matches a comment that has already been posted on the PR.",
+        why: "言い方が変わると一致しないので、まさに今の不満（言い換えての再指摘）を防げない。",
+      },
+      {
+        text: "Review only the diff of the newest commits, so issues in code that was already reviewed are never reported a second time.",
+        why: "重複は減るが、新しい変更が古いコードとどう関わるかや、前の指摘が本当に直ったかを見られなくなる。",
+      },
+      {
+        text: "Store the session ID from the first review and use --resume on each push so Claude remembers what it already said.",
+        why: "CI のジョブをまたいでセッションを保つ仕組みが要り、古いコードの読みも文脈に残る。要るのは会話の全部ではなく、前の指摘の一覧。",
+      },
+      {
+        text: "Pass the previous review's findings into the prompt and ask for only new issues and those that are still unresolved.",
+        why: "正解。レビューし直すときは前の指摘を渡し、新しいものと未対応のものだけを報告させる。直ったものは繰り返されず、言い換えての重複も防げる。",
+      },
+    ],
+    answer: 3,
+    point: "レビューし直すときは前回の指摘を渡し、新しい問題と未対応の問題だけを出させる",
+  },
+  {
+    id: "s5-33",
+    scenario: "s5",
+    tasks: ["4.1"],
+    hard: true,
+    stem: "Developers have started ignoring the review bot. Analysis shows that comment-accuracy findings are wrong 40% of the time, while security and correctness findings are wrong under 5% of the time. The team cannot afford to lose any security findings. What should you do first?",
+    options: [
+      {
+        text: "Pause the comment-accuracy category and rewrite it to flag a comment only when it contradicts what the code does.",
+        why: "正解。誤検出の多い種類があると、正しい指摘まで信用されなくなる。その種類だけを一時的に止め、具体的な基準に直してから戻す。ほかの種類には触れない。",
+      },
+      {
+        text: "Have each finding include a confidence score, and post only findings whose confidence is at least 0.8.",
+        why: "モデルが自分で言う確信度は較正されておらず、誤った指摘も高い確信度で出る。しかも全種類にかかるので、セキュリティの指摘を落とし得る。",
+      },
+      {
+        text: "Add a sentence to the review prompt asking Claude to be conservative and to report only issues it is highly certain about.",
+        why: "「控えめに」では何を報告しないかが決まらず、精度は上がらない。全種類に効くので、守りたいセキュリティの指摘まで減り得る。",
+      },
+      {
+        text: "Lower the severity of every comment-accuracy finding to informational, so it no longer appears alongside more serious findings.",
+        why: "目立たなくなるだけで、誤った指摘は投稿され続ける。基準のあいまいさという原因が残る。",
+      },
+    ],
+    answer: 0,
+    point: "誤検出の多い種類だけを一時的に止め、具体的な基準（動きと食い違うときだけ）に直してから戻す",
+  },
+  {
+    id: "s5-34",
+    scenario: "s5",
+    tasks: ["4.5"],
+    hard: true,
+    stem: "A weekly dependency audit of about 5,000 files must be ready for a Monday 9:00 meeting. It is submitted to the Message Batches API at 23:00 on Sunday, and on some weeks it is not finished in time. Results based on code as of Saturday evening are acceptable. What is the best change?",
+    options: [
+      {
+        text: "Poll the batch status every minute from Sunday night onward, so that the results are collected the moment they are ready.",
+        why: "受け取りが早まるのは数分だけ。処理に最大 24 時間かかるという性質は変わらない。",
+      },
+      {
+        text: "Submit the audit on Saturday evening, so that the full 24-hour processing window ends well before the Monday meeting.",
+        why: "正解。Batches API は最大 24 時間かかり、待ち時間の保証が無い。締め切りから逆算し、最大の処理時間に余裕を足した時刻に出す。土曜の時点のコードでよいなら、それで満たせる。",
+      },
+      {
+        text: "Split the job into 50 smaller batches of 100 files each, since smaller batches are guaranteed to finish sooner.",
+        why: "小さいほうが早く終わりやすいことはあっても、保証は無い。どのバッチも最大 24 時間かかり得る。",
+      },
+      {
+        text: "Keep Sunday night, and at 8:00 Monday resend any unfinished requests through the standard API so they finish before the meeting.",
+        why: "間に合うことは多いが、予備の仕組みと二重の費用が要る。待てる処理なので、出す時刻を前にずらすだけで済む。",
+      },
+    ],
+    answer: 1,
+    point: "Batches API は最大 24 時間・保証なし。締め切りから逆算して、最大の処理時間に余裕を足した時刻に出す",
+  },
+  {
+    id: "s5-35",
+    scenario: "s5",
+    tasks: ["4.6"],
+    hard: true,
+    stem: 'To catch mistakes before a fix is pushed, the pipeline asks a second Claude instance to review code that the first instance generated. To "save tokens and give context," the reviewer receives the generator\'s full transcript, including its reasoning, along with the diff. Reviews rarely find anything, yet bugs reach production. What is the best change?',
+    options: [
+      {
+        text: "Give the reviewer a larger thinking budget so it can examine the generator's reasoning more thoroughly step by step.",
+        why: "作った側の理由づけを読む限り、レビュー役もその前提に引き寄せられる。考える量を増やしても、独立していないことは変わらない。",
+      },
+      {
+        text: "Tell the reviewer in its prompt to be skeptical of the generator and to assume that its reasoning contains at least one error.",
+        why: "疑うよう指示しても、同じ理由づけを読めば同じ見落としをしやすい。「自分を疑え」の指示より、文脈を分けるほうが効く。",
+      },
+      {
+        text: "Give the reviewer only the diff and the specification, without the generator's transcript or its reasoning.",
+        why: "正解。レビューの強みは、作ったときの理由づけを持たない独立した目にある。作った側の考えを渡すと、その前提ごと受け継いでしまう。",
+      },
+      {
+        text: "Run the review twice with the same inputs and flag only the issues that both runs report independently.",
+        why: "一致を求めると、たまにしか見つからない本物のバグまで消える。しかも 2 回とも同じ前提を受け継いだまま。",
+      },
+    ],
+    answer: 2,
+    point: "レビュー役には作った側の考えを渡さない。差分と仕様だけを見る独立した文脈のほうが見落としを見つける",
+  },
 ];

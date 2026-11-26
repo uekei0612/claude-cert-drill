@@ -789,4 +789,140 @@ export const s2: Question[] = [
     point:
       "文脈が埋まったら /compact に「何を残すか」を指示して縮める（/clear は全部消える、自動の要約は細部から落ちる）",
   },
+  {
+    id: "s2-31",
+    scenario: "s2",
+    tasks: ["3.1"],
+    hard: true,
+    stem: "The repository has a CLAUDE.md at the root and another in packages/api that defines the API's error-code rules. A developer starts Claude Code at the repository root and, before any file has been opened, asks how errors should be coded in the API. The answer ignores the API rules. A teammate later gets the rules applied correctly while editing packages/api/src/users.ts. What explains the difference?",
+    options: [
+      {
+        text: "CLAUDE.md files below the launch directory apply only when Claude Code is started from inside that directory.",
+        why: "下のディレクトリの CLAUDE.md も見つけられて効く。ただし起動時ではなく、そのディレクトリのファイルを触ったときに読まれる。",
+      },
+      {
+        text: "The root CLAUDE.md takes precedence over nested ones, so the API rules were overridden until a file in the package was edited.",
+        why: "ルートに API と食い違う決まりが無い限り、上書きは起きない。答えに決まりが出なかったのは、まだ読み込まれていなかったから。",
+      },
+      {
+        text: "Nested CLAUDE.md files have to be registered in .claude/settings.json before Claude Code will load them at all.",
+        why: "そのような登録は要らない。編集したときに決まりが効いたこと自体が、登録なしで読まれている証拠。",
+      },
+      {
+        text: "A nested CLAUDE.md joins the context when Claude reads files in its subtree, not at launch, and none had been read.",
+        why: "正解。起動したディレクトリとその上の CLAUDE.md は起動時に読まれ、下のディレクトリのものはそこのファイルを触ったときに足される。",
+      },
+    ],
+    answer: 3,
+    point: "起動した場所より下の CLAUDE.md は起動時ではなく、そのディレクトリのファイルを読んだときに文脈に入る",
+  },
+  {
+    id: "s2-32",
+    scenario: "s2",
+    tasks: ["3.2"],
+    hard: true,
+    stem: "The team's /audit-deps skill should only read the code and report outdated dependencies. Its SKILL.md frontmatter sets context: fork and allowed-tools: Read Grep Glob. During a run, Claude still proposed an Edit to package.json and asked for permission to apply it. What change makes the skill unable to edit files?",
+    options: [
+      {
+        text: "Put Edit and Write under disallowed-tools; allowed-tools pre-approves the tools it lists but does not forbid others.",
+        why: "正解。allowed-tools は許可の一覧で、制限の一覧ではない。使わせないツールは disallowed-tools で外す。",
+      },
+      {
+        text: "Remove context: fork, because a forked skill inherits the main session's permissions and ignores its own allowed-tools.",
+        why: "context: fork は別の文脈で動かして本体の会話を汚さないための設定。編集を提案した理由は allowed-tools の意味の取り違えにある。",
+      },
+      {
+        text: "Add a line to SKILL.md telling Claude that this skill must not modify any files and should only report its findings.",
+        why: "指示は確率的で、「できないようにする」にはならない。ツールの設定で外すのが確実。",
+      },
+      {
+        text: "Move the skill from .claude/skills/ to ~/.claude/skills/ so that it runs with each developer's personal permission settings.",
+        why: "置き場所はチームで共有するか個人用かの違い。チームに配れなくなるうえ、編集できないことの保証にもならない。",
+      },
+    ],
+    answer: 0,
+    point:
+      "スキルの allowed-tools は「承認なしで使える」許可で、制限ではない。使わせないツールは disallowed-tools で外す",
+  },
+  {
+    id: "s2-33",
+    scenario: "s2",
+    tasks: ["3.3", "3.1"],
+    hard: true,
+    stem: "The root CLAUDE.md has grown to 300 lines of database-migration conventions that matter only for files under services/*/migrations/ in eight services. Developers report that unrelated tasks now start with a crowded context. Which change keeps the conventions applied to migration work while removing them from other tasks?",
+    options: [
+      {
+        text: "Move the conventions into a separate docs/migrations.md file and pull it into the root CLAUDE.md with a single @import line.",
+        why: "ファイルは分かれて読みやすくなるが、ルートから読み込む以上、どの作業でも起動時に入る。文脈の混み合いは減らない。",
+      },
+      {
+        text: "Move them to a .claude/rules/ file with paths: services/*/migrations/**, so they load only for matching files.",
+        why: "正解。paths の glob を持つルールは、合うファイルを扱うときだけ読み込まれる。8 か所に散らばる移行のファイルにも 1 つのファイルで効く。",
+      },
+      {
+        text: "Place a copy of the conventions in a CLAUDE.md inside each of the eight migrations directories, and delete them from the root.",
+        why: "読み込みの範囲は絞れるが、同じ 300 行を 8 か所で保守することになり、いずれ食い違う。1 つの glob のルールで済む。",
+      },
+      {
+        text: "Turn the conventions into a /migration-rules skill that developers invoke when they start writing a migration.",
+        why: "呼び忘れれば効かない。いつも効かせたい規約は、人の操作に頼らず自動で読まれる形に置く。",
+      },
+    ],
+    answer: 1,
+    point: "一部のパスにだけ関係する規約は、paths の glob を持つ .claude/rules/ に移す。@import は分けても常に読まれる",
+  },
+  {
+    id: "s2-34",
+    scenario: "s2",
+    tasks: ["3.4", "5.4"],
+    hard: true,
+    stem: "A developer uses plan mode to design the split of a large billing module. While Claude explores roughly 300 files, the context fills with file contents, and the plan it finally writes misses dependencies that it had found early in the exploration. What is the best way to run this kind of task?",
+    options: [
+      {
+        text: "Switch to direct execution, since plan mode makes Claude read files that it would not otherwise need.",
+        why: "大きな設計の判断がいる作業こそプランモードの出番。問題はモードではなく、探索の出力が本体の文脈を埋めたこと。",
+      },
+      {
+        text: "Run /compact each time the context passes half full, so that enough room is always left at the end to write the plan.",
+        why: "余地は空くが、圧縮のたびに初めの具体的な発見がぼやける。落ちた依存関係はまさにその種類の情報。",
+      },
+      {
+        text: "Stay in plan mode, but hand the exploration to an Explore subagent and keep only its dependency summary.",
+        why: "正解。長い探索はサブエージェントの別の文脈で行い、本体には要約だけを戻す。本体の文脈は設計の判断に使える。",
+      },
+      {
+        text: "Use a model with a larger context window so that all 300 files fit at once without dropping anything.",
+        why: "収まっても、長い文脈の真ん中は読み落とされやすい。大きな窓は注意の質の問題を解かない。",
+      },
+    ],
+    answer: 2,
+    point: "プランモードの長い探索は Explore サブエージェントに任せ、要約だけを本体に戻して文脈を守る",
+  },
+  {
+    id: "s2-35",
+    scenario: "s2",
+    tasks: ["2.4", "2.1"],
+    hard: true,
+    stem: 'Your team added an internal-docs MCP server to the project\'s .mcp.json. Its search_docs tool is described only as "Search docs." When developers ask about internal APIs, Claude usually runs Grep over the repository instead and misses the documentation entirely. What is the most effective first change?',
+    options: [
+      {
+        text: "Add a line to the project CLAUDE.md telling Claude to use search_docs before Grep for questions about internal APIs.",
+        why: "効く場面はあるが、ツール選択の主な手がかりであるツールの説明が薄いままでは、取り違えの根は残る。",
+      },
+      {
+        text: "Deny Grep in the project's permission settings so that Claude has to fall back to search_docs for these questions.",
+        why: "コードを探す正当な使い方まで止まり、開発の作業全体が遅くなる。釣り合わない対処。",
+      },
+      {
+        text: "Move the server from .mcp.json to each developer's user scope so that its tools are loaded with higher priority.",
+        why: "スコープは誰と共有するかの違いで、ツールの選ばれやすさは変わらない。チームに配れなくもなる。",
+      },
+      {
+        text: "Rewrite the search_docs description: what is indexed, what it returns, and when to use it instead of searching code.",
+        why: "正解。MCP のツールの説明が薄いと、モデルは中身の分かる組み込みのツールを選ぶ。できること・出力・使い分けの境界を書くのが根本の直し方。",
+      },
+    ],
+    answer: 3,
+    point: "MCP ツールが組み込みの Grep に負けるときは、まず説明に「何を持ち・何を返し・いつ使うか」を書く",
+  },
 ];

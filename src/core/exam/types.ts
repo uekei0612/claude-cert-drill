@@ -171,6 +171,9 @@ export interface Question {
   readonly point: string;
   /** 出典（#61）。公式の公開問題などを使った問題に付ける。無ければ自作の問題 */
   readonly source?: QuestionSource;
+  /** 難しい問題（#106）。どの選択肢もそれなりに正しく、条件や根本原因の読み分けで正解が決まる。
+      練習で「難しい問題」だけを選んで解ける（only=hard） */
+  readonly hard?: boolean;
 }
 
 /** 問題の出典（#61） */

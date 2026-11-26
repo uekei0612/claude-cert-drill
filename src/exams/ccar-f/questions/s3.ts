@@ -785,4 +785,140 @@ export const s3: Question[] = [
     answer: 0,
     point: "出典の保持には確かさの度合いも含む。「可能性がある」「審査しだい」を言い切りに変えず、主張と一緒に運ぶ",
   },
+  {
+    id: "s3-31",
+    scenario: "s3",
+    tasks: ["1.2"],
+    hard: true,
+    stem: 'The coordinator runs every query through all four subagents in sequence: web search, document analysis, synthesis, and report writing. For a simple question such as "When was the EU AI Act formally adopted?" users wait several minutes and the system spends the full cost of a research report. What is the best change?',
+    options: [
+      {
+        text: "Have the coordinator judge what each query needs and invoke only the subagents that it requires.",
+        why: "正解。コーディネーターは問いに応じて呼ぶ相手を選ぶ。決まった順にすべてを通す必要はない。",
+      },
+      {
+        text: "Run the four subagents in parallel rather than in sequence so that the total wait is closer to the slowest one.",
+        why: "待ち時間は縮むが、要らない仕事と費用はそのまま。しかも統合やレポートは前の結果を待つので、並列にできない。",
+      },
+      {
+        text: "Cache each subagent's output by query text so that repeated simple questions are answered without running them.",
+        why: "同じ問いが繰り返されるときだけ効く。初めての単純な問いは、やはり 4 つすべてを通る。",
+      },
+      {
+        text: "Add a separate classifier in front of the coordinator that sends short questions to a plain single-call model instead.",
+        why: "仕組みが 1 つ増えるうえ、文の長さは必要な調べ方を表さない。振り分けはもともとコーディネーターの役目。",
+      },
+    ],
+    answer: 0,
+    point: "コーディネーターは問いに応じて呼ぶサブエージェントを選ぶ。毎回すべてを順に通さない",
+  },
+  {
+    id: "s3-32",
+    scenario: "s3",
+    tasks: ["1.3"],
+    hard: true,
+    stem: 'The coordinator is told to research three independent subtopics "in parallel," and "Agent" is in its allowedTools. Traces show three subagents running one after another: each response from the coordinator contains a single Agent tool call, and the next one appears only after the previous result returns. What change produces actual parallel execution?',
+    options: [
+      {
+        text: "Add a parallel flag to each subagent's AgentDefinition so that the SDK starts them at the same time.",
+        why: "並列かどうかは定義の項目では決まらない。1 回の応答に呼び出しをいくつ並べるかで決まる。",
+      },
+      {
+        text: "Have the coordinator emit all three Agent tool calls within one response, before waiting for any of the results.",
+        why: "正解。サブエージェントを並列に動かすには、1 回の応答に複数の Agent の呼び出しを出す。1 つずつ出せば、1 つずつ実行される。",
+      },
+      {
+        text: 'Keep "Agent" in allowedTools and also list each subagent by name there so that all of them can be called at once.',
+        why: "呼べることはすでに確かめられている（順には動いている）。問題は呼び出しの出し方。",
+      },
+      {
+        text: "Start three separate query() calls from your own code, one per subtopic, and merge their results afterwards.",
+        why: "並列にはなるが、コーディネーターが結果を見て次を決める仕組み（範囲の調整、穴の再委任）を外へ出してしまう。今の設計のまま直す方法がある。",
+      },
+    ],
+    answer: 1,
+    point: "サブエージェントを並列に動かすには、コーディネーターが 1 回の応答に複数の Agent ツールの呼び出しを出す",
+  },
+  {
+    id: "s3-33",
+    scenario: "s3",
+    tasks: ["1.6"],
+    hard: true,
+    stem: 'Every topic goes through one fixed pipeline: search, analyze, synthesize, write. Reports on well-defined topics such as "compare the GDPR fines issued in 2023 and 2024" are good. Reports on open-ended topics such as "why did smaller cloud providers lose share last year" are shallow: early findings reveal new threads, such as pricing changes and an acquisition, that are never pursued. What is the best change?',
+    options: [
+      {
+        text: "Switch every topic to dynamic decomposition so that the coordinator can re-plan after each round of findings.",
+        why: "答えの形が決まっていないテーマには効くが、すでに上手くいっている定型のテーマまで、費用と結果の揺れが増える。",
+      },
+      {
+        text: "Add more stages to the fixed pipeline, such as a second search and analysis pass, for every topic that is processed.",
+        why: "段を増やしても、何を追うかが前もって決まっている限り、途中で見つかった手がかりは追われない。",
+      },
+      {
+        text: "Keep the fixed pipeline for well-defined topics, and re-plan open-ended ones as findings come in.",
+        why: "正解。手順の予測できる作業は固定のパイプライン、調べてみないと分からない作業は動的な分解。作業の性質で使い分ける。",
+      },
+      {
+        text: "Raise the number of sources the search subagent collects so that more threads are present when analysis begins.",
+        why: "手がかりが増えても、それを追う段が無い。問題は量ではなく、発見を計画に戻す仕組みが無いこと。",
+      },
+    ],
+    answer: 2,
+    point:
+      "手順が予測できるテーマは固定のパイプライン、答えの形が決まっていないテーマは発見に応じた動的な分解、と使い分ける",
+  },
+  {
+    id: "s3-34",
+    scenario: "s3",
+    tasks: ["5.3", "2.2"],
+    hard: true,
+    stem: 'The document analysis subagent is asked to analyze a paper behind a paywall. Its fetch fails with an access-denied error. It retries five times with exponential backoff, which takes about two minutes, and then returns "analysis failed" to the coordinator. What is the best design for this case?',
+    options: [
+      {
+        text: "Keep the retries but return a structured error after they are exhausted, with the failure type and the documents that were tried.",
+        why: "返す中身は良くなるが、アクセス拒否はやり直しても直らない。2 分を無駄にしてから伝えることになる。",
+      },
+      {
+        text: "Have the subagent look for other copies or related papers itself and analyze whichever one it can reach first.",
+        why: "代わりの情報源を選ぶのは、調査全体を見ているコーディネーターの判断。分析担当が勝手に対象を替えると、範囲が重なったり、ずれたりする。",
+      },
+      {
+        text: "Record the paper as not relevant so that the synthesis step leaves it out and the report is not delayed.",
+        why: "読めなかったことと関係が無かったことは別物。取り違えると、レポートの穴が隠れてしまう。",
+      },
+      {
+        text: "Treat access-denied as non-retryable and return at once with its category, the document, and any partial content.",
+        why: "正解。一時的な失敗だけを中でやり直し、直らない失敗は種類と途中の結果を付けてすぐ上に伝える。代わりを探すかどうかはコーディネーターが決める。",
+      },
+    ],
+    answer: 3,
+    point: "アクセス拒否のような直らない失敗はやり直さず、種類・対象・途中の結果を付けてすぐコーディネーターに返す",
+  },
+  {
+    id: "s3-35",
+    scenario: "s3",
+    tasks: ["5.6"],
+    hard: true,
+    stem: "For the 2023 size of a market, one reputable source gives $4.1B and another gives $5.6B. The first is a forecast published in 2022; the second is a measured figure published in 2024. The synthesis subagent reported $4.85B, the average of the two. What should it have done?",
+    options: [
+      {
+        text: "Report only the 2024 figure, because a later measurement supersedes an earlier forecast of the same quantity.",
+        why: "後の実測のほうが確かな見込みは高いが、片方を黙って消すと、読む人は食い違いがあったことも理由も分からない。判断の材料ごと示す。",
+      },
+      {
+        text: "Report both figures with sources and publication dates, noting that one is a forecast and one a measurement.",
+        why: "正解。信頼できる情報源どうしの食い違いは、勝手に 1 つに決めず、出典と時期を付けて両方示す。予測と実測の違いが分かれば、読む人が判断できる。",
+      },
+      {
+        text: "Report the figure from the source with the stronger reputation and mention the other one in a footnote.",
+        why: "評判は、どちらがこの数字に合っているかを決めない。違いの本当の理由（予測か実測か）が隠れる。",
+      },
+      {
+        text: "Keep the average but add a range of $4.1B to $5.6B, so the uncertainty between the sources is visible.",
+        why: "予測と実測は同じ種類の数字ではないので、平均には意味が無い。幅を添えても、出典と時期の違いが分からない。",
+      },
+    ],
+    answer: 1,
+    point: "信頼できる情報源の数字が食い違ったら、平均や片方の採用をせず、出典・公開日・数字の性質を付けて両方示す",
+  },
 ];
