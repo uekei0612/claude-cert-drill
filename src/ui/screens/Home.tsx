@@ -24,7 +24,7 @@ import {
   snoozeExportNudge,
   weakIds,
 } from "../../core/store/actions";
-import { NEW_ONLY } from "../../core/engine/practice";
+import { HARD_ONLY, NEW_ONLY } from "../../core/engine/practice";
 import { PRACTICE_SIZES, itemKey } from "../../core/store/schema";
 import { update, useData } from "../../app/store";
 import { Activity } from "../Activity";
@@ -53,6 +53,7 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
   const size = practiceSizeOf(data, exam.id);
   const examAt = examDate ? parseDate(examDate) : undefined;
   const unseen = all.total - all.seen;
+  const hardCount = exam.questions.filter(q => q.hard).length;
   const unread = chapters.length - readCount;
   const plan = examAt !== undefined ? dailyPlan(examAt, now, unseen, unread) : undefined;
   const due = dueCount(exam, statOf, now);
@@ -247,6 +248,12 @@ export function Home({ exam, now }: { exam: Exam; now: number }) {
       {due > 0 && unseen > 0 && (
         <a class="btn block" href={href({ name: "practice", examId: exam.id, only: NEW_ONLY })}>
           新しい問題を解く（未解答 {unseen} 問）
+        </a>
+      )}
+      {/* 難しい問題だけの回（#106）。難しい問題のある資格だけに出す */}
+      {hardCount > 0 && (
+        <a class="btn block" href={href({ name: "practice", examId: exam.id, only: HARD_ONLY })}>
+          難しい問題を解く（{hardCount} 問）
         </a>
       )}
 

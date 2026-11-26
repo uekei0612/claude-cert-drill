@@ -782,4 +782,140 @@ export const s6: Question[] = [
     answer: 3,
     point: "文書の中の食い違いは選ばない・混ぜない。両方を場所つきで残し、食い違いとして確認に回す",
   },
+  {
+    id: "s6-31",
+    scenario: "s6",
+    tasks: ["4.2"],
+    hard: true,
+    stem: "Invoices with handwritten corrections, such as a crossed-out quantity with a new number written beside it, are extracted inconsistently: sometimes the printed value, sometimes the handwritten one, and sometimes both. The prompt already contains detailed written rules for corrections. What is the most effective addition?",
+    options: [
+      {
+        text: "Add 10 to 15 examples of clean, typical invoices with their correct outputs, to show the expected output format.",
+        why: "揃っていないのは訂正のある迷う場面で、典型的な請求書ではない。例の数より、どの場面の例かが大事。",
+      },
+      {
+        text: "Rewrite the correction rules in more detail, covering each kind of mark: strike-throughs, arrows, initials, and circled numbers.",
+        why: "詳しい指示だけでは揃わない、というのが今の状態。文を足すより、判断を見せる例のほうが効く。",
+      },
+      {
+        text: "Add examples of corrected invoices with only the final output for each, so that the model can see the right answer.",
+        why: "方向は合っているが、なぜその値を選ぶのかが無いと、例と少し違う訂正に判断を広げられない。",
+      },
+      {
+        text: "Add 2 to 4 examples of corrected invoices showing which value was chosen, why, and why the other was rejected.",
+        why: "正解。迷う場面の例を少数、判断の理由と一緒に見せるのが、出力を揃えるのに最も効く。理由があると、新しい形の訂正にも判断を広げられる。",
+      },
+    ],
+    answer: 3,
+    point: "揃わない迷う場面には、選んだ理由と選ばなかった理由を付けた few-shot の例を 2〜4 個見せる",
+  },
+  {
+    id: "s6-32",
+    scenario: "s6",
+    tasks: ["4.3"],
+    hard: true,
+    stem: 'The extraction tool\'s schema marks due_date as required, and payment_terms is an enum of "net30" and "net60". Audits find invented due dates on invoices that print none, and invoices that say "net 45" recorded as "net30". Which schema change addresses both problems?',
+    options: [
+      {
+        text: 'Make due_date nullable, and add "other" to payment_terms together with a free-text payment_terms_detail field.',
+        why: '正解。原文に無いかもしれない項目を必須にすると、モデルは値を作る。列挙型に収まらない値のために、"other" と詳細の欄を用意する。',
+      },
+      {
+        text: 'Keep due_date required with a sentinel such as "1900-01-01" for missing dates, and add "net45" to the enum.',
+        why: '目印の値は下流で本物の日付と取り違えられやすい。"net45" を足しても、次の "net 90" で同じことが起きる。',
+      },
+      {
+        text: "Turn on strict schema validation and set tool_choice to the extraction tool, so every output must match the schema.",
+        why: "形は保証されるが、どちらの問題も形の誤りではなく意味の誤り。スキーマどおりの作られた期日や、合わない列挙値は止められない。",
+      },
+      {
+        text: "Add a validation step that retries the extraction whenever due_date or payment_terms is missing from the output.",
+        why: "原文に無い情報は、何度やり直しても出てこない。必須の圧力をさらに強め、値を作らせる方向に働く。",
+      },
+    ],
+    answer: 0,
+    point:
+      '原文に無いかもしれない項目は null 可にし、列挙型には "other" ＋詳細の欄を用意する。必須にすると値が作られる',
+  },
+  {
+    id: "s6-33",
+    scenario: "s6",
+    tasks: ["4.4"],
+    hard: true,
+    stem: "Validation checks that line items add up to the stated total, and a failed check triggers a retry that includes the specific error. Retries fix most failures. For one supplier they never do: the stated total includes a freight charge listed on a separate delivery note, which the pipeline does not receive. What should the pipeline do with these documents?",
+    options: [
+      {
+        text: "Retry up to five times with stronger instructions to reconcile the line items with the stated total before giving up.",
+        why: "足りない情報は文書の中に無いので、何度やり直しても直らない。強く指示すれば、合わせるために数字を作り出しかねない。",
+      },
+      {
+        text: "Set the stated total to the sum of the line items so that the record passes validation and can flow downstream.",
+        why: "原文に書かれた事実を書き換えることになる。運賃の分だけ、下流の金額が黙って誤る。",
+      },
+      {
+        text: "Extract both calculated and stated totals, flag the conflict without retrying, and route the record to review.",
+        why: "正解。情報が渡した文書に無いときは、やり直しは効かない。両方の合計を残して食い違いを示せば、確認する人はすぐ原因に当たれる。",
+      },
+      {
+        text: "Remove stated_total from the schema for this supplier, since it cannot be checked against the line items.",
+        why: "検証が通るようになるだけで、合計の食い違いという大事な手がかりを捨てる。",
+      },
+    ],
+    answer: 2,
+    point: "情報が渡した文書に無いときはやり直しても直らない。計算と記載の合計を両方残し、食い違いの印を付けて人に回す",
+  },
+  {
+    id: "s6-34",
+    scenario: "s6",
+    tasks: ["5.5"],
+    hard: true,
+    stem: "On a 2,000-document validation set the pipeline reaches 97% field-level accuracy. The team proposes to stop human review of every extraction whose model-reported confidence is above 0.9. What should be done before this change goes live?",
+    options: [
+      {
+        text: "Raise the threshold to 0.95 to leave a safety margin, since the overall accuracy is already high enough to rely on.",
+        why: "閾値を上げても、その確信度が本当の正しさと合っているかは確かめていない。較正していない数字の線を動かしているだけ。",
+      },
+      {
+        text: "Measure accuracy by document type and by field, and calibrate the threshold against labeled data for each segment.",
+        why: "正解。全体で 97% でも、珍しい種類の文書や特定の項目では低いことがある。区分ごとに確かめ、確信度が正しさと合う閾値を正解つきのデータで決める。",
+      },
+      {
+        text: "Keep reviewing a uniform random 1% of the high-confidence extractions after launch to watch for any drop in accuracy.",
+        why: "続けて見張るのは良いが、一様な抽出では珍しい種類の文書がほとんど選ばれない。しかも本番の前に確かめるべきことの代わりにはならない。",
+      },
+      {
+        text: "Ask the model to explain its reasoning for each extraction, and skip review only when the explanation is consistent.",
+        why: "説明の筋が通っていても、値が正しいとは限らない。正解との突き合わせで確かめていない点は同じ。",
+      },
+    ],
+    answer: 1,
+    point: "確認を減らす前に、文書の種類・項目ごとに正答率を測り、正解つきのデータで確信度の閾値を較正する",
+  },
+  {
+    id: "s6-35",
+    scenario: "s6",
+    tasks: ["2.2"],
+    hard: true,
+    stem: "The pipeline's fetch_document MCP tool returns isError with the message \"Error\" in three situations: the document ID does not exist, the storage service timed out, and the document exists but has no text layer. The orchestrator retries every error three times. What change to the tool's responses helps most?",
+    options: [
+      {
+        text: "Put the underlying HTTP status code into the error message so that the orchestrator can tell the cases apart by parsing the text.",
+        why: "見分けの手がかりにはなるが、文を読み解かせる作りは壊れやすい。文字の層が無いことのように、HTTP の失敗ではない場合も表せない。",
+      },
+      {
+        text: "Throw a protocol-level exception instead of returning isError, so that the client stops the run and nothing is retried.",
+        why: "時間切れのように、やり直せば直る失敗まで止まる。しかもモデルに失敗の中身が届かなくなる。",
+      },
+      {
+        text: "Limit the retries to one for every error, so that time spent on errors that cannot be fixed is kept small.",
+        why: "無駄は減るが、直らない失敗も 1 回やり直し、直る失敗はやり直しが足りなくなる。見分けられないことが根本。",
+      },
+      {
+        text: "Return an error category and an isRetryable flag, true only for the timeout, plus a short readable explanation.",
+        why: "正解。種類・やり直せるか・人の読める説明を返せば、呼ぶ側は時間切れだけをやり直し、存在しない文書や文字の層が無い文書は別の流れ（人や OCR）に回せる。",
+      },
+    ],
+    answer: 3,
+    point: "MCP ツールのエラーは種類・isRetryable・読める説明を返し、やり直すのは一時的な失敗だけにする",
+  },
 ];

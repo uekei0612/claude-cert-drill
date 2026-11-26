@@ -786,4 +786,141 @@ export const s4: Question[] = [
     answer: 0,
     point: "長い作業は見つけたことと進み具合をファイルに書き出す。文脈が埋まっても読み直せ、落ちても続きから再開できる",
   },
+  {
+    id: "s4-31",
+    scenario: "s4",
+    tasks: ["1.5"],
+    hard: true,
+    stem: "Engineers rely on the assistant's Bash tool for builds, tests, and git. Security requires that no command ever connects to the production database host. The current safeguard is a PostToolUse hook that inspects each finished Bash command and, if it touched production, tells the model to undo what it did. What should replace it?",
+    options: [
+      {
+        text: "A PreToolUse hook that denies Bash calls aimed at the production host before they run, returning the reason.",
+        why: "正解。要件は「走らせないこと」なので、実行の前に止めるフックが要る。理由を返せば、モデルは許された別の進め方を選べる。",
+      },
+      {
+        text: "Remove the Bash tool and provide MCP tools for builds, tests, and git that cannot reach the database.",
+        why: "安全にはなるが、エンジニアが頼る Bash の正当な使い方をまとめて失い、作り直す手間も大きい。危ない呼び出しだけを止めれば足りる。",
+      },
+      {
+        text: "Keep the PostToolUse hook and also roll back the database automatically from the latest snapshot whenever it fires.",
+        why: "コマンドが走ったあとの対処で、要件の「走らせない」を満たさない。巻き戻しで、その間の正当な書き込みまで失う。",
+      },
+      {
+        text: "Describe the production host in the system prompt as off-limits, and keep the PostToolUse hook as a second line of defense.",
+        why: "1 段目は確率的、2 段目は実行のあと。どちらも実行の前に決定的に止めることはしない。",
+      },
+    ],
+    answer: 0,
+    point:
+      "「決して実行させない」要件は、実行後の PostToolUse ではなく、実行前に止めて理由を返す PreToolUse フックで守る",
+  },
+  {
+    id: "s4-32",
+    scenario: "s4",
+    tasks: ["2.1"],
+    hard: true,
+    stem: "The assistant has two ways to find code: an MCP tool, search_code, backed by a semantic index that is rebuilt every night, and the built-in Grep. Asked about a function added an hour ago, the agent calls search_code, gets no match, and reports that the function does not exist. What is the best fix?",
+    options: [
+      {
+        text: "Rebuild the semantic index every hour instead of every night, so that recent code is found much sooner.",
+        why: "遅れが縮むだけで、数分前のコードは相変わらず見つからない。エージェントが索引の限界を知らないという根は残る。",
+      },
+      {
+        text: "Tell the agent in the system prompt to search with Grep first and to use search_code only when Grep finds nothing.",
+        why: "名前の分からない「〜をしている所」のような問いでは、意味検索の強みを捨てることになる。使い分けの境界を伝えるほうがよい。",
+      },
+      {
+        text: "Say in search_code's description that the index is nightly and to use Grep for recent code or exact names.",
+        why: "正解。ツールの説明には、できることだけでなく境界（何が入っていないか、どの場面では別のツールか）を書く。モデルは場面に応じて選べるようになる。",
+      },
+      {
+        text: "Remove search_code from the assistant so that the agent can rely on a single tool whose results are always current.",
+        why: "意味で探す力を丸ごと失う。2 つのツールは得意が違うので、境界を書いて使い分けさせればよい。",
+      },
+    ],
+    answer: 2,
+    point: "ツールの説明には境界（索引の新しさ、別のツールを使う場面）まで書き、似たツールを使い分けさせる",
+  },
+  {
+    id: "s4-33",
+    scenario: "s4",
+    tasks: ["2.3"],
+    hard: true,
+    stem: "Every task must begin with a call to get_repo_context; after that the agent should choose its tools freely and finish with a written answer. The team set tool_choice to force get_repo_context on every request. The agent now calls get_repo_context over and over and never finishes. What is the correct configuration?",
+    options: [
+      {
+        text: 'Use tool_choice "any" on every request, so a tool call is required but the agent can choose which one.',
+        why: "どれかのツールは毎回呼ばなければならないので、文章の答えで終えることができない。最初の 1 回の要件と、終わり方の要件を両立しない。",
+      },
+      {
+        text: 'Force get_repo_context on the first request only, then switch tool_choice to "auto" for the rest of the loop.',
+        why: "正解。最初に必ず呼ばせたいツールは最初の回だけ強制し、あとは auto に戻す。auto なら、ツールを選ぶことも文章で終えることもできる。",
+      },
+      {
+        text: 'Leave tool_choice at "auto" throughout and state in the system prompt that get_repo_context has to be called first.',
+        why: "終わらない問題は消えるが、最初の呼び出しが確率的になる。「必ず最初に」という要件は強制で満たせる。",
+      },
+      {
+        text: "Keep forcing get_repo_context, and stop the loop after a fixed number of iterations so the agent cannot repeat it forever.",
+        why: "止まりはするが、ほかのツールも文章の答えも出せないので、作業は一度も進まない。",
+      },
+    ],
+    answer: 1,
+    point: '最初の 1 回だけ特定のツールを強制し、あとは tool_choice を "auto" に戻す。"any" のままだと文章で終われない',
+  },
+  {
+    id: "s4-34",
+    scenario: "s4",
+    tasks: ["2.5"],
+    hard: true,
+    stem: 'Asked to find every place that reads the retry.max setting, the agent ran Grep for "retry.max" and listed three call sites. Engineers know of others: some code calls settings.retry_limit(), a wrapper around the setting, and some reads the RETRY_MAX environment variable that overrides it. What is the best approach?',
+    options: [
+      {
+        text: "Read every file under src/ so that no form of access can be missed, then list each place that uses the setting.",
+        why: "見落としは減るが、文脈と時間を大量に使う。読む前に、何を探せばよいかを決められる。",
+      },
+      {
+        text: 'Run one broader Grep for "retry" across the repository and go through every match to find the relevant ones.',
+        why: 'retry_limit() のように名前に "retry" を含むものは拾えるが、関係の無い当たりに埋もれ、別名の呼び出しは見落とし得る。',
+      },
+      {
+        text: "Use Glob to collect the configuration files and modules, then read only those to see where the setting is defined.",
+        why: "決めている場所は分かっても、読んでいる場所（呼び出し元）は分からない。",
+      },
+      {
+        text: "First list every name that exposes the setting, such as the wrappers and the env variable, then run Grep for each.",
+        why: "正解。包み関数などを経由する使い方を追うときは、先に公開されている名前を洗い出し、名前ごとに検索する。少ない読みで漏れなく見つかる。",
+      },
+    ],
+    answer: 3,
+    point: "包み関数や別名を経由する使い方は、先に公開されている名前を洗い出し、名前ごとに Grep する",
+  },
+  {
+    id: "s4-35",
+    scenario: "s4",
+    tasks: ["5.4"],
+    hard: true,
+    stem: 'Two hours into exploring an unfamiliar codebase, the agent begins answering in generic terms such as "the repository layer typically handles this" instead of naming the OrderRepository class and the retry decorator that it identified earlier. More questions are still to come in this session. What is the best change?',
+    options: [
+      {
+        text: "Have the agent keep key findings in a scratchpad file it rereads, and send further exploration to subagents.",
+        why: "正解。長いセッションで具体的な発見がぼやけるのを防ぐには、要点を外に書き残して読み直す。探索をサブエージェントに出せば、本体の文脈も膨らまない。",
+      },
+      {
+        text: "Run /compact now so that the context is condensed and the agent has room to keep working on the remaining questions.",
+        why: "余地はできるが、圧縮は要約なので、クラス名のような具体的な発見はさらにぼやけ得る。書き残した要点と組み合わせて使うもの。",
+      },
+      {
+        text: "Start a fresh session for each remaining question so that every answer begins from a clean context.",
+        why: "文脈はきれいになるが、2 時間分の発見もすべて失い、毎回調べ直すことになる。",
+      },
+      {
+        text: "Remind the agent in the system prompt to name concrete classes and functions instead of describing general patterns.",
+        why: "名前を挙げようとしても、文脈の中で発見がぼやけていれば正しく挙げられない。原因は文脈の劣化にある。",
+      },
+    ],
+    answer: 0,
+    point:
+      "長い探索で答えが一般論になってきたら、要点をスクラッチパッドに書き残して読み直し、探索はサブエージェントに出す",
+  },
 ];

@@ -788,4 +788,141 @@ export const s1: Question[] = [
     answer: 1,
     point: "依頼の対象があいまいなら推測で選ばず、候補を具体的に（品物・日付）示して聞く",
   },
+  {
+    id: "s1-31",
+    scenario: "s1",
+    tasks: ["1.1"],
+    hard: true,
+    stem: 'Your loop continues while stop_reason is "tool_use" and treats every other value as a finished answer. A few conversations end with no reply to the customer. In each of them the final response had stop_reason "max_tokens", and its last content block was a lookup_order tool_use whose input was cut off partway through. What should the loop do with such a response?',
+    options: [
+      {
+        text: "Run lookup_order with whatever fields of the input were received, and let the model correct any missing values on the next turn.",
+        why: "途中で切れた入力は不完全で、壊れた JSON や欠けた項目のまま実行することになる。誤った注文を引く危険があり、直す機会があるとは限らない。",
+      },
+      {
+        text: "Keep the partial response, add a user message asking the model to continue from where it stopped, and resume the loop.",
+        why: "文章が途中で切れたときの続け方としてはあり得るが、tool_use のブロックが途中で切れたときの公式の扱いは、上限を上げて同じリクエストをやり直すこと。",
+      },
+      {
+        text: "Resend the same request with a higher max_tokens, and handle each stop_reason separately instead of treating all but tool_use as done.",
+        why: "正解。上限で切れた応答に不完全な tool_use があれば、max_tokens を上げてやり直すのが公式の扱い。あわせて、max_tokens や refusal を「答え終えた」と扱う判定そのものを直す。",
+      },
+      {
+        text: "Add a fallback that sends the customer a short apology whenever the last response contains no text, so that no conversation ends silently.",
+        why: "症状を隠すだけで、注文を調べるという用件は果たされない。原因は stop_reason の扱いにある。",
+      },
+    ],
+    answer: 2,
+    point:
+      'stop_reason が "max_tokens" で tool_use が途中で切れたら、max_tokens を上げて同じリクエストをやり直す。tool_use 以外をまとめて完了扱いにしない',
+  },
+  {
+    id: "s1-32",
+    scenario: "s1",
+    tasks: ["1.4"],
+    hard: true,
+    stem: "A gate blocks process_refund until get_customer has returned a verified customer ID in the current conversation, and it checks your own record of tool results, not a flag set by the model. An audit finds one bad refund: the customer verified their personal account, then asked for a refund on an order placed from their separate business account, and the agent issued it. What is the gap in the gate?",
+    options: [
+      {
+        text: "It confirms that some verification happened, but not that the refunded order belongs to the verified customer ID.",
+        why: "正解。前提のゲートは「確認が済んだか」だけでなく、「操作の対象が確認した相手のものか」まで結び付けて判定する。注文の持ち主の ID と確認済みの ID を突き合わせる。",
+      },
+      {
+        text: "It runs once per conversation, so get_customer should be forced with tool_choice right before each process_refund call.",
+        why: "直前にもう一度確認しても、確認されるのは同じ個人のアカウント。注文の持ち主と結び付けない限り、同じ返金が通る。",
+      },
+      {
+        text: "It should reject refunds for any customer who holds more than one account and send those cases to a human agent.",
+        why: "安全側ではあるが、正当な返金まで人に回り、解決率を下げる。問題は対象の照合が無いことで、照合すれば自動で正しく扱える。",
+      },
+      {
+        text: "It lacks a system prompt rule telling the agent to verify each account separately before acting on orders from it.",
+        why: "指示は確率的。ゲートで保証している仕組みの穴を、プロンプトで埋めることはできない。",
+      },
+    ],
+    answer: 0,
+    point: "前提のゲートは「確認したか」だけでなく、操作の対象（注文の持ち主）が確認した相手と一致するかまで判定する",
+  },
+  {
+    id: "s1-33",
+    scenario: "s1",
+    tasks: ["1.7", "5.1"],
+    hard: true,
+    stem: "A customer returns four days after a long session about a delayed replacement. Since then the order status, the tracking events, and the refund state have all changed. The team's habit is to resume the stored session so the agent keeps its full context. What is the most reliable way to continue?",
+    options: [
+      {
+        text: "Resume the session and add a note that some earlier results may be outdated, so the agent re-checks anything it relies on.",
+        why: "変わったものが一部なら有効だが、今回はほぼすべてが古い。古い結果が文脈に残ったままだと、新しい結果と食い違い、どちらを使うかが確率的になる。",
+      },
+      {
+        text: "Fork the stored session so the original stays intact, then let the agent update the order details inside the new branch.",
+        why: "分岐は別の方針を試すためのもの。分岐しても古いツール結果はそのまま引き継がれ、問題は解けない。",
+      },
+      {
+        text: "Resume the session as it is; the earlier tool results carry timestamps, so the model can tell which facts are no longer current.",
+        why: "時刻があっても、古い事実を使わない保証は無い。長い文脈に大量の古い結果が残るほど、取り違えやすくなる。",
+      },
+      {
+        text: "Start a new session seeded with a structured summary of the case and what was promised, and re-fetch the current state.",
+        why: "正解。以前のツール結果の多くが古くなったなら、再開より、要約を持った新しいセッションのほうが確実。約束など変わらない事実は要約で引き継ぎ、変わる状態は取り直す。",
+      },
+    ],
+    answer: 3,
+    point:
+      "以前のツール結果の多くが古くなったら、再開せず、要約（約束した事実）を入れた新しいセッションで今の状態を取り直す",
+  },
+  {
+    id: "s1-34",
+    scenario: "s1",
+    tasks: ["5.1"],
+    hard: true,
+    stem: "To keep long conversations within budget, older turns are replaced by a model-written summary. In one case the agent had promised a refund of $54.99, the item price plus return shipping. After two rounds of summarization it issued $45.00, the item price alone. Which change addresses this most reliably?",
+    options: [
+      {
+        text: "Tell the summarization prompt to copy every amount, date, and order number verbatim instead of paraphrasing them.",
+        why: "効果はあるが、要約はモデルが書くので、写し漏れや取り違えは確率的に残る。しかも要約を重ねるたびに危険が重なる。",
+      },
+      {
+        text: "Keep amounts, order IDs, and commitments in a case-facts block outside the summarized history, and send it with every request.",
+        why: "正解。取引の事実は要約に任せず、別に持って毎回そのまま渡す。要約が何度かかっても、約束した金額は変わらない。",
+      },
+      {
+        text: "Stop summarizing and send the complete transcript on every turn, since the context window is large enough for most conversations.",
+        why: "費用が増え、長い会話では窓を超える。長い入力の真ん中の情報は読み落とされやすく、正確さも保証されない。",
+      },
+      {
+        text: "Summarize less often, for example every 30 turns instead of every 15, so that fewer rounds of compression affect each fact.",
+        why: "回数が減るだけで、要約で数字がぼやける仕組みは同じ。長い案件ではいずれ同じことが起きる。",
+      },
+    ],
+    answer: 1,
+    point: "約束した金額などの取引の事実は、要約に任せず「事実のブロック」として履歴の外に持ち、毎回そのまま渡す",
+  },
+  {
+    id: "s1-35",
+    scenario: "s1",
+    tasks: ["5.2"],
+    hard: true,
+    stem: "A customer asks the agent to match a lower price they found at a competitor. Your written policy covers price adjustments when your own store lowers a price within 14 days of purchase, but says nothing about competitors' prices. The customer is calm and has a screenshot. What should the agent do?",
+    options: [
+      {
+        text: "Decline politely, explaining that the price adjustment policy applies only to price drops in your own store.",
+        why: "方針は他社の価格について何も決めていない。「触れていない」を「認めない」と読み替えるのは、エージェントが方針を勝手に作ることになる。",
+      },
+      {
+        text: "Ask the customer to upload the screenshot, check that the competitor's offer is current, and approve the match if it is.",
+        why: "丁寧で筋が良く見えるが、認めるかどうかの根拠になる方針が無いまま決めている。確かめる手順が正しくても、判断の権限が無い。",
+      },
+      {
+        text: "Say the request is outside the written policy, and escalate with the order, both prices, and the screenshot attached.",
+        why: "正解。方針が触れていない求めは、推測で認めも断りもせず人に回す。必要な材料をそろえて渡せば、人はすぐ判断できる。",
+      },
+      {
+        text: "Treat it like the 14-day adjustment, since the customer's loss is the same, and refund the difference automatically.",
+        why: "似た規則を広げて当てはめるのは、方針の例外を自分で作ること。金銭が動く判断は特に、根拠の無いまま進めない。",
+      },
+    ],
+    answer: 2,
+    point: "方針が触れていない求め（他社価格への合わせ）は、認めも断りもせず、材料をそろえて人に引き継ぐ",
+  },
 ];

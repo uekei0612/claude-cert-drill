@@ -1,5 +1,6 @@
 /* CCAR-F だけの決まり。どの資格にもかける形の検査は core/exam/validate.ts */
 import { describe, expect, test } from "vitest";
+import { stemText } from "../../core/exam/types";
 import { ccarF as exam } from "./exam";
 
 describe("「はじめに」", () => {
@@ -49,6 +50,32 @@ test("教科書の各章（はじめにを除く）に、「試験での考え�
     const found = l.sections.flatMap(s => s.body.flatMap(b => (typeof b !== "string" && "quiz" in b ? [s.h] : [])));
     expect(found, k).toEqual(["試験での考え方"]);
   }
+});
+
+describe("難しい問題（#106）", () => {
+  const hard = exam.questions.filter(q => q.hard);
+  test("どの細目にも、主たる細目の難しい問題が 1 問以上ある", () => {
+    for (const d of exam.domains)
+      for (const t of d.tasks)
+        expect(
+          hard.some(q => q.tasks[0] === t.id),
+          t.id,
+        ).toBe(true);
+  });
+  test("選択肢の長さで正解が分からない（正解が一番長い・一番短い問題が、それぞれ 3 割以下）", () => {
+    const texts = (q: (typeof hard)[number]) => q.options.map(o => ("text" in o ? stemText(o.text) : "").length);
+    const ja = (q: (typeof hard)[number]) =>
+      exam.translations!.ja!.questions[q.id]!.options.map(o => stemText(o).length);
+    for (const [name, lens] of [
+      ["原文", texts],
+      ["訳", ja],
+    ] as const) {
+      const longest = hard.filter(q => lens(q)[q.answer] === Math.max(...lens(q))).map(q => q.id);
+      const shortest = hard.filter(q => lens(q)[q.answer] === Math.min(...lens(q))).map(q => q.id);
+      expect(longest.length / hard.length, `${name}で正解が最長：${longest.join(" ")}`).toBeLessThanOrEqual(0.3);
+      expect(shortest.length / hard.length, `${name}で正解が最短：${shortest.join(" ")}`).toBeLessThanOrEqual(0.3);
+    }
+  });
 });
 
 test("模擬試験は本番と同じ 60 問（4 シナリオ × 15 問）を組める", () => {
