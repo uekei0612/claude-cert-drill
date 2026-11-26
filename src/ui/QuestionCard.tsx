@@ -8,8 +8,8 @@
    答える前は、hintCopy のときだけ、問題と選択肢だけ（答え・解説なし）でヒントを頼む文を写すボタンを出す（#36）。
    答えを見たあとは、問題ごとのメモ（なぜ間違えたか）を書ける。コピーにもメモを入れる（#88）。
    答えを見たあと、苦手な問題（覚えたあとに何度も間違えた。#87）には、忘れた回数を出す。
-   learnLink のときは、覚えることの下にその細目の教科書の章へのリンクを出し、細目の番号も章へのリンクにする
-   （間違えた直後に読めるように。#26・#102）。練習の途中でも出す（答えるたびに回を記録に残しているので、
+   learnLink のときは、細目の番号をその細目の教科書の章へのリンクにする
+   （間違えた直後に読めるように。#26・#102。同じ行き先のリンクを二重に出さない。#105）。練習の途中でも出す（答えるたびに回を記録に残しているので、
    章から戻れば同じ問題の解説から続けられる。戻り先は練習の側で learnBack に渡す） */
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { APP } from "../app/config";
@@ -235,11 +235,6 @@ export function QuestionCard({
               `${task?.id} ${task?.ja}`
             )}
           </p>
-          {lesson && (
-            <a class="tap small learn-link" href={lesson}>
-              教科書で読む（{task!.id}）→
-            </a>
-          )}
         </div>
       )}
       {reveal && <NoteBox key={q.id} examId={exam.id} questionId={q.id} />}

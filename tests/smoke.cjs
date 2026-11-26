@@ -205,7 +205,7 @@ const OUT = process.argv[3] || "/tmp/shots";
   if (!(await page.$(".review-row .row-stem"))) throw new Error("振り返りの一覧の行に問題文が出ない");
   await shot("24-saved");
   // 答えのあとから、その細目の教科書の章へ行ける（#26）
-  await click(".qcard .learn-link");
+  await click(".qcard .chapter-link");
   if (!/#\/ccar-f\/learn\/\d\.\d\?back=/.test(await page.evaluate(() => location.hash)))
     throw new Error("振り返りから教科書の章に移れない");
   // 章の戻るボタンで振り返りへ戻れる（#91）
@@ -463,7 +463,7 @@ const OUT = process.argv[3] || "/tmp/shots";
   await click(".lang-toggle");
   await shot("11-mock-result");
   await click(".review-row");
-  if (!(await page.$(".qcard .learn-link"))) throw new Error("模擬試験の見直しに教科書へのリンクが無い");
+  if (!(await page.$(".qcard .chapter-link"))) throw new Error("模擬試験の見直しに教科書へのリンクが無い");
   await shot("12-mock-review");
   // 間違えた（未回答を含む）問題だけを練習できる（#39）。60 問中、正解は多くても 2 問
   await clickText("間違えた（未回答を含む）");
